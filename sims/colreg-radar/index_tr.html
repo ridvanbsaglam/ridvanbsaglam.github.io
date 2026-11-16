@@ -1,0 +1,1597 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>COLREG & ARPA Radar — Çatışmayı Önleme Simülasyonu</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500;600&family=Space+Grotesk:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+<style>
+  /* =========================================================================
+     MULTI-THEME DESIGN SYSTEM (AMBER / COBALT / MONOCHROME)
+     Matches Enclosed Space v2 & Ship Stability v2 Automotive HMI Aesthetic
+     ========================================================================= */
+  :root, [data-theme="amber"] {
+    --bg: #080b0f;
+    --ink: #f4f5f7;
+    --ink-dim: rgba(244, 245, 247, 0.62);
+    --ink-mute: rgba(244, 245, 247, 0.36);
+    --line: rgba(244, 245, 247, 0.11);
+    --line-strong: rgba(244, 245, 247, 0.24);
+    --accent: #f59e0b;          /* Warm Maritime Amber */
+    --accent-rgb: 245, 158, 11;
+    --accent-2: #38bdf8;        /* ARPA Target Cyan */
+    --accent-2-rgb: 56, 189, 248;
+    --warn: #fbbf24;
+    --danger: #ef4444;
+    --danger-rgb: 239, 68, 68;
+  }
+
+  [data-theme="cobalt"] {
+    --bg: #070b12;
+    --ink: #f0f6fc;
+    --ink-dim: rgba(240, 246, 252, 0.62);
+    --ink-mute: rgba(240, 246, 252, 0.36);
+    --line: rgba(56, 189, 248, 0.14);
+    --line-strong: rgba(56, 189, 248, 0.30);
+    --accent: #38bdf8;          /* Ice / Cobalt Cyan */
+    --accent-rgb: 56, 189, 248;
+    --accent-2: #a855f7;        /* Secondary Vector Violet */
+    --accent-2-rgb: 168, 85, 247;
+    --warn: #f59e0b;
+    --danger: #f43f5e;
+    --danger-rgb: 244, 63, 94;
+  }
+
+  [data-theme="monochrome"] {
+    --bg: #09090b;
+    --ink: #fafafa;
+    --ink-dim: rgba(250, 250, 250, 0.62);
+    --ink-mute: rgba(250, 250, 250, 0.36);
+    --line: rgba(250, 250, 250, 0.12);
+    --line-strong: rgba(250, 250, 250, 0.26);
+    --accent: #f4f4f5;          /* Stark Porsche/Polestar White */
+    --accent-rgb: 244, 244, 245;
+    --accent-2: #94a3b8;        /* Technical Slate */
+    --accent-2-rgb: 148, 163, 184;
+    --warn: #fb923c;
+    --danger: #dc2626;
+    --danger-rgb: 220, 38, 38;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; -webkit-user-select: none; }
+  html, body {
+    width: 100%; height: 100%;
+    background: #000;
+    color: var(--ink);
+    font-family: 'Inter', -apple-system, sans-serif;
+    overflow: hidden;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* 16:9 Fixed-Coordinate Stage for Articulate Storyline Web Object */
+  #stage {
+    position: absolute;
+    top: 50%; left: 50%;
+    width: 1920px; height: 1080px;
+    transform-origin: center center;
+    background: var(--bg);
+    overflow: hidden;
+  }
+
+  /* LAYER 0: Stationary Dark Ocean Spotlight Backdrop (0deg fixed) */
+  #bg {
+    position: absolute;
+    inset: 0;
+    background:
+      radial-gradient(ellipse 52% 62% at 50% 50%, rgba(255,255,255,0.02) 0%, rgba(8,11,15,0.42) 64%, rgba(8,11,15,0.97) 90%, var(--bg) 100%),
+      url('assets/colreg_studio_bg.jpg') center center / 72% auto no-repeat,
+      var(--bg);
+    z-index: 1;
+    pointer-events: none;
+  }
+
+  /* LAYER 1: Interactive 2D Canvas (Tactical Radar Grid, Wakes, 3D Vessels, Pill Badges) */
+  #fx {
+    position: absolute;
+    inset: 0;
+    width: 1920px; height: 1080px;
+    z-index: 2;
+    cursor: grab;
+  }
+  #fx:active { cursor: grabbing; }
+
+  /* LAYER 2: Unboxed Automotive HMI Typography & Controls */
+  .ui { position: absolute; z-index: 3; pointer-events: none; }
+  .ui-interactive { pointer-events: auto; }
+
+  .eyebrow {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    font-weight: 500;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--ink-mute);
+  }
+  .display {
+    font-family: 'Space Grotesk', sans-serif;
+    font-weight: 500;
+    letter-spacing: -0.025em;
+    line-height: 1.06;
+  }
+  .mono {
+    font-family: 'JetBrains Mono', monospace;
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* Top-left title block */
+  #brand {
+    top: 48px; left: 64px;
+  }
+  #brand h1 {
+    font-size: 40px;
+    margin-top: 8px;
+    color: var(--ink);
+  }
+  #brand .rule {
+    width: 56px; height: 1px;
+    background: var(--line-strong);
+    margin-top: 18px;
+  }
+
+  /* Top-right Theme Switcher + Step Counter */
+  #top-right-bar {
+    top: 48px; right: 64px;
+    display: flex;
+    align-items: center;
+    gap: 28px;
+  }
+  .theme-Seg {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px;
+    border: 1px solid var(--line-strong);
+    border-radius: 4px;
+    background: rgba(8, 11, 15, 0.65);
+    backdrop-filter: blur(8px);
+  }
+  .theme-btn {
+    background: transparent;
+    border: none;
+    color: var(--ink-mute);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    padding: 6px 12px;
+    cursor: pointer;
+    border-radius: 2px;
+    transition: all 0.2s ease;
+  }
+  .theme-btn:hover { color: var(--ink); }
+  .theme-btn.active {
+    background: var(--accent);
+    color: #080b0f;
+    font-weight: 600;
+  }
+  #step-pill {
+    font-size: 13px;
+    letter-spacing: 0.24em;
+    color: var(--ink-dim);
+  }
+
+  /* Left column: Guided 3-step scenario */
+  #task {
+    left: 64px;
+    top: 325px;
+    width: 380px;
+  }
+  #task .step-num {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 16px;
+    font-weight: 500;
+    color: var(--accent);
+    letter-spacing: 0.18em;
+  }
+  #task .step-num .slash {
+    color: var(--ink-mute);
+    margin: 0 6px;
+  }
+  #task .step-num .total {
+    color: var(--ink-mute);
+  }
+  #task .divider {
+    width: 28px; height: 1px;
+    background: var(--line-strong);
+    margin: 14px 0 18px;
+  }
+  #task .body-wrap {
+    padding-left: 18px;
+    border-left: 1px solid var(--line);
+  }
+  #task h2 {
+    font-size: 28px;
+    color: var(--ink);
+    margin-bottom: 12px;
+  }
+  #task p {
+    font-size: 15px;
+    line-height: 1.65;
+    color: var(--ink-dim);
+    font-weight: 400;
+  }
+  #task .action-btn {
+    margin-top: 22px;
+    display: none;
+    align-items: center;
+    gap: 10px;
+    padding: 11px 18px;
+    border: 1px solid rgba(var(--accent-rgb), 0.45);
+    background: rgba(var(--accent-rgb), 0.10);
+    color: var(--accent);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    font-weight: 500;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+  #task .action-btn.show { display: inline-flex; }
+  #task .action-btn:hover {
+    background: var(--accent);
+    color: #080b0f;
+  }
+  #task .feedback {
+    margin-top: 20px;
+    padding-top: 16px;
+    border-top: 1px solid var(--line);
+    font-size: 14px;
+    line-height: 1.55;
+    color: var(--ink);
+    opacity: 0;
+    transform: translateY(4px);
+    transition: opacity .35s ease, transform .35s ease;
+  }
+  #task .feedback.show {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  #task .feedback.ok { color: var(--accent); }
+  #task .feedback.warn { color: var(--warn); }
+  #task .feedback.danger { color: var(--danger); }
+
+  /* Right column: Live ARPA Telemetry + Mini CPA Curve */
+  #readout {
+    right: 64px;
+    top: 265px;
+    width: 330px;
+  }
+  #readout .head {
+    padding-bottom: 14px;
+    border-bottom: 1px solid var(--line);
+    margin-bottom: 22px;
+  }
+  #readout .grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    row-gap: 24px;
+    column-gap: 24px;
+  }
+  .cell { position: relative; }
+  .cell:nth-child(odd) {
+    padding-right: 14px;
+    border-right: 1px solid var(--line);
+  }
+  .cell .k {
+    font-family: 'Inter', sans-serif;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--ink-dim);
+    letter-spacing: 0.01em;
+  }
+  .cell .v {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 42px;
+    font-weight: 500;
+    letter-spacing: -0.03em;
+    line-height: 1;
+    margin-top: 6px;
+    color: var(--ink);
+    font-variant-numeric: tabular-nums;
+    transition: color .2s ease;
+  }
+  .cell .u {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    color: var(--ink-mute);
+    margin-left: 4px;
+    font-weight: 400;
+  }
+  .cell.primary .v { color: var(--accent); }
+  .cell.warn .v { color: var(--warn); }
+  .cell.alarm .v { color: var(--danger); }
+
+  /* Verdict Status Row */
+  #verdict {
+    margin-top: 24px;
+    padding-top: 20px;
+    padding-bottom: 20px;
+    border-top: 1px solid var(--line);
+    border-bottom: 1px solid var(--line);
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+  #verdict-icon {
+    width: 38px; height: 38px;
+    flex-shrink: 0;
+    display: grid; place-items: center;
+    color: var(--accent);
+    transition: color .25s ease;
+  }
+  #verdict-icon svg { width: 38px; height: 38px; display: block; }
+  #verdict.warn #verdict-icon { color: var(--warn); }
+  #verdict.alarm #verdict-icon { color: var(--danger); }
+  #verdict-body { min-width: 0; }
+  #verdict-text {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 20px;
+    font-weight: 500;
+    letter-spacing: -0.01em;
+    line-height: 1.15;
+    color: var(--accent);
+    transition: color .25s ease;
+  }
+  #verdict.warn #verdict-text { color: var(--warn); }
+  #verdict.alarm #verdict-text { color: var(--danger); }
+  #verdict-sub {
+    font-family: 'Inter', sans-serif;
+    font-size: 13px;
+    color: var(--ink-dim);
+    margin-top: 3px;
+  }
+
+  /* Miniature CPA Curve vs Course Alteration */
+  #mini-cpa-wrap {
+    margin-top: 22px;
+  }
+  #mini-cpa-wrap .cpa-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+  }
+  #mini-cpa-canvas {
+    width: 330px;
+    height: 120px;
+    display: block;
+  }
+
+  /* Bottom Control Bar: Course (Pruva) Slider + Next Step CTA */
+  #bottom-bar {
+    left: 50%;
+    bottom: 42px;
+    transform: translateX(-50%);
+    display: flex;
+    align-items: center;
+    gap: 36px;
+    padding: 18px 32px;
+    background: rgba(8, 11, 15, 0.78);
+    border: 1px solid var(--line-strong);
+    backdrop-filter: blur(12px);
+  }
+  .slider-group {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+  }
+  .slider-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    letter-spacing: 0.16em;
+    color: var(--ink-dim);
+    text-transform: uppercase;
+    min-width: 175px;
+  }
+  .slider-val {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--ink);
+    min-width: 68px;
+    text-align: right;
+  }
+  input[type="range"]#course-slider {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 440px;
+    height: 2px;
+    background: linear-gradient(to right,
+      var(--accent) 0%,
+      var(--accent) var(--fill, 0%),
+      rgba(244,245,247,0.18) var(--fill, 0%),
+      rgba(244,245,247,0.18) 100%);
+    outline: none;
+    cursor: pointer;
+  }
+  input[type="range"]#course-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 22px; height: 22px;
+    border-radius: 50%;
+    background: var(--bg);
+    border: 2px solid var(--accent);
+    box-shadow: 0 0 0 5px rgba(var(--accent-rgb), 0.16);
+    cursor: grab;
+    transition: transform .15s ease, box-shadow .15s ease;
+  }
+  input[type="range"]#course-slider::-webkit-slider-thumb:hover {
+    transform: scale(1.12);
+    box-shadow: 0 0 0 8px rgba(var(--accent-rgb), 0.25);
+  }
+
+  .bar-sep {
+    width: 1px;
+    height: 28px;
+    background: var(--line-strong);
+  }
+
+  #next {
+    background: transparent;
+    border: none;
+    color: var(--ink);
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 17px;
+    font-weight: 500;
+    letter-spacing: 0.03em;
+    padding: 6px 0;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+    transition: color .2s ease, opacity .2s ease;
+    white-space: nowrap;
+  }
+  #next:disabled {
+    opacity: 0.28;
+    cursor: not-allowed;
+  }
+  #next:not(:disabled):hover {
+    color: var(--accent);
+  }
+  #next .arr {
+    font-family: 'JetBrains Mono', monospace;
+    transition: transform .2s ease;
+  }
+  #next:not(:disabled):hover .arr {
+    transform: translateX(5px);
+  }
+
+  /* Final Results Overlay */
+  #results {
+    position: absolute;
+    inset: 0;
+    z-index: 10;
+    background: rgba(8, 11, 15, 0.90);
+    backdrop-filter: blur(14px);
+    display: grid;
+    place-items: center;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity .45s ease;
+  }
+  #results.show {
+    opacity: 1;
+    pointer-events: auto;
+  }
+  #results .card {
+    width: 920px;
+    padding: 56px 64px;
+    border-top: 1px solid var(--line-strong);
+    border-bottom: 1px solid var(--line-strong);
+  }
+  #results h3 {
+    font-size: 40px;
+    margin-top: 10px;
+    margin-bottom: 10px;
+  }
+  #results .lead {
+    font-size: 16px;
+    color: var(--ink-dim);
+    margin-bottom: 36px;
+  }
+  #results table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 15px;
+  }
+  #results th, #results td {
+    text-align: left;
+    padding: 16px 8px;
+    border-bottom: 1px solid var(--line);
+  }
+  #results th {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.2em;
+    color: var(--ink-mute);
+    text-transform: uppercase;
+    font-weight: 500;
+  }
+  #results td {
+    font-family: 'JetBrains Mono', monospace;
+    color: var(--ink);
+  }
+  #results td.ok { color: var(--accent); }
+  #results td.warn { color: var(--warn); }
+  #results td.bad { color: var(--danger); }
+  #results .restart {
+    margin-top: 36px;
+    background: transparent;
+    border: 1px solid var(--line-strong);
+    color: var(--ink);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    padding: 14px 26px;
+    cursor: pointer;
+    transition: border-color .2s ease, color .2s ease;
+  }
+  #results .restart:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+</style>
+</head>
+<body>
+  <div id="stage" data-theme="amber">
+    <!-- LAYER 0: Stationary Dark Ocean Spotlight Backdrop -->
+    <div id="bg"></div>
+
+    <!-- LAYER 1: Tactical ARPA Vector Overlay + Independent Rotating 3D Ships -->
+    <canvas id="fx" width="1920" height="1080"></canvas>
+
+    <!-- LAYER 2: Unboxed Automotive HMI Typography -->
+    <div id="brand" class="ui">
+      <div class="eyebrow">DENİZCİLİK / SİMÜLASYON 02</div>
+      <h1 class="display">COLREG & ARPA Radar</h1>
+      <div class="rule"></div>
+    </div>
+
+    <!-- Top-Right Theme Switcher + Step Indicator -->
+    <div id="top-right-bar" class="ui ui-interactive">
+      <div class="theme-Seg" title="Tasarım Renk Yaklaşımı Seçimi">
+        <button class="theme-btn active" onclick="setTheme('amber')" id="th-amber">Amber</button>
+        <button class="theme-btn" onclick="setTheme('cobalt')" id="th-cobalt">Cobalt</button>
+        <button class="theme-btn" onclick="setTheme('monochrome')" id="th-mono">Monochrome</button>
+      </div>
+      <div id="step-pill" class="eyebrow">
+        <span id="step-text">Adım 01 / 03</span>
+      </div>
+    </div>
+
+    <!-- Left Guided 3-Step Flow -->
+    <div id="task" class="ui ui-interactive">
+      <div class="step-num">
+        <span id="step-num">01</span><span class="slash">/</span><span class="total">03</span>
+      </div>
+      <div class="divider"></div>
+      <div class="body-wrap">
+        <h2 id="task-title" class="display">ARPA Hedef Kilitleme (Kural 7)</h2>
+        <p id="task-desc">Sancak pruvamızda (048°) tespit edilen M/V HORIZON gemisini ARPA radarına kilitleyin ve mevcut rotadaki (000°) çatışma riskini doğrulayın.</p>
+        <button id="task-action-btn" class="action-btn show" onclick="triggerTaskAction()">Hedefi ARPA'ya Kilitle</button>
+        <div id="task-feedback" class="feedback"></div>
+      </div>
+    </div>
+
+    <!-- Right Live ARPA Telemetry Readout -->
+    <div id="readout" class="ui">
+      <div class="head eyebrow">CANLI ARPA TELEMETRİSİ</div>
+      <div class="grid">
+        <div class="cell primary" id="c-cpa">
+          <div class="k">CPA (En Yakın)</div>
+          <div class="v"><span id="v-cpa">0.18</span><span class="u">NM</span></div>
+        </div>
+        <div class="cell" id="c-tcpa">
+          <div class="k">TCPA (Süre)</div>
+          <div class="v"><span id="v-tcpa">11.4</span><span class="u">dk</span></div>
+        </div>
+        <div class="cell" id="c-course">
+          <div class="k">Pruva (Rota)</div>
+          <div class="v"><span id="v-course">000</span><span class="u">°</span></div>
+        </div>
+        <div class="cell" id="c-speed">
+          <div class="k">Sürat (Hız)</div>
+          <div class="v"><span id="v-speed">14.0</span><span class="u">kts</span></div>
+        </div>
+      </div>
+
+      <div id="verdict" class="alarm">
+        <div id="verdict-icon" aria-hidden="true"></div>
+        <div id="verdict-body">
+          <div id="verdict-text">Çatışma Riski (Kural 15)</div>
+          <div id="verdict-sub">CPA &lt; 1.50 NM — Yol verme zorunlu!</div>
+        </div>
+      </div>
+
+      <!-- Mini CPA Curve vs Course Alteration -->
+      <div id="mini-cpa-wrap">
+        <div class="cpa-head">
+          <span class="eyebrow" style="font-size:10px;">CPA MESAFE EĞRİSİ (0°–65°)</span>
+          <span class="mono" style="font-size:11px; color:var(--ink-dim);" id="cpa-live-tag">Ψ:000° CPA:0.18NM</span>
+        </div>
+        <canvas id="mini-cpa-canvas" width="330" height="120"></canvas>
+      </div>
+    </div>
+
+    <!-- Bottom Interactive Bar: Course Alteration Slider + Next Button -->
+    <div id="bottom-bar" class="ui ui-interactive">
+      <div class="slider-group">
+        <span class="slider-label">SANCAĞA ROTA DEĞİŞİMİ (Ψ)</span>
+        <input type="range" id="course-slider" min="0" max="65" step="1" value="0">
+        <span class="slider-val" id="course-val">000°</span>
+      </div>
+      <div class="bar-sep"></div>
+      <button id="next" disabled onclick="nextStep()">
+        <span id="next-label">Ölçüm bekleniyor</span>
+        <span class="arr">→</span>
+      </button>
+    </div>
+
+    <!-- Summary Results Overlay -->
+    <div id="results">
+      <div class="card">
+        <div class="eyebrow">COLREG MANEVRA RAPORU / TAMAMLANDI</div>
+        <h3 class="display">Aykırı Geçiş ve ARPA Çatışma Analizi</h3>
+        <p class="lead">Kural 7 (Çatışma Riski), Kural 15 (Aykırı Geçiş) ve Kural 8/16 (Yol Verme Manevrası) kayıtlarınız.</p>
+        <table>
+          <thead>
+            <tr>
+              <th>ADIM</th>
+              <th>MANEVRA DURUMU</th>
+              <th>PRUVA (Ψ)</th>
+              <th>SÜRAT</th>
+              <th>CPA MESAFESİ</th>
+              <th>COLREG KARARI</th>
+            </tr>
+          </thead>
+          <tbody id="results-body"></tbody>
+        </table>
+        <button class="restart" onclick="restart()">SİMÜLASYONU YENİDEN BAŞLAT</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+  // =========================================================================
+  // 1. COLREG KINEMATICS & ARPA VECTOR SOLVER (CPA / TCPA)
+  // =========================================================================
+  const RADAR_CENTER = { x: 960, y: 540 };
+  const PX_PER_NM = 76.0;         // 1 Nautical Mile = 76 pixels (4.5 NM outer ring = 342px)
+  const SAFE_CPA_NM = 1.50;       // IMO / Company safe passing distance (1.50 NM)
+
+  // Own Ship base position in Nautical Miles relative to radar center (slightly south-west of center)
+  const BASE_OWN_NM = { x: -0.75, y: -1.25 }; // x: East (+), y: North (+)
+  // Target Ship (M/V HORIZON) base position on Starboard Bow (bearing ~044 deg, distance 3.75 NM)
+  const BASE_TGT_NM = { x: 1.85, y: 1.45 };
+  const TGT_COURSE = 279.5;       // Heading West-Northwest across our bow (Rule 15 Crossing)
+  const TGT_SPEED  = 13.0;        // Knots
+
+  // Preload 3D Top-Down Vessel Sprites
+  const ownShipImg = new Image();
+  ownShipImg.src = 'assets/own_ship.png';
+  const targetShipImg = new Image();
+  targetShipImg.src = 'assets/target_ship.png';
+
+  const state = {
+    theme: 'amber',
+    step: 1,
+    course: 0.0,           // Own Ship heading in degrees (000 to 065)
+    speed: 14.0,           // Own Ship speed in knots (14.0 or reduced 8.5)
+    arpaLocked: false,     // Step 1 ARPA target acquisition lock
+    lockProgress: 0.0,     // 0.0 -> 1.0 animated lock ring & vector extension
+    simProgress: 0.0,      // 0.0 -> 1.0 animated vessel advancement along track
+    speedReduced: false,   // Step 3 engine half-ahead reduction
+    stepDone: false,
+    dwell: 0,
+    records: {}
+  };
+
+  const STEPS = {
+    1: {
+      title: 'ARPA Hedef Kilitleme (Kural 7)',
+      desc: 'Sancak pruvamızda (044°) tespit edilen M/V HORIZON gemisini ARPA radarına kilitleyin ve mevcut rotadaki (000°) çatışma riskini doğrulayın.',
+      btnLabel: "Hedefi ARPA'ya Kilitle",
+      cond: () => state.arpaLocked && state.lockProgress >= 0.95 && state.course <= 8,
+      done: 'ARPA Kilidi Aktif: Sabit kerteriz ve azalan mesafe (CBDR)! CPA 0.32 NM ve TCPA 12.1 dk ile doğrudan çatışma rotası tespit edildi.',
+      doneClass: 'danger',
+      next: 'Sonraki adım'
+    },
+    2: {
+      title: 'Sancağa Belirgin Rota Değişimi (Kural 15 & 16)',
+      desc: 'Sancak tarafımızda kalan gemiye yol vermekle yükümlüyüz (Give-Way). Pruvayı alttaki sürgüyle sancağa 044°–060° aralığına kırarak CPA’yı 1.50 NM güvenli çemberin dışına çıkarın.',
+      btnLabel: '',
+      cond: () => state.course >= 44 && state.course <= 62 && computeARPA(state.course, state.speed).cpaNm >= SAFE_CPA_NM,
+      done: 'Kural 8 & 16 Uygun: Sancağa belirgin rota değişimi ile M/V HORIZON’un pupasından (kıçından) net geçiş sağlandı (CPA > 1.50 NM).',
+      doneClass: 'ok',
+      next: 'Sonraki adım'
+    },
+    3: {
+      title: 'Hız Düşürme & Emniyetli Geçiş (Kural 8)',
+      desc: 'Geçiş süresini uzatmak ve CPA emniyet payını artırmak için makineleri yarı yola (8.5 kts) düşürün ve geçiş simülasyonunu doğrulayın.',
+      btnLabel: 'Makineleri Yarı Yola Düşür (8.5 KTS)',
+      cond: () => state.speedReduced && state.course >= 42 && computeARPA(state.course, state.speed).cpaNm >= 1.95,
+      done: 'Mükemmel Manevra! Hız 8.5 kts’ye düşürüldü, CPA > 2.00 NM seviyesine çıkarılarak M/V HORIZON’un pupasından emniyetli geçiş tamamlandı.',
+      doneClass: 'ok',
+      next: 'Sonuçları değerlendir'
+    }
+  };
+
+  // Convert navigation heading (000=N, 090=E) and speed to East/North velocity components
+  function headingToVel(deg, speedKts) {
+    const rad = (deg * Math.PI) / 180;
+    return {
+      vx: Math.sin(rad) * speedKts,
+      vy: Math.cos(rad) * speedKts
+    };
+  }
+
+  // Compute exact CPA (NM), TCPA (minutes), and CPA coordinates for any (ownCourse, ownSpeed)
+  function computeARPA(ownCourse, ownSpeed) {
+    // Advance positions slightly when simProgress > 0 (Step 3 maneuver preview)
+    const dtHours = state.simProgress * (4.2 / 60); // up to 4.2 minutes of motion preview
+    const vOwn = headingToVel(ownCourse, ownSpeed);
+    const vTgt = headingToVel(TGT_COURSE, TGT_SPEED);
+
+    const ownPos = {
+      x: BASE_OWN_NM.x + vOwn.vx * dtHours,
+      y: BASE_OWN_NM.y + vOwn.vy * dtHours
+    };
+    const tgtPos = {
+      x: BASE_TGT_NM.x + vTgt.vx * dtHours,
+      y: BASE_TGT_NM.y + vTgt.vy * dtHours
+    };
+
+    // Relative position of Target from Own Ship (in NM)
+    const rx = tgtPos.x - ownPos.x;
+    const ry = tgtPos.y - ownPos.y;
+
+    // Relative velocity V_rel = V_target - V_own (in knots = NM/hour)
+    const rvx = vTgt.vx - vOwn.vx;
+    const rvy = vTgt.vy - vOwn.vy;
+    const rvSq = rvx * rvx + rvy * rvy;
+
+    // Time to CPA in hours: t_cpa = - (R . V_rel) / |V_rel|^2
+    const tCpaHours = rvSq > 0.001 ? Math.max(0, -(rx * rvx + ry * rvy) / rvSq) : 0;
+    const tcpaMin = tCpaHours * 60.0;
+
+    // Relative position vector at CPA (relative to Own Ship)
+    const cpaRelX = rx + rvx * tCpaHours;
+    const cpaRelY = ry + rvy * tCpaHours;
+    const cpaNm = Math.hypot(cpaRelX, cpaRelY);
+
+    return {
+      ownPos,
+      tgtPos,
+      vOwn,
+      vTgt,
+      rvx,
+      rvy,
+      cpaNm,
+      tcpaMin,
+      cpaWorld: {
+        x: ownPos.x + cpaRelX,
+        y: ownPos.y + cpaRelY
+      }
+    };
+  }
+
+  function nmToCanvas(nmX, nmY) {
+    return {
+      x: RADAR_CENTER.x + nmX * PX_PER_NM,
+      y: RADAR_CENTER.y - nmY * PX_PER_NM
+    };
+  }
+
+  // =========================================================================
+  // 2. CANVAS RENDERING (TACTICAL ARPA OVERLAY, WAKES, 3D SHIPS, PILL LABELS)
+  // =========================================================================
+  const canvas = document.getElementById('fx');
+  const ctx = canvas.getContext('2d');
+  const miniCanvas = document.getElementById('mini-cpa-canvas');
+  const miniCtx = miniCanvas.getContext('2d');
+
+  function getThemeColor(propName) {
+    return getComputedStyle(document.getElementById('stage')).getPropertyValue(propName).trim();
+  }
+
+  // Sleek porcelain-white capsule pill badge (matching Ship Stability v2)
+  function drawPillLabel(c, keyText, valText, anchorX, anchorY, pillX, pillY, dotColor, align = 'left') {
+    c.save();
+    c.font = '600 13px "Space Grotesk", sans-serif';
+    const keyW = c.measureText(keyText).width;
+    c.font = '500 12px "JetBrains Mono", monospace';
+    const valW = valText ? c.measureText(valText).width : 0;
+
+    const padX = 12;
+    const dotSpace = 14;
+    const sepSpace = valText ? 12 : 0;
+    const totalW = padX * 2 + dotSpace + keyW + sepSpace + valW;
+    const pillH = 28;
+
+    const boxX = align === 'right' ? pillX - totalW : (align === 'center' ? pillX - totalW / 2 : pillX);
+    const boxY = pillY - pillH / 2;
+
+    // Hairline leader line from target point to nearest pill edge
+    const attachX = align === 'right' ? boxX + totalW : (align === 'center' ? pillX : boxX);
+    const dist = Math.hypot(attachX - anchorX, pillY - anchorY);
+    if (dist > 6) {
+      c.beginPath();
+      c.moveTo(anchorX, anchorY);
+      c.lineTo(attachX, pillY);
+      c.strokeStyle = 'rgba(248, 250, 252, 0.55)';
+      c.lineWidth = 1.25;
+      c.stroke();
+    }
+
+    // Soft drop shadow + crisp porcelain white capsule
+    c.shadowColor = 'rgba(0, 0, 0, 0.55)';
+    c.shadowBlur = 12;
+    c.shadowOffsetY = 3;
+
+    c.fillStyle = 'rgba(248, 250, 252, 0.95)';
+    c.beginPath();
+    c.roundRect(boxX, boxY, totalW, pillH, 14);
+    c.fill();
+
+    c.shadowBlur = 0;
+    c.shadowOffsetY = 0;
+    c.strokeStyle = 'rgba(15, 23, 42, 0.14)';
+    c.lineWidth = 1;
+    c.stroke();
+
+    // Colored status dot
+    let curX = boxX + padX;
+    c.fillStyle = dotColor;
+    c.beginPath();
+    c.arc(curX + 3, pillY, 3.8, 0, Math.PI * 2);
+    c.fill();
+    curX += dotSpace;
+
+    // Key text
+    c.fillStyle = '#0f172a';
+    c.font = '600 13px "Space Grotesk", sans-serif';
+    c.textBaseline = 'middle';
+    c.textAlign = 'left';
+    c.fillText(keyText, curX, pillY + 0.5);
+    curX += keyW;
+
+    // Value text
+    if (valText) {
+      c.fillStyle = '#94a3b8';
+      c.font = '400 11px "Inter", sans-serif';
+      c.fillText('·', curX + 4, pillY + 0.5);
+      curX += sepSpace;
+
+      c.fillStyle = '#334155';
+      c.font = '500 12px "JetBrains Mono", monospace';
+      c.fillText(valText, curX, pillY + 0.5);
+    }
+
+    c.restore();
+  }
+
+  // Draw realistic Kelvin bow wake + foaming propeller wake behind a 3D top-down vessel
+  function drawVesselAndWake(c, posPx, headingDeg, speedKts, imgSprite, timeSec, isOwnShip) {
+    const rad = (headingDeg * Math.PI) / 180;
+    const shipLen = isOwnShip ? 118 : 112;
+    const shipW   = isOwnShip ? 29  : 28;
+
+    c.save();
+    c.translate(posPx.x, posPx.y);
+    c.rotate(rad);
+
+    // 1. Foaming stern propeller wake trail (extends behind stern at +Y in local coords)
+    const wakeLen = (speedKts / 14.0) * 105;
+    const sternY = shipLen * 0.44;
+
+    const wakeGrad = c.createLinearGradient(0, sternY - 6, 0, sternY + wakeLen);
+    wakeGrad.addColorStop(0, 'rgba(224, 242, 254, 0.48)');
+    wakeGrad.addColorStop(0.35, 'rgba(125, 211, 252, 0.22)');
+    wakeGrad.addColorStop(1, 'rgba(56, 189, 248, 0)');
+
+    c.beginPath();
+    c.moveTo(-4, sternY);
+    c.lineTo(4, sternY);
+    c.lineTo(18, sternY + wakeLen);
+    c.lineTo(-18, sternY + wakeLen);
+    c.closePath();
+    c.fillStyle = wakeGrad;
+    c.fill();
+
+    // Animated turbulent wake ripples along centerline behind stern
+    for (let i = 0; i < 6; i++) {
+      const p = ((timeSec * 1.4 + i / 6) % 1.0);
+      const wy = sternY + p * wakeLen * 0.85;
+      const ww = 4 + p * 12;
+      c.strokeStyle = `rgba(224, 242, 254, ${(1 - p) * 0.36})`;
+      c.lineWidth = 1.3;
+      c.beginPath();
+      c.arc(0, wy, ww, 0.15 * Math.PI, 0.85 * Math.PI);
+      c.stroke();
+    }
+
+    // 2. Kelvin V-shaped bow wave arms (originating near bow at -Y)
+    const bowY = -shipLen * 0.45;
+    [-1, 1].forEach(side => {
+      const armGrad = c.createLinearGradient(0, bowY, side * 26, bowY + 78);
+      armGrad.addColorStop(0, 'rgba(224, 242, 254, 0.50)');
+      armGrad.addColorStop(0.5, 'rgba(186, 230, 253, 0.20)');
+      armGrad.addColorStop(1, 'rgba(186, 230, 253, 0)');
+      c.strokeStyle = armGrad;
+      c.lineWidth = 1.8;
+      c.beginPath();
+      c.moveTo(side * 2, bowY + 4);
+      c.quadraticCurveTo(side * 13, bowY + 32, side * 25, bowY + 76);
+      c.stroke();
+    });
+
+    // 3. Soft contact shadow on water surface underneath the 3D hull
+    c.shadowColor = 'rgba(0, 0, 0, 0.82)';
+    c.shadowBlur = 16;
+    c.shadowOffsetY = 4;
+
+    // 4. Render isolated 3D Top-Down Vessel Sprite
+    if (imgSprite && imgSprite.complete && imgSprite.naturalWidth > 0) {
+      c.drawImage(imgSprite, -shipW / 2, -shipLen / 2, shipW, shipLen);
+    }
+
+    c.shadowBlur = 0;
+    c.shadowOffsetY = 0;
+
+    // 5. Crisp COLREG Navigation Sidelights (Port Red / Starboard Green / White Masthead)
+    // Port (left, -X) Red light
+    c.fillStyle = '#ef4444';
+    c.shadowColor = '#ef4444';
+    c.shadowBlur = 8;
+    c.beginPath();
+    c.arc(-shipW * 0.42, -shipLen * 0.12, 2.2, 0, Math.PI * 2);
+    c.fill();
+
+    // Starboard (right, +X) Green light
+    c.fillStyle = '#10b981';
+    c.shadowColor = '#10b981';
+    c.shadowBlur = 8;
+    c.beginPath();
+    c.arc(shipW * 0.42, -shipLen * 0.12, 2.2, 0, Math.PI * 2);
+    c.fill();
+
+    // Bow Masthead White light
+    c.fillStyle = '#f8fafc';
+    c.shadowColor = '#f8fafc';
+    c.shadowBlur = 6;
+    c.beginPath();
+    c.arc(0, -shipLen * 0.36, 1.8, 0, Math.PI * 2);
+    c.fill();
+
+    c.restore();
+  }
+
+  function drawArrowHead(c, x, y, angleRad, size, color) {
+    c.save();
+    c.fillStyle = color;
+    c.translate(x, y);
+    c.rotate(angleRad);
+    c.beginPath();
+    c.moveTo(0, 0);
+    c.lineTo(-size * 1.55, -size * 0.82);
+    c.lineTo(-size * 1.55, size * 0.82);
+    c.closePath();
+    c.fill();
+    c.restore();
+  }
+
+  function render(timeSec) {
+    ctx.clearRect(0, 0, 1920, 1080);
+
+    const arpa = computeARPA(state.course, state.speed);
+    const ownPx = nmToCanvas(arpa.ownPos.x, arpa.ownPos.y);
+    const tgtPx = nmToCanvas(arpa.tgtPos.x, arpa.tgtPos.y);
+    const cpaPx = nmToCanvas(arpa.cpaWorld.x, arpa.cpaWorld.y);
+
+    const accentColor = getThemeColor('--accent') || '#f59e0b';
+    const warnColor   = getThemeColor('--warn')   || '#fbbf24';
+    const dangerColor = getThemeColor('--danger') || '#ef4444';
+
+    const isCollision = arpa.cpaNm < 1.0;
+    const isWarning   = arpa.cpaNm >= 1.0 && arpa.cpaNm < SAFE_CPA_NM;
+    const statusColor = isCollision ? dangerColor : (isWarning ? warnColor : accentColor);
+
+    // 1. SUBTLE TACTICAL RANGE RINGS & COMPASS ROSE ON THE SPOTLIGHT OCEAN
+    ctx.save();
+    [1.5, 3.0, 4.5].forEach((nm, idx) => {
+      const rPx = nm * PX_PER_NM;
+      ctx.beginPath();
+      ctx.arc(RADAR_CENTER.x, RADAR_CENTER.y, rPx, 0, Math.PI * 2);
+      ctx.strokeStyle = idx === 2 ? 'rgba(244, 245, 247, 0.16)' : 'rgba(244, 245, 247, 0.08)';
+      ctx.lineWidth = 1;
+      ctx.stroke();
+
+      // Subtle range ring label along top vertical axis
+      ctx.fillStyle = 'rgba(244, 245, 247, 0.28)';
+      ctx.font = '500 10px "JetBrains Mono", monospace';
+      ctx.textAlign = 'left';
+      ctx.fillText(`${nm.toFixed(1)} NM`, RADAR_CENTER.x + 6, RADAR_CENTER.y - rPx + 12);
+    });
+
+    // Outer compass degree ticks (every 10 deg, cardinal labels N/E/S/W)
+    const outerR = 4.5 * PX_PER_NM;
+    for (let deg = 0; deg < 360; deg += 10) {
+      const a = ((deg - 90) * Math.PI) / 180;
+      const isMajor = deg % 30 === 0;
+      const r1 = outerR - (isMajor ? 8 : 4);
+      const r2 = outerR;
+      ctx.beginPath();
+      ctx.moveTo(RADAR_CENTER.x + Math.cos(a) * r1, RADAR_CENTER.y + Math.sin(a) * r1);
+      ctx.lineTo(RADAR_CENTER.x + Math.cos(a) * r2, RADAR_CENTER.y + Math.sin(a) * r2);
+      ctx.strokeStyle = isMajor ? 'rgba(244, 245, 247, 0.28)' : 'rgba(244, 245, 247, 0.12)';
+      ctx.lineWidth = 1;
+      ctx.stroke();
+
+      if (deg % 90 === 0) {
+        const label = deg === 0 ? '000° N' : (deg === 90 ? '090° E' : (deg === 180 ? '180° S' : '270° W'));
+        const lr = outerR + 18;
+        ctx.fillStyle = 'rgba(244, 245, 247, 0.42)';
+        ctx.font = '500 11px "JetBrains Mono", monospace';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(label, RADAR_CENTER.x + Math.cos(a) * lr, RADAR_CENTER.y + Math.sin(a) * lr);
+      }
+    }
+
+    // Subtle rotating radar sweep line around Radar Center
+    const sweepAngle = (timeSec * 0.65) % (Math.PI * 2);
+    const sweepGrad = ctx.createLinearGradient(
+      RADAR_CENTER.x,
+      RADAR_CENTER.y,
+      RADAR_CENTER.x + Math.cos(sweepAngle) * outerR,
+      RADAR_CENTER.y + Math.sin(sweepAngle) * outerR
+    );
+    sweepGrad.addColorStop(0, 'rgba(56, 189, 248, 0)');
+    sweepGrad.addColorStop(1, 'rgba(56, 189, 248, 0.18)');
+    ctx.strokeStyle = sweepGrad;
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.moveTo(RADAR_CENTER.x, RADAR_CENTER.y);
+    ctx.lineTo(RADAR_CENTER.x + Math.cos(sweepAngle) * outerR, RADAR_CENTER.y + Math.sin(sweepAngle) * outerR);
+    ctx.stroke();
+    ctx.restore();
+
+    // 2. OWN SHIP 1.50 NM SAFE CPA GUARD RING
+    const safeRingR = SAFE_CPA_NM * PX_PER_NM;
+    ctx.save();
+    ctx.setLineDash([6, 5]);
+    ctx.strokeStyle = isCollision
+      ? 'rgba(239, 68, 68, 0.55)'
+      : (isWarning ? 'rgba(251, 191, 36, 0.55)' : `rgba(${getThemeColor('--accent-rgb')}, 0.50)`);
+    ctx.lineWidth = 1.8;
+    ctx.beginPath();
+    ctx.arc(ownPx.x, ownPx.y, safeRingR, 0, Math.PI * 2);
+    ctx.stroke();
+
+    // Faint fill inside guard ring
+    ctx.fillStyle = isCollision
+      ? 'rgba(239, 68, 68, 0.05)'
+      : `rgba(${getThemeColor('--accent-rgb')}, 0.03)`;
+    ctx.fill();
+    ctx.restore();
+
+    // 3. RELATIVE MOTION LINE (RML) & CPA INTERCEPT VECTOR (Animated with lockProgress)
+    const lockAlpha = Math.max(0.28, state.lockProgress);
+    ctx.save();
+    ctx.globalAlpha = lockAlpha;
+
+    // Extended Relative Motion Line from Target Ship through CPA Point
+    const rmlDx = cpaPx.x - tgtPx.x;
+    const rmlDy = cpaPx.y - tgtPx.y;
+    const rmlLen = Math.hypot(rmlDx, rmlDy);
+    if (rmlLen > 5) {
+      const extX = cpaPx.x + (rmlDx / rmlLen) * 115;
+      const extY = cpaPx.y + (rmlDy / rmlLen) * 115;
+
+      ctx.setLineDash([5, 5]);
+      ctx.strokeStyle = statusColor;
+      ctx.lineWidth = 2.0;
+      ctx.beginPath();
+      ctx.moveTo(tgtPx.x, tgtPx.y);
+      ctx.lineTo(extX, extY);
+      ctx.stroke();
+
+      // Perpendicular CPA distance ruler (Own Ship -> CPA Point)
+      ctx.setLineDash([3, 3]);
+      ctx.strokeStyle = 'rgba(248, 250, 252, 0.65)';
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.moveTo(ownPx.x, ownPx.y);
+      ctx.lineTo(cpaPx.x, cpaPx.y);
+      ctx.stroke();
+
+      // Pulsing CPA Point Target Marker
+      ctx.setLineDash([]);
+      const pulseR = 9 + Math.sin(timeSec * 4.5) * 2.5;
+      ctx.strokeStyle = statusColor;
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.arc(cpaPx.x, cpaPx.y, pulseR, 0, Math.PI * 2);
+      ctx.stroke();
+
+      ctx.fillStyle = statusColor;
+      ctx.beginPath();
+      ctx.arc(cpaPx.x, cpaPx.y, 4.8, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.strokeStyle = '#ffffff';
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+    }
+    ctx.restore();
+
+    // 4. TRUE VELOCITY VECTORS (12-Minute Predicted Path Vectors for Both Vessels)
+    const vecHours = 12 / 60; // 12-minute vector length
+    const ownTip = nmToCanvas(
+      arpa.ownPos.x + arpa.vOwn.vx * vecHours,
+      arpa.ownPos.y + arpa.vOwn.vy * vecHours
+    );
+    const tgtTip = nmToCanvas(
+      arpa.tgtPos.x + arpa.vTgt.vx * vecHours,
+      arpa.tgtPos.y + arpa.vTgt.vy * vecHours
+    );
+
+    // Own Ship True Vector
+    ctx.save();
+    ctx.strokeStyle = accentColor;
+    ctx.lineWidth = 2.6;
+    ctx.shadowColor = 'rgba(0,0,0,0.75)';
+    ctx.shadowBlur = 6;
+    ctx.beginPath();
+    ctx.moveTo(ownPx.x, ownPx.y);
+    ctx.lineTo(ownTip.x, ownTip.y);
+    ctx.stroke();
+    const ownHeadingRad = ((state.course - 90) * Math.PI) / 180;
+    drawArrowHead(ctx, ownTip.x, ownTip.y, ownHeadingRad, 6.5, accentColor);
+    ctx.restore();
+
+    // Target Ship True Vector
+    ctx.save();
+    ctx.strokeStyle = '#38bdf8';
+    ctx.lineWidth = 2.6;
+    ctx.shadowColor = 'rgba(0,0,0,0.75)';
+    ctx.shadowBlur = 6;
+    ctx.beginPath();
+    ctx.moveTo(tgtPx.x, tgtPx.y);
+    ctx.lineTo(tgtTip.x, tgtTip.y);
+    ctx.stroke();
+    const tgtHeadingRad = ((TGT_COURSE - 90) * Math.PI) / 180;
+    drawArrowHead(ctx, tgtTip.x, tgtTip.y, tgtHeadingRad, 6.5, '#38bdf8');
+    ctx.restore();
+
+    // 5. RENDER INDEPENDENT ROTATING 3D SHIPS & REALISTIC WATER WAKES
+    drawVesselAndWake(ctx, tgtPx, TGT_COURSE, TGT_SPEED, targetShipImg, timeSec, false);
+    drawVesselAndWake(ctx, ownPx, state.course, state.speed, ownShipImg, timeSec, true);
+
+    // 6. ARPA TARGET LOCK BRACKETS AROUND M/V HORIZON
+    if (state.lockProgress > 0.02) {
+      ctx.save();
+      ctx.translate(tgtPx.x, tgtPx.y);
+      const bSize = 26 + (1 - state.lockProgress) * 18;
+      const corner = 7;
+      ctx.strokeStyle = isCollision ? dangerColor : '#38bdf8';
+      ctx.lineWidth = 2;
+      ctx.globalAlpha = state.lockProgress;
+
+      [[-1, -1], [1, -1], [1, 1], [-1, 1]].forEach(([sx, sy]) => {
+        ctx.beginPath();
+        ctx.moveTo(sx * bSize, sy * (bSize - corner));
+        ctx.lineTo(sx * bSize, sy * bSize);
+        ctx.lineTo(sx * (bSize - corner), sy * bSize);
+        ctx.stroke();
+      });
+      ctx.restore();
+    }
+
+    // 7. SLEEK PORCELAIN-WHITE PILL CALLOUT BADGES (Zero overlap, ultra-high contrast)
+    // Own Ship Pill (anchored cleanly to bottom-left of Own Ship)
+    drawPillLabel(
+      ctx,
+      'M/T ANATOLIA',
+      `${String(Math.round(state.course)).padStart(3, '0')}° · ${state.speed.toFixed(1)} kts`,
+      ownPx.x - 12,
+      ownPx.y + 18,
+      ownPx.x - 42,
+      ownPx.y + 52,
+      '#d97706',
+      'right'
+    );
+
+    // Target Ship Pill (anchored cleanly to top-right of M/V HORIZON)
+    drawPillLabel(
+      ctx,
+      'M/V HORIZON',
+      `280° · 13.0 kts`,
+      tgtPx.x + 12,
+      tgtPx.y - 18,
+      tgtPx.x + 38,
+      tgtPx.y - 46,
+      '#0284c7',
+      'left'
+    );
+
+    // CPA Point Pill (smart placement above/left of CPA point so it never collides with ships)
+    const cpaDotColor = isCollision ? '#dc2626' : (isWarning ? '#d97706' : '#059669');
+    const cpaPillOffsetY = cpaPx.y < ownPx.y ? -38 : 38;
+    drawPillLabel(
+      ctx,
+      'CPA',
+      `${arpa.cpaNm.toFixed(2)} NM · ${arpa.tcpaMin.toFixed(1)} dk`,
+      cpaPx.x,
+      cpaPx.y,
+      cpaPx.x - 24,
+      cpaPx.y + cpaPillOffsetY,
+      cpaDotColor,
+      'right'
+    );
+
+    // 8. RENDER MINIATURE CPA CURVE (RIGHT COLUMN)
+    renderMiniCPACurve(arpa);
+  }
+
+  // =========================================================================
+  // 3. MINIATURE CPA DISTANCE CURVE (RIGHT COLUMN)
+  // =========================================================================
+  function renderMiniCPACurve(arpaNow) {
+    const w = miniCanvas.width;
+    const h = miniCanvas.height;
+    miniCtx.clearRect(0, 0, w, h);
+
+    const padL = 30, padR = 12, padTop = 14, padBot = 22;
+    const plotW = w - padL - padR;
+    const plotH = h - padTop - padBot;
+
+    const degToX = d => padL + (d / 65) * plotW;
+    const cpaToY = c => padTop + plotH - Math.min(1, c / 2.6) * plotH;
+
+    // 1.50 NM Safe Limit Dashed Threshold Line
+    const safeY = cpaToY(SAFE_CPA_NM);
+    miniCtx.save();
+    miniCtx.setLineDash([4, 4]);
+    miniCtx.strokeStyle = 'rgba(244, 245, 247, 0.28)';
+    miniCtx.lineWidth = 1;
+    miniCtx.beginPath();
+    miniCtx.moveTo(padL, safeY);
+    miniCtx.lineTo(w - padR, safeY);
+    miniCtx.stroke();
+    miniCtx.restore();
+
+    miniCtx.fillStyle = 'rgba(244, 245, 247, 0.42)';
+    miniCtx.font = '9px "JetBrains Mono", monospace';
+    miniCtx.fillText('1.5NM', 2, safeY + 3);
+
+    // Degree Ticks
+    miniCtx.font = '10px "JetBrains Mono", monospace';
+    [0, 20, 40, 60].forEach(deg => {
+      const gx = degToX(deg);
+      miniCtx.fillText(`${deg}°`, gx - 8, h - 6);
+    });
+
+    // Plot CPA vs Course Curve
+    const isCollision = arpaNow.cpaNm < 1.0;
+    const curveColor = isCollision ? getThemeColor('--danger') : getThemeColor('--accent');
+
+    miniCtx.save();
+    miniCtx.strokeStyle = curveColor;
+    miniCtx.lineWidth = 2.4;
+    miniCtx.beginPath();
+    for (let d = 0; d <= 65; d += 2) {
+      const cVal = computeARPA(d, state.speed).cpaNm;
+      const px = degToX(d);
+      const py = cpaToY(cVal);
+      if (d === 0) miniCtx.moveTo(px, py);
+      else miniCtx.lineTo(px, py);
+    }
+    miniCtx.stroke();
+    miniCtx.restore();
+
+    // Current Course Dot
+    const curX = degToX(state.course);
+    const curY = cpaToY(arpaNow.cpaNm);
+    miniCtx.save();
+    miniCtx.fillStyle = '#ffffff';
+    miniCtx.beginPath();
+    miniCtx.arc(curX, curY, 4.5, 0, Math.PI * 2);
+    miniCtx.fill();
+    miniCtx.strokeStyle = curveColor;
+    miniCtx.lineWidth = 2;
+    miniCtx.stroke();
+    miniCtx.restore();
+
+    document.getElementById('cpa-live-tag').textContent =
+      `Ψ:${String(Math.round(state.course)).padStart(3, '0')}° CPA:${arpaNow.cpaNm.toFixed(2)}NM`;
+  }
+
+  // =========================================================================
+  // 4. UI SYNC & STEP MANAGEMENT
+  // =========================================================================
+  const $ = id => document.getElementById(id);
+
+  const ICON_OK = '<svg viewBox="0 0 38 38" fill="none"><circle cx="19" cy="19" r="17.5" stroke="currentColor" stroke-width="1.5"/><path d="M12 19.5l4.5 4.5L26 14" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+  const ICON_BAD = '<svg viewBox="0 0 38 38" fill="none"><circle cx="19" cy="19" r="17.5" stroke="currentColor" stroke-width="1.5"/><path d="M13 13l12 12M25 13L13 25" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>';
+  const ICON_WARN = '<svg viewBox="0 0 38 38" fill="none"><circle cx="19" cy="19" r="17.5" stroke="currentColor" stroke-width="1.5" stroke-dasharray="4 3"/><path d="M13 19h12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>';
+
+  function syncUI() {
+    const arpa = computeARPA(state.course, state.speed);
+
+    $('v-cpa').textContent = arpa.cpaNm.toFixed(2);
+    $('v-tcpa').textContent = arpa.tcpaMin.toFixed(1);
+    $('v-course').textContent = String(Math.round(state.course)).padStart(3, '0');
+    $('v-speed').textContent = state.speed.toFixed(1);
+
+    const isCollision = arpa.cpaNm < 1.0;
+    const isWarning = arpa.cpaNm >= 1.0 && arpa.cpaNm < SAFE_CPA_NM;
+
+    $('c-cpa').className = 'cell ' + (isCollision ? 'alarm' : (isWarning ? 'warn' : 'primary'));
+
+    const verdict = $('verdict');
+    if (isCollision) {
+      verdict.className = 'alarm';
+      $('verdict-icon').innerHTML = ICON_BAD;
+      $('verdict-text').textContent = 'Çatışma Riski (Kural 15)';
+      $('verdict-sub').textContent = 'CPA < 1.00 NM — Sancağa net rota kırın!';
+    } else if (isWarning) {
+      verdict.className = 'warn';
+      $('verdict-icon').innerHTML = ICON_WARN;
+      $('verdict-text').textContent = 'Yakın Geçiş Uyarısı';
+      $('verdict-sub').textContent = 'CPA < 1.50 NM — Emniyet çemberi içinde';
+    } else {
+      verdict.className = '';
+      $('verdict-icon').innerHTML = ICON_OK;
+      $('verdict-text').textContent = 'Emniyetli Geçiş (Net CPA)';
+      $('verdict-sub').textContent = 'Kural 8 & 16 kriterleri sağlandı';
+    }
+
+    const slider = $('course-slider');
+    slider.value = Math.round(state.course);
+    slider.style.setProperty('--fill', ((state.course / 65) * 100) + '%');
+    $('course-val').textContent = String(Math.round(state.course)).padStart(3, '0') + '°';
+  }
+
+  function showStep() {
+    const s = STEPS[state.step];
+    const n = String(state.step).padStart(2, '0');
+    $('step-num').textContent = n;
+    $('step-text').textContent = `Adım ${n} / 03`;
+    $('task-title').textContent = s.title;
+    $('task-desc').textContent = s.desc;
+
+    const fb = $('task-feedback');
+    fb.className = 'feedback';
+    fb.textContent = '';
+
+    const btn = $('task-action-btn');
+    if (s.btnLabel) {
+      btn.classList.add('show');
+      btn.textContent = s.btnLabel;
+    } else {
+      btn.classList.remove('show');
+    }
+
+    $('next').disabled = true;
+    $('next-label').textContent = 'Ölçüm bekleniyor';
+    state.stepDone = false;
+    state.dwell = 0;
+  }
+
+  function triggerTaskAction() {
+    if (state.step === 1) {
+      state.arpaLocked = true;
+      gsap.killTweensOf(state, 'lockProgress');
+      gsap.to(state, {
+        lockProgress: 1.0,
+        duration: 1.1,
+        ease: 'power2.out',
+        onUpdate: () => {
+          $('task-action-btn').textContent = `ARPA Taranıyor... %${Math.round(state.lockProgress * 100)}`;
+          syncUI();
+        },
+        onComplete: () => {
+          $('task-action-btn').textContent = 'ARPA Hedef Kilidi Aktif';
+          syncUI();
+        }
+      });
+    } else if (state.step === 3) {
+      state.speedReduced = !state.speedReduced;
+      const targetSpd = state.speedReduced ? 8.5 : 14.0;
+      const targetSim = state.speedReduced ? 1.0 : 0.0;
+
+      gsap.killTweensOf(state, 'speed,simProgress');
+      gsap.to(state, {
+        speed: targetSpd,
+        simProgress: targetSim,
+        duration: 1.8,
+        ease: 'power2.inOut',
+        onUpdate: () => {
+          $('task-action-btn').textContent = state.speedReduced
+            ? `Sürat Düşürülüyor... ${state.speed.toFixed(1)} KTS`
+            : 'Makineleri Yarı Yola Düşür (8.5 KTS)';
+          syncUI();
+        },
+        onComplete: () => {
+          $('task-action-btn').textContent = state.speedReduced
+            ? 'Yarı Yol Aktif (8.5 KTS)'
+            : 'Makineleri Yarı Yola Düşür (8.5 KTS)';
+          syncUI();
+        }
+      });
+    }
+  }
+
+  function completeStep() {
+    const s = STEPS[state.step];
+    const arpa = computeARPA(state.course, state.speed);
+    state.stepDone = true;
+    state.records[state.step] = {
+      course: state.course,
+      speed: state.speed,
+      cpa: arpa.cpaNm,
+      tcpa: arpa.tcpaMin
+    };
+
+    const fb = $('task-feedback');
+    fb.textContent = s.done;
+    fb.className = 'feedback show ' + s.doneClass;
+    $('next').disabled = false;
+    $('next-label').textContent = s.next;
+  }
+
+  function nextStep() {
+    if (!state.stepDone) return;
+    if (state.step < 3) {
+      state.step++;
+      showStep();
+      syncUI();
+    } else {
+      showResults();
+    }
+  }
+
+  function showResults() {
+    const r = state.records;
+    const rows = [
+      { n: '01', name: 'İlk Tespit & ARPA Kilidi', rec: r[1], verdict: 'Çatışma Riski (CPA 0.18 NM)', cls: 'bad' },
+      { n: '02', name: 'Kural 15/16 Sancağa Rota Değişimi', rec: r[2], verdict: 'Güvenli Çember Dışı (>1.5 NM)', cls: 'ok' },
+      { n: '03', name: 'Kural 8 Yarı Yol & Pupa Geçişi', rec: r[3], verdict: 'Emniyetli Geçiş Tamamlandı', cls: 'ok' }
+    ];
+
+    $('results-body').innerHTML = rows.map(x => `
+      <tr>
+        <td class="n mono">${x.n}</td>
+        <td>${x.name}</td>
+        <td>${String(Math.round(x.rec.course)).padStart(3, '0')}°</td>
+        <td>${x.rec.speed.toFixed(1)} kts</td>
+        <td class="${x.rec.cpa < 1.0 ? 'bad' : 'ok'}">${x.rec.cpa.toFixed(2)} NM</td>
+        <td class="${x.cls}">${x.verdict}</td>
+      </tr>`).join('');
+    $('results').classList.add('show');
+
+    try {
+      const player = window.parent && window.parent.GetPlayer ? window.parent.GetPlayer() : null;
+      if (player) player.SetVar('ColregSimTamam', true);
+    } catch (e) { /* standalone */ }
+  }
+
+  function restart() {
+    $('results').classList.remove('show');
+    gsap.killTweensOf(state);
+    Object.assign(state, {
+      step: 1,
+      course: 0.0,
+      speed: 14.0,
+      arpaLocked: false,
+      lockProgress: 0.0,
+      simProgress: 0.0,
+      speedReduced: false,
+      stepDone: false,
+      dwell: 0,
+      records: {}
+    });
+    showStep();
+    syncUI();
+  }
+
+  function setTheme(t) {
+    state.theme = t;
+    $('stage').setAttribute('data-theme', t);
+    ['th-amber', 'th-cobalt', 'th-mono'].forEach(id => $(id).classList.remove('active'));
+    $('th-' + (t === 'monochrome' ? 'mono' : t)).classList.add('active');
+    syncUI();
+  }
+
+  // =========================================================================
+  // 5. INPUT HANDLING & 16:9 STAGE SCALER
+  // =========================================================================
+  $('course-slider').addEventListener('input', e => {
+    state.course = Number(e.target.value);
+    if (!state.arpaLocked) {
+      state.arpaLocked = true;
+      state.lockProgress = 1.0;
+    }
+    syncUI();
+  });
+
+  // Allow dragging directly on the radar ocean to steer Own Ship's course
+  let draggingRadar = false;
+  canvas.addEventListener('pointerdown', e => {
+    const rect = canvas.getBoundingClientRect();
+    const mx = (e.clientX - rect.left) * (1920 / rect.width);
+    const my = (e.clientY - rect.top) * (1080 / rect.height);
+    if (Math.hypot(mx - RADAR_CENTER.x, my - RADAR_CENTER.y) < 380) {
+      draggingRadar = true;
+      canvas.setPointerCapture(e.pointerId);
+      if (!state.arpaLocked) {
+        state.arpaLocked = true;
+        state.lockProgress = 1.0;
+      }
+    }
+  });
+
+  canvas.addEventListener('pointermove', e => {
+    if (!draggingRadar) return;
+    const rect = canvas.getBoundingClientRect();
+    const mx = (e.clientX - rect.left) * (1920 / rect.width);
+    const my = (e.clientY - rect.top) * (1080 / rect.height);
+    const arpa = computeARPA(state.course, state.speed);
+    const ownPx = nmToCanvas(arpa.ownPos.x, arpa.ownPos.y);
+    const deg = (Math.atan2(mx - ownPx.x, -(my - ownPx.y)) * 180) / Math.PI;
+    state.course = Math.max(0, Math.min(65, Math.round(deg)));
+    syncUI();
+  });
+
+  canvas.addEventListener('pointerup', e => {
+    draggingRadar = false;
+    canvas.releasePointerCapture(e.pointerId);
+  });
+
+  function fit() {
+    const s = Math.min(window.innerWidth / 1920, window.innerHeight / 1080);
+    document.getElementById('stage').style.transform = `translate(-50%, -50%) scale(${s})`;
+  }
+  window.addEventListener('resize', fit);
+
+  let lastTime = performance.now();
+  function loop(now) {
+    const dt = Math.min(0.05, (now - lastTime) / 1000);
+    lastTime = now;
+
+    if (!state.stepDone) {
+      if (STEPS[state.step].cond()) {
+        state.dwell = Math.min(1, state.dwell + dt / 1.0);
+        if (state.dwell >= 1) completeStep();
+      } else {
+        state.dwell = Math.max(0, state.dwell - dt * 2);
+      }
+    }
+
+    render(now / 1000);
+    requestAnimationFrame(loop);
+  }
+
+  showStep();
+  syncUI();
+  fit();
+  requestAnimationFrame(loop);
+  </script>
+</body>
+</html>

@@ -1,0 +1,646 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Rıdvan Sağlam — Learning Experience Architect & Serious Game Developer</title>
+  <meta name="description" content="Senior Learning Experience Designer and Simulation Architect bridging cognitive science, kinetic physics simulators, and serious game development.">
+  
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            bg: '#07090e',
+            card: '#0f141c',
+            'card-border': '#1e2638',
+            amber: {
+              accent: '#f59e0b',
+              glow: 'rgba(245, 158, 11, 0.25)'
+            },
+            cyan: {
+              accent: '#38bdf8',
+              glow: 'rgba(56, 189, 248, 0.25)'
+            }
+          },
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+            mono: ['"JetBrains Mono"', 'monospace']
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    body {
+      background-color: #07090e;
+      color: #f1f5f9;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      overflow-x: hidden;
+    }
+    
+    /* Subtle background grid pattern */
+    .bg-grid {
+      background-size: 40px 40px;
+      background-image: 
+        linear-gradient(to right, rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+    }
+
+    /* Glow backdrop effects */
+    .radial-glow {
+      background: radial-gradient(circle at 50% 0%, rgba(245, 158, 11, 0.08) 0%, rgba(7, 9, 14, 0) 65%);
+    }
+
+    .glass-nav {
+      background: rgba(7, 9, 14, 0.75);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    }
+
+    .project-card {
+      transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    .project-card:hover {
+      transform: translateY(-4px);
+      border-color: rgba(245, 158, 11, 0.4);
+      box-shadow: 0 16px 36px -12px rgba(0, 0, 0, 0.7), 0 0 24px rgba(245, 158, 11, 0.12);
+    }
+
+    /* Modal Animation */
+    #case-modal {
+      transition: opacity 0.3s ease, visibility 0.3s ease;
+    }
+    #case-modal.hidden-modal {
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+    }
+    #case-modal.visible-modal {
+      opacity: 1;
+      visibility: visible;
+      pointer-events: auto;
+    }
+  </style>
+</head>
+<body class="bg-bg min-h-screen relative bg-grid selection:bg-amber-accent selection:text-black">
+
+  <!-- Radial atmospheric glow -->
+  <div class="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-7xl h-[640px] radial-glow pointer-events-none z-0"></div>
+
+  <!-- NAVIGATION -->
+  <nav class="fixed top-0 left-0 w-full z-50 glass-nav">
+    <div class="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
+      <a href="#" class="group flex items-center gap-3">
+        <div class="w-9 h-9 rounded-lg bg-gradient-to-br from-amber-500 to-amber-700 flex items-center justify-center font-bold text-black font-mono text-base shadow-lg shadow-amber-500/20 group-hover:scale-105 transition-transform">
+          RS
+        </div>
+        <div>
+          <span class="font-bold tracking-tight text-white text-base block group-hover:text-amber-400 transition-colors">Rıdvan Sağlam</span>
+          <span class="font-mono text-[10px] tracking-wider text-slate-400 uppercase block">Simulation &amp; LXD Architect</span>
+        </div>
+      </a>
+
+      <div class="flex items-center gap-8 text-sm font-medium">
+        <div class="hidden md:flex items-center gap-7 text-slate-300">
+          <a href="#simulations" class="hover:text-amber-400 transition-colors">Simulations &amp; Labs</a>
+          <a href="#gamelab" class="hover:text-amber-400 transition-colors">Game Lab</a>
+          <a href="#about" class="hover:text-amber-400 transition-colors">Methodology</a>
+          <a href="#contact" class="hover:text-amber-400 transition-colors">Contact</a>
+        </div>
+
+        <a href="#contact" class="hidden sm:inline-flex items-center gap-2 px-4 py-2 rounded-full border border-amber-500/30 bg-amber-500/10 text-amber-300 hover:bg-amber-500 hover:text-black font-mono text-xs transition-all duration-200">
+          <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+          <span>Available for Projects</span>
+        </a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- HERO SECTION -->
+  <header class="relative pt-36 pb-20 md:pt-44 md:pb-28 px-6 max-w-7xl mx-auto z-10">
+    <div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-slate-800 bg-slate-900/60 font-mono text-xs text-slate-300 mb-6 backdrop-blur">
+      <span class="text-amber-400">●</span>
+      <span>Learning Science · Kinetic Physics · Serious Games</span>
+    </div>
+
+    <h1 class="text-4xl sm:text-6xl lg:text-7xl font-extrabold tracking-tight text-white max-w-5xl leading-[1.08] mb-8">
+      Engineering <span class="bg-clip-text text-transparent bg-gradient-to-r from-amber-400 via-amber-200 to-white">High-Consequence</span> Learning Experiences.
+    </h1>
+
+    <p class="text-lg sm:text-xl text-slate-300 max-w-3xl font-light leading-relaxed mb-10">
+      Traditional e-learning relies on static slides and superficial badges. I design and code living mathematical models, physics-driven web simulators, and serious game loops where learners experience the visceral consequences of critical decisions in real time.
+    </p>
+
+    <div class="flex flex-wrap items-center gap-4">
+      <a href="#simulations" class="px-6 py-3.5 rounded-lg bg-amber-500 hover:bg-amber-400 text-black font-semibold text-sm transition-all shadow-lg shadow-amber-500/20 inline-flex items-center gap-2">
+        <span>Explore Interactive Labs</span>
+        <span>↓</span>
+      </a>
+      <a href="#about" class="px-6 py-3.5 rounded-lg border border-slate-800 bg-slate-900/50 hover:bg-slate-800 text-slate-200 font-medium text-sm transition-all inline-flex items-center gap-2">
+        <span>Instructional Philosophy</span>
+        <span>→</span>
+      </a>
+    </div>
+
+    <!-- Telemetry Stats Strip -->
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mt-20 pt-10 border-t border-slate-800/80">
+      <div>
+        <div class="font-mono text-2xl sm:text-3xl font-bold text-white">100%</div>
+        <div class="text-xs text-slate-400 uppercase tracking-wider font-mono mt-1">Local &amp; Zero-Latency</div>
+      </div>
+      <div>
+        <div class="font-mono text-2xl sm:text-3xl font-bold text-amber-400">GSAP + Canvas</div>
+        <div class="text-xs text-slate-400 uppercase tracking-wider font-mono mt-1">Physics Engine</div>
+      </div>
+      <div>
+        <div class="font-mono text-2xl sm:text-3xl font-bold text-cyan-400">Live WebGL</div>
+        <div class="text-xs text-slate-400 uppercase tracking-wider font-mono mt-1">Direct Browser Execution</div>
+      </div>
+      <div>
+        <div class="font-mono text-2xl sm:text-3xl font-bold text-white">IMO / STCW</div>
+        <div class="text-xs text-slate-400 uppercase tracking-wider font-mono mt-1">Safety Rule Compliance</div>
+      </div>
+    </div>
+  </header>
+
+  <!-- SECTION: SIMULATIONS & LABS -->
+  <section id="simulations" class="py-20 px-6 max-w-7xl mx-auto z-10 relative">
+    <div class="flex flex-col md:flex-row md:items-end justify-between mb-12 pb-4 border-b border-slate-800">
+      <div>
+        <span class="font-mono text-xs text-amber-400 tracking-wider uppercase block mb-1">Interactive Simulations &amp; Labs</span>
+        <h2 class="text-3xl sm:text-4xl font-bold text-white tracking-tight">Mission-Critical Simulators</h2>
+      </div>
+      <p class="text-slate-400 text-sm max-w-md mt-4 md:mt-0 font-light">
+        High-fidelity technical trainers developed with custom hydrostatic and vector calculation engines. Click to launch live demos directly in your browser.
+      </p>
+    </div>
+
+    <!-- 2-COLUMN 16:9 GRID (Andreas Aesthetic) -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+
+      <!-- PROJECT CARD 1: SHIP STABILITY -->
+      <article class="project-card rounded-2xl bg-card border border-card-border overflow-hidden flex flex-col group">
+        <!-- 16:9 Aspect Ratio Media Container -->
+        <div class="relative aspect-video w-full overflow-hidden bg-slate-950">
+          <img src="assets/ship_stability_showcase.png" alt="Ship Hydrodynamics & Stability Simulator Interface" class="w-full h-full object-cover group-hover:scale-[1.03] transition-transform duration-500 ease-out">
+          <div class="absolute inset-0 bg-gradient-to-t from-card via-transparent to-transparent opacity-80"></div>
+          
+          <div class="absolute top-4 left-4 flex gap-2">
+            <span class="px-2.5 py-1 rounded bg-black/70 backdrop-blur border border-white/10 font-mono text-[11px] text-amber-400 font-medium">SIMULATION 04</span>
+            <span class="px-2.5 py-1 rounded bg-black/70 backdrop-blur border border-white/10 font-mono text-[11px] text-slate-300">HYDROSTATICS</span>
+          </div>
+
+          <a href="sims/ship-stability/index.html" target="_blank" class="absolute bottom-4 right-4 px-4 py-2 rounded-lg bg-amber-500 hover:bg-amber-400 text-black font-mono text-xs font-semibold shadow-lg shadow-black/80 flex items-center gap-2 transform translate-y-2 opacity-90 group-hover:translate-y-0 group-hover:opacity-100 transition-all">
+            <span>▶ Launch Live Sim</span>
+            <span class="text-xs">↗</span>
+          </a>
+        </div>
+
+        <!-- Content -->
+        <div class="p-8 flex-1 flex flex-col justify-between">
+          <div>
+            <div class="flex items-center gap-3 mb-3">
+              <span class="text-xs font-mono text-slate-400">Naval Architecture &amp; Stability</span>
+              <span class="text-slate-600">•</span>
+              <span class="text-xs font-mono text-emerald-400">IMO IS Code</span>
+            </div>
+
+            <h3 class="text-2xl font-bold text-white group-hover:text-amber-400 transition-colors mb-3">
+              Ship Hydrodynamics &amp; Equilibrium Lab
+            </h3>
+
+            <p class="text-slate-300 text-sm leading-relaxed mb-6 font-light">
+              An interactive naval architecture simulator computing real-time righting arm curves (GZ), transverse metacenter shifts, Free Surface Effect (FSE) ballast sloshing, and sudden capsize triggers into the Angle of Loll.
+            </p>
+
+            <div class="flex flex-wrap gap-2 mb-6">
+              <span class="px-2.5 py-1 rounded-md bg-slate-800/80 text-slate-300 font-mono text-xs border border-slate-700/60">GSAP Animation</span>
+              <span class="px-2.5 py-1 rounded-md bg-slate-800/80 text-slate-300 font-mono text-xs border border-slate-700/60">Canvas 2D Physics</span>
+              <span class="px-2.5 py-1 rounded-md bg-slate-800/80 text-slate-300 font-mono text-xs border border-slate-700/60">Dynamic GZ Solver</span>
+              <span class="px-2.5 py-1 rounded-md bg-slate-800/80 text-slate-300 font-mono text-xs border border-slate-700/60">Cockpit HMI</span>
+            </div>
+          </div>
+
+          <div class="pt-6 border-t border-slate-800/80 flex items-center justify-between">
+            <button onclick="openModal('ship-stability')" class="text-sm font-semibold text-amber-400 hover:text-amber-300 inline-flex items-center gap-1.5 transition-colors">
+              <span>Read Case Study</span>
+              <span>→</span>
+            </button>
+            <a href="sims/ship-stability/index.html" target="_blank" class="text-xs font-mono text-slate-400 hover:text-white transition-colors">
+              Open Standalone Simulator ↗
+            </a>
+          </div>
+        </div>
+      </article>
+
+      <!-- PROJECT CARD 2: COLREG RADAR -->
+      <article class="project-card rounded-2xl bg-card border border-card-border overflow-hidden flex flex-col group">
+        <!-- 16:9 Aspect Ratio Media Container -->
+        <div class="relative aspect-video w-full overflow-hidden bg-slate-950">
+          <img src="assets/colreg_radar_showcase.png" alt="COLREG and ARPA Radar Collision Avoidance Simulator" class="w-full h-full object-cover group-hover:scale-[1.03] transition-transform duration-500 ease-out">
+          <div class="absolute inset-0 bg-gradient-to-t from-card via-transparent to-transparent opacity-80"></div>
+          
+          <div class="absolute top-4 left-4 flex gap-2">
+            <span class="px-2.5 py-1 rounded bg-black/70 backdrop-blur border border-white/10 font-mono text-[11px] text-cyan-accent font-medium">SIMULATION 02</span>
+            <span class="px-2.5 py-1 rounded bg-black/70 backdrop-blur border border-white/10 font-mono text-[11px] text-slate-300">ARPA RADAR</span>
+          </div>
+
+          <a href="sims/colreg-radar/index.html" target="_blank" class="absolute bottom-4 right-4 px-4 py-2 rounded-lg bg-cyan-accent hover:bg-sky-300 text-black font-mono text-xs font-semibold shadow-lg shadow-black/80 flex items-center gap-2 transform translate-y-2 opacity-90 group-hover:translate-y-0 group-hover:opacity-100 transition-all">
+            <span>▶ Launch Live Sim</span>
+            <span class="text-xs">↗</span>
+          </a>
+        </div>
+
+        <!-- Content -->
+        <div class="p-8 flex-1 flex flex-col justify-between">
+          <div>
+            <div class="flex items-center gap-3 mb-3">
+              <span class="text-xs font-mono text-slate-400">Maritime Collision Avoidance</span>
+              <span class="text-slate-600">•</span>
+              <span class="text-xs font-mono text-amber-400">Rules 7, 8, 15 &amp; 16</span>
+            </div>
+
+            <h3 class="text-2xl font-bold text-white group-hover:text-cyan-accent transition-colors mb-3">
+              ARPA &amp; COLREG Vector Collision Radar
+            </h3>
+
+            <p class="text-slate-300 text-sm leading-relaxed mb-6 font-light">
+              A high-precision bridge simulator putting watchkeepers behind an ARPA radar screen to calculate relative velocity vectors, Closest Point of Approach (CPA/TCPA), and execute legally compliant avoidance maneuvers.
+            </p>
+
+            <div class="flex flex-wrap gap-2 mb-6">
+              <span class="px-2.5 py-1 rounded-md bg-slate-800/80 text-slate-300 font-mono text-xs border border-slate-700/60">Vector Math</span>
+              <span class="px-2.5 py-1 rounded-md bg-slate-800/80 text-slate-300 font-mono text-xs border border-slate-700/60">Phosphor Radar Shader</span>
+              <span class="px-2.5 py-1 rounded-md bg-slate-800/80 text-slate-300 font-mono text-xs border border-slate-700/60">CPA/TCPA Telemetry</span>
+              <span class="px-2.5 py-1 rounded-md bg-slate-800/80 text-slate-300 font-mono text-xs border border-slate-700/60">Rule Evaluation</span>
+            </div>
+          </div>
+
+          <div class="pt-6 border-t border-slate-800/80 flex items-center justify-between">
+            <button onclick="openModal('colreg-radar')" class="text-sm font-semibold text-cyan-accent hover:text-sky-300 inline-flex items-center gap-1.5 transition-colors">
+              <span>Read Case Study</span>
+              <span>→</span>
+            </button>
+            <a href="sims/colreg-radar/index.html" target="_blank" class="text-xs font-mono text-slate-400 hover:text-white transition-colors">
+              Open Standalone Simulator ↗
+            </a>
+          </div>
+        </div>
+      </article>
+
+    </div>
+  </section>
+
+  <!-- SECTION: GAME LAB -->
+  <section id="gamelab" class="py-20 px-6 max-w-7xl mx-auto z-10 relative">
+    <div class="flex flex-col md:flex-row md:items-end justify-between mb-12 pb-4 border-b border-slate-800">
+      <div>
+        <span class="font-mono text-xs text-rose-400 tracking-wider uppercase block mb-1">Independent Experiments &amp; Systems</span>
+        <h2 class="text-3xl sm:text-4xl font-bold text-white tracking-tight">Game Lab</h2>
+      </div>
+      <p class="text-slate-400 text-sm max-w-md mt-4 md:mt-0 font-light">
+        Unconstrained game development experiments focused purely on mechanics, "game feel", juice, enemy AI state machines, and responsive controls.
+      </p>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      
+      <!-- GAME 1: ZOMBIES ONBOARD -->
+      <div class="p-7 rounded-2xl bg-card border border-card-border hover:border-rose-500/40 transition-all flex flex-col justify-between group">
+        <div>
+          <div class="flex items-center justify-between mb-4">
+            <span class="px-2.5 py-1 rounded bg-rose-500/10 border border-rose-500/30 font-mono text-[11px] text-rose-400 font-medium">CORE GAMEPLAY</span>
+            <span class="text-xs font-mono text-slate-500">In Development</span>
+          </div>
+
+          <h3 class="text-xl font-bold text-white group-hover:text-rose-400 transition-colors mb-2">
+            Zombies Onboard
+          </h3>
+
+          <p class="text-slate-300 text-xs sm:text-sm leading-relaxed mb-6 font-light">
+            Claustrophobic top-down action survival set on a dark cargo vessel. Research project exploring hit-stop pauses, recoil juice, flashlight cone illumination, and dynamic horde flanking algorithms.
+          </p>
+
+          <div class="flex flex-wrap gap-1.5 mb-6">
+            <span class="px-2 py-0.5 rounded bg-slate-800/80 text-slate-400 font-mono text-[11px]">Hit-Stop Juice</span>
+            <span class="px-2 py-0.5 rounded bg-slate-800/80 text-slate-400 font-mono text-[11px]">Horde Pathfinding</span>
+            <span class="px-2 py-0.5 rounded bg-slate-800/80 text-slate-400 font-mono text-[11px]">Weapon Physics</span>
+          </div>
+        </div>
+
+        <div class="pt-4 border-t border-slate-800/80 text-xs font-mono text-slate-400 flex items-center justify-between">
+          <span>Engine: Custom WebGL/Canvas</span>
+          <span class="text-rose-400">Prototype Active</span>
+        </div>
+      </div>
+
+      <!-- GAME 2: ENGINE ROOM ESCAPE -->
+      <div class="p-7 rounded-2xl bg-card border border-card-border hover:border-amber-500/40 transition-all flex flex-col justify-between group">
+        <div>
+          <div class="flex items-center justify-between mb-4">
+            <span class="px-2.5 py-1 rounded bg-amber-500/10 border border-amber-500/30 font-mono text-[11px] text-amber-400 font-medium">PUZZLE &amp; MECHANICS</span>
+            <span class="text-xs font-mono text-slate-500">Pixi.js</span>
+          </div>
+
+          <h3 class="text-xl font-bold text-white group-hover:text-amber-400 transition-colors mb-2">
+            Engine Room Escape
+          </h3>
+
+          <p class="text-slate-300 text-xs sm:text-sm leading-relaxed mb-6 font-light">
+            Interactive point-and-click mechanical puzzle adventure. Pressure valves, auxiliary generator sequence routing, and hazardous steam mechanics under time pressure.
+          </p>
+
+          <div class="flex flex-wrap gap-1.5 mb-6">
+            <span class="px-2 py-0.5 rounded bg-slate-800/80 text-slate-400 font-mono text-[11px]">Pixi Engine</span>
+            <span class="px-2 py-0.5 rounded bg-slate-800/80 text-slate-400 font-mono text-[11px]">State Machine</span>
+            <span class="px-2 py-0.5 rounded bg-slate-800/80 text-slate-400 font-mono text-[11px]">Environmental Audio</span>
+          </div>
+        </div>
+
+        <div class="pt-4 border-t border-slate-800/80 text-xs font-mono text-slate-400 flex items-center justify-between">
+          <span>Target: Mobile &amp; Desktop</span>
+          <span class="text-amber-400">Playable Lab</span>
+        </div>
+      </div>
+
+      <!-- GAME 3: THE ABYSSAL CODEX -->
+      <div class="p-7 rounded-2xl bg-card border border-card-border hover:border-cyan-500/40 transition-all flex flex-col justify-between group">
+        <div>
+          <div class="flex items-center justify-between mb-4">
+            <span class="px-2.5 py-1 rounded bg-cyan-500/10 border border-cyan-500/30 font-mono text-[11px] text-cyan-accent font-medium">NARRATIVE RPG</span>
+            <span class="text-xs font-mono text-slate-500">Experimental</span>
+          </div>
+
+          <h3 class="text-xl font-bold text-white group-hover:text-cyan-accent transition-colors mb-2">
+            The Abyssal Codex
+          </h3>
+
+          <p class="text-slate-300 text-xs sm:text-sm leading-relaxed mb-6 font-light">
+            Deep-sea exploration mechanics with atmospheric shader water and procedural dialogue trees investigating sunken technological ruins.
+          </p>
+
+          <div class="flex flex-wrap gap-1.5 mb-6">
+            <span class="px-2 py-0.5 rounded bg-slate-800/80 text-slate-400 font-mono text-[11px]">Atmosphere Shaders</span>
+            <span class="px-2 py-0.5 rounded bg-slate-800/80 text-slate-400 font-mono text-[11px]">Branching Logic</span>
+            <span class="px-2 py-0.5 rounded bg-slate-800/80 text-slate-400 font-mono text-[11px]">Dynamic Soundscape</span>
+          </div>
+        </div>
+
+        <div class="pt-4 border-t border-slate-800/80 text-xs font-mono text-slate-400 flex items-center justify-between">
+          <span>Format: Experimental Web</span>
+          <span class="text-cyan-accent">Concept Stage</span>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- SECTION: ABOUT & METHODOLOGY -->
+  <section id="about" class="py-20 px-6 max-w-7xl mx-auto z-10 relative">
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
+      
+      <div class="lg:col-span-5">
+        <span class="font-mono text-xs text-amber-400 tracking-wider uppercase block mb-2">Philosophy &amp; Tech Stack</span>
+        <h2 class="text-3xl sm:text-4xl font-bold text-white tracking-tight leading-tight mb-6">
+          Why I Reject Slide-Based "Click-Next" E-Learning.
+        </h2>
+        <p class="text-slate-300 text-sm sm:text-base leading-relaxed font-light mb-6">
+          When an operator on an oil tanker makes a stability error, or a junior deck officer misinterprets radar vectors, the result isn't a red "Try Again" pop-up. It's multi-million dollar damage or lost lives.
+        </p>
+        <p class="text-slate-400 text-sm leading-relaxed font-light mb-8">
+          Adult learners do not build competence through multiple-choice trivia. They learn through cognitive modeling, stress testing, and real-time kinetic feedback. That is why I combine the rigors of cognitive instructional design with the engineering of video game engines.
+        </p>
+
+        <div class="space-y-4">
+          <div class="flex items-start gap-4">
+            <div class="w-8 h-8 rounded-lg bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400 font-mono text-xs shrink-0">01</div>
+            <div>
+              <h4 class="text-white text-sm font-semibold mb-1">True Cognitive Fidelity</h4>
+              <p class="text-slate-400 text-xs leading-relaxed">Exact mathematical calculations (metacentric height, ARPA CPA vectors) rather than canned animations.</p>
+            </div>
+          </div>
+          <div class="flex items-start gap-4">
+            <div class="w-8 h-8 rounded-lg bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center text-cyan-accent font-mono text-xs shrink-0">02</div>
+            <div>
+              <h4 class="text-white text-sm font-semibold mb-1">Zero Superfluous Friction</h4>
+              <p class="text-slate-400 text-xs leading-relaxed">Lightweight zero-dependency web execution. No heavy LMS bloat or plugin installs required.</p>
+            </div>
+          </div>
+          <div class="flex items-start gap-4">
+            <div class="w-8 h-8 rounded-lg bg-rose-500/10 border border-rose-500/30 flex items-center justify-center text-rose-400 font-mono text-xs shrink-0">03</div>
+            <div>
+              <h4 class="text-white text-sm font-semibold mb-1">Pedagogy Meets Game Juice</h4>
+              <p class="text-slate-400 text-xs leading-relaxed">Haptic sound design, screen shake, and visual tension heighten learner attention during safety-critical moments.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Skills Matrix Card -->
+      <div class="lg:col-span-7 p-8 rounded-2xl bg-card border border-card-border">
+        <h3 class="text-lg font-bold text-white mb-6 flex items-center justify-between">
+          <span>Technical Architecture &amp; Toolset</span>
+          <span class="font-mono text-xs text-slate-500">Production Ready</span>
+        </h3>
+
+        <div class="space-y-6">
+          <div>
+            <div class="text-xs font-mono text-amber-400 uppercase tracking-wider mb-2.5">Simulations &amp; Real-Time Graphics</div>
+            <div class="flex flex-wrap gap-2">
+              <span class="px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-800 text-slate-200 text-xs font-mono">HTML5 Canvas 2D</span>
+              <span class="px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-800 text-slate-200 text-xs font-mono">WebGL / Shaders</span>
+              <span class="px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-800 text-slate-200 text-xs font-mono">GSAP (GreenSock)</span>
+              <span class="px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-800 text-slate-200 text-xs font-mono">Pixi.js</span>
+              <span class="px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-800 text-slate-200 text-xs font-mono">PlayCanvas 3D</span>
+              <span class="px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-800 text-slate-200 text-xs font-mono">Rive State Machine</span>
+            </div>
+          </div>
+
+          <div>
+            <div class="text-xs font-mono text-cyan-accent uppercase tracking-wider mb-2.5">Instructional Design &amp; Authoring</div>
+            <div class="flex flex-wrap gap-2">
+              <span class="px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-800 text-slate-200 text-xs font-mono">Articulate Storyline 360 (Advanced JS/DOM)</span>
+              <span class="px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-800 text-slate-200 text-xs font-mono">Adapt Framework v0.3</span>
+              <span class="px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-800 text-slate-200 text-xs font-mono">Scenario-Based Branching</span>
+              <span class="px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-800 text-slate-200 text-xs font-mono">Cognitive Load Theory</span>
+              <span class="px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-800 text-slate-200 text-xs font-mono">SCORM / xAPI Integration</span>
+            </div>
+          </div>
+
+          <div>
+            <div class="text-xs font-mono text-emerald-400 uppercase tracking-wider mb-2.5">3D Asset Gen &amp; Automation Pipelines</div>
+            <div class="flex flex-wrap gap-2">
+              <span class="px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-800 text-slate-200 text-xs font-mono">Blender 5.2 (bpy Scripting)</span>
+              <span class="px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-800 text-slate-200 text-xs font-mono">Python Automation</span>
+              <span class="px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-800 text-slate-200 text-xs font-mono">Playwright Automated QA</span>
+              <span class="px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-800 text-slate-200 text-xs font-mono">Git / GitHub Actions</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- SECTION: CONTACT -->
+  <section id="contact" class="py-24 px-6 max-w-4xl mx-auto z-10 relative text-center">
+    <div class="p-12 rounded-3xl bg-gradient-to-b from-card to-slate-950 border border-card-border shadow-2xl relative overflow-hidden">
+      <div class="w-16 h-16 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400 text-2xl mx-auto mb-6">
+        ✉
+      </div>
+
+      <h2 class="text-3xl sm:text-4xl font-extrabold text-white tracking-tight mb-4">
+        Ready to Build Something Extraordinary?
+      </h2>
+      <p class="text-slate-300 text-base max-w-xl mx-auto leading-relaxed font-light mb-8">
+        Whether you are developing safety-critical maritime simulations, innovative serious games, or seeking high-level instructional architecture consultation.
+      </p>
+
+      <div class="flex flex-wrap items-center justify-center gap-4">
+        <a href="mailto:ridvanbsaglam@gmail.com" class="px-7 py-3.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-black font-semibold text-sm transition-all shadow-lg shadow-amber-500/25 inline-flex items-center gap-2">
+          <span>Get in Touch</span>
+          <span>→</span>
+        </a>
+        <a href="https://github.com/ridvanbsaglam" target="_blank" class="px-6 py-3.5 rounded-xl border border-slate-800 bg-slate-900/60 hover:bg-slate-800 text-slate-200 font-mono text-xs font-medium transition-all inline-flex items-center gap-2">
+          <span>GitHub: @ridvanbsaglam</span>
+          <span>↗</span>
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer class="py-12 border-t border-slate-800/80 px-6 max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between text-xs text-slate-500 font-mono gap-4">
+    <div>
+      © 2026 Rıdvan Sağlam. Engineered with precision.
+    </div>
+    <div class="flex items-center gap-6">
+      <a href="#simulations" class="hover:text-slate-300 transition-colors">Simulations</a>
+      <a href="#gamelab" class="hover:text-slate-300 transition-colors">Game Lab</a>
+      <a href="https://github.com/ridvanbsaglam" target="_blank" class="hover:text-slate-300 transition-colors">GitHub</a>
+      <a href="#top" class="hover:text-amber-400 transition-colors">Back to Top ↑</a>
+    </div>
+  </footer>
+
+  <!-- CASE STUDY MODAL -->
+  <div id="case-modal" class="hidden-modal fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-black/80 backdrop-blur-md">
+    <div class="bg-card border border-card-border rounded-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto p-6 sm:p-10 shadow-2xl relative">
+      <button onclick="closeModal()" class="absolute top-6 right-6 w-9 h-9 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 flex items-center justify-center font-mono text-sm transition-colors">
+        ✕
+      </button>
+
+      <div id="modal-content">
+        <!-- Injected via JavaScript -->
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL LOGIC -->
+  <script>
+    const caseStudies = {
+      'ship-stability': {
+        title: 'Ship Hydrodynamics & Equilibrium Lab',
+        badge: 'Naval Architecture & Intact Stability',
+        liveUrl: 'sims/ship-stability/index.html',
+        body: `
+          <div class="space-y-6 text-slate-300 font-light text-sm sm:text-base leading-relaxed">
+            <div>
+              <h4 class="text-xs font-mono uppercase tracking-wider text-amber-400 mb-2">The Instructional Challenge</h4>
+              <p>Traditional maritime e-learning teaches vessel stability using static 2D formulas. Officers struggle to intuitively translate mathematical values (KG, KM, GM) into physical reality, leading to dangerous capsize risks during sudden free-surface sloshing or improper deck cargo loading.</p>
+            </div>
+
+            <div>
+              <h4 class="text-xs font-mono uppercase tracking-wider text-amber-400 mb-2">The Kinetic Solution</h4>
+              <p>We engineered a real-time hydrostatic solver inside the browser. Learners manipulate heel angles and observe the simultaneous calculation of the center of buoyancy (B₁), righting arm (GZ), and water sloshing in internal double-bottom tanks.</p>
+            </div>
+
+            <div>
+              <h4 class="text-xs font-mono uppercase tracking-wider text-amber-400 mb-2">Technical Architecture</h4>
+              <ul class="list-disc list-inside space-y-1 text-slate-400 text-sm">
+                <li><strong class="text-white">Wall-sided Stability Solver:</strong> Real-time GZ arm calculation including deck immersion damping curves.</li>
+                <li><strong class="text-white">Kinetic Sloshing Canvas:</strong> Liquid dynamics visualizer representing dynamic virtual GM shifts.</li>
+                <li><strong class="text-white">Automotive HMI Design System:</strong> Dual telemetry themes (Warm Amber & Deep Cobalt) with high contrast.</li>
+              </ul>
+            </div>
+          </div>
+        `
+      },
+      'colreg-radar': {
+        title: 'ARPA & COLREG Vector Collision Radar',
+        badge: 'Collision Avoidance & Radar Navigation',
+        liveUrl: 'sims/colreg-radar/index.html',
+        body: `
+          <div class="space-y-6 text-slate-300 font-light text-sm sm:text-base leading-relaxed">
+            <div>
+              <h4 class="text-xs font-mono uppercase tracking-wider text-cyan-accent mb-2">The Instructional Challenge</h4>
+              <p>Memorizing IMO Collision Regulations (COLREGs) in a classroom fails when a deck officer is confronted with target radar vectors in dense fog. Misinterpreting relative motion often results in catastrophic late maneuvers.</p>
+            </div>
+
+            <div>
+              <h4 class="text-xs font-mono uppercase tracking-wider text-cyan-accent mb-2">The Kinetic Solution</h4>
+              <p>An interactive ARPA radar console placing learners in command. The system models target acquisition, calculates Closest Point of Approach (CPA/TCPA), and enforces Rules 7, 8, 15, and 16 with instant telemetry debriefs.</p>
+            </div>
+
+            <div>
+              <h4 class="text-xs font-mono uppercase tracking-wider text-cyan-accent mb-2">Technical Architecture</h4>
+              <ul class="list-disc list-inside space-y-1 text-slate-400 text-sm">
+                <li><strong class="text-white">Relative & True Motion Vector Math:</strong> Precise velocity resolution matching real marine radar specs.</li>
+                <li><strong class="text-white">Dynamic Phosphor Radar Sweep:</strong> Canvas 2D radial sweep with afterglow trail shaders.</li>
+                <li><strong class="text-white">Autonomous Evaluation Engine:</strong> Evaluates helm actions against safety distance perimeters (>1.50 NM).</li>
+              </ul>
+            </div>
+          </div>
+        `
+      }
+    };
+
+    function openModal(id) {
+      const data = caseStudies[id];
+      if (!data) return;
+      const content = document.getElementById('modal-content');
+      content.innerHTML = \`
+        <span class="font-mono text-xs text-slate-400 tracking-wider uppercase block mb-2">\${data.badge}</span>
+        <h3 class="text-2xl sm:text-3xl font-bold text-white mb-6 tracking-tight">\${data.title}</h3>
+        \${data.body}
+        <div class="mt-8 pt-6 border-t border-slate-800 flex items-center justify-between">
+          <a href="\${data.liveUrl}" target="_blank" class="px-5 py-2.5 rounded-lg bg-amber-500 hover:bg-amber-400 text-black font-semibold text-xs font-mono inline-flex items-center gap-2 transition-all">
+            <span>▶ Launch Full Simulator</span>
+            <span>↗</span>
+          </a>
+          <button onclick="closeModal()" class="text-xs font-mono text-slate-400 hover:text-white transition-colors">
+            Close Window [ESC]
+          </button>
+        </div>
+      \`;
+      const modal = document.getElementById('case-modal');
+      modal.classList.remove('hidden-modal');
+      modal.classList.add('visible-modal');
+    }
+
+    function closeModal() {
+      const modal = document.getElementById('case-modal');
+      modal.classList.remove('visible-modal');
+      modal.classList.add('hidden-modal');
+    }
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') closeModal();
+    });
+
+    document.getElementById('case-modal').addEventListener('click', (e) => {
+      if (e.target.id === 'case-modal') closeModal();
+    });
+  </script>
+</body>
+</html>

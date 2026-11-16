@@ -1,0 +1,1715 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ship Stability & Hydrostatic Equilibrium · Maritime Simulation 04</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    /* =========================================================================
+       THEME SYSTEM: Amber (Default) | Cobalt | Monochrome
+       ========================================================================= */
+    :root, [data-theme="amber"] {
+      --bg: #090b0e;
+      --ink: #f4f5f7;
+      --ink-2: rgba(244, 245, 247, 0.65);
+      --ink-3: rgba(244, 245, 247, 0.38);
+      --line: rgba(244, 245, 247, 0.12);
+      --accent: #f59e0b;
+      --accent-dim: rgba(245, 158, 11, 0.45);
+      --accent-glow: rgba(245, 158, 11, 0.22);
+      --danger: #ef4444;
+      --danger-dim: rgba(239, 68, 68, 0.35);
+      --card-bg: rgba(244, 245, 247, 0.02);
+    }
+
+    [data-theme="cobalt"] {
+      --bg: #060911;
+      --ink: #f8fafc;
+      --ink-2: rgba(248, 250, 252, 0.65);
+      --ink-3: rgba(248, 250, 252, 0.38);
+      --line: rgba(248, 250, 252, 0.12);
+      --accent: #3b82f6;
+      --accent-dim: rgba(59, 130, 246, 0.45);
+      --accent-glow: rgba(59, 130, 246, 0.22);
+      --danger: #f43f5e;
+      --danger-dim: rgba(244, 63, 94, 0.35);
+      --card-bg: rgba(248, 250, 252, 0.02);
+    }
+
+    [data-theme="monochrome"] {
+      --bg: #08090b;
+      --ink: #ffffff;
+      --ink-2: rgba(255, 255, 255, 0.65);
+      --ink-3: rgba(255, 255, 255, 0.35);
+      --line: rgba(255, 255, 255, 0.12);
+      --accent: #ffffff;
+      --accent-dim: rgba(255, 255, 255, 0.45);
+      --accent-glow: rgba(255, 255, 255, 0.15);
+      --danger: #ff4d4d;
+      --danger-dim: rgba(255, 77, 77, 0.35);
+      --card-bg: rgba(255, 255, 255, 0.02);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
+
+    html, body {
+      width: 100%;
+      height: 100%;
+      background: #000;
+      overflow: hidden;
+      font-family: 'Inter', system-ui, sans-serif;
+      color: var(--ink);
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ---------------------------------------------------------------
+       16:9 STAGE (1920x1080) — scaled to fit Storyline Web Object
+       --------------------------------------------------------------- */
+    #stage {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      width: 1920px;
+      height: 1080px;
+      transform-origin: center center;
+      overflow: hidden;
+      background:
+        radial-gradient(ellipse 70% 60% at 50% 45%, #10141a 0%, var(--bg) 70%);
+      transition: background 0.4s ease;
+    }
+
+    /* Layer 1: Stationary Studio Spotlight & Calm Water Horizon (NEVER rotates) */
+    #bg-viewport {
+      position: absolute;
+      left: 350px;
+      top: 155px;
+      width: 1220px;
+      height: 681px;
+      pointer-events: none;
+      z-index: 1;
+    }
+
+    #bg-img {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      -webkit-mask-image: radial-gradient(ellipse 58% 62% at 50% 50%, #000 74%, transparent 100%);
+              mask-image: radial-gradient(ellipse 58% 62% at 50% 50%, #000 74%, transparent 100%);
+    }
+
+    /* Layer 2: Isolated 3D Ship Hull (ONLY this layer rotates with heel angle) */
+    #ship-viewport {
+      position: absolute;
+      left: 350px;
+      top: 155px;
+      width: 1220px;
+      height: 681px;
+      pointer-events: none;
+      transform-origin: 50% 58.5%; /* Waterline center of flotation pivot */
+      transition: transform 0.25s cubic-bezier(0.2, 0.9, 0.3, 1);
+      z-index: 2;
+    }
+
+    #tank-fx {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+    }
+
+    #ship-img {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    /* Layer 3: Subtle Horizontal Waterline Surface Shimmer (Stationary) */
+    #waterline-gleam {
+      position: absolute;
+      left: 380px;
+      top: 553px;
+      width: 1160px;
+      height: 1px;
+      background: linear-gradient(90deg,
+        transparent 0%,
+        rgba(244, 245, 247, 0.08) 25%,
+        rgba(244, 245, 247, 0.18) 50%,
+        rgba(244, 245, 247, 0.08) 75%,
+        transparent 100%);
+      pointer-events: none;
+      z-index: 3;
+    }
+
+    /* Layer 4: Interactive Hydrostatic Vectors Canvas */
+    #fx {
+      position: absolute;
+      inset: 0;
+      width: 1920px;
+      height: 1080px;
+      pointer-events: auto;
+      z-index: 4;
+    }
+
+    .mono {
+      font-family: 'JetBrains Mono', ui-monospace, monospace;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+    }
+
+    /* ---------------------------------------------------------------
+       HEADER & THEME SWITCHER
+       --------------------------------------------------------------- */
+    #header {
+      position: absolute;
+      left: 64px;
+      top: 48px;
+      pointer-events: none;
+      z-index: 20;
+    }
+    #header .eyebrow { font-size: 16px; color: var(--ink-3); }
+    #header h1 {
+      margin-top: 14px;
+      font-size: 54px;
+      font-weight: 300;
+      letter-spacing: -0.01em;
+    }
+    #header .rule {
+      margin-top: 26px;
+      width: 56px;
+      height: 1px;
+      background: var(--ink-3);
+    }
+
+    #top-bar {
+      position: absolute;
+      right: 64px;
+      top: 58px;
+      display: flex;
+      align-items: center;
+      gap: 28px;
+      font-size: 16px;
+      color: var(--ink-2);
+      z-index: 30;
+    }
+
+    /* Theme Switcher Pills */
+    .theme-switcher {
+      display: flex;
+      gap: 6px;
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid var(--line);
+      padding: 4px;
+      border-radius: 4px;
+    }
+    .theme-btn {
+      background: transparent;
+      border: 1px solid transparent;
+      color: var(--ink-2);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+      font-weight: 500;
+      padding: 6px 12px;
+      border-radius: 3px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      letter-spacing: 0.05em;
+    }
+    .theme-btn:hover { color: var(--ink); }
+    .theme-btn.active {
+      background: var(--accent);
+      color: #080a0e;
+      border-color: var(--accent);
+      font-weight: 600;
+    }
+    [data-theme="monochrome"] .theme-btn.active {
+      background: #ffffff;
+      color: #000000;
+    }
+
+    #top-bar .sep { width: 1px; height: 22px; background: var(--line); }
+
+    /* ---------------------------------------------------------------
+       LEFT · TASK COLUMN
+       --------------------------------------------------------------- */
+    #task {
+      position: absolute;
+      left: 64px;
+      top: 360px;
+      width: 320px;
+      z-index: 20;
+    }
+    #task .count { font-size: 22px; color: var(--ink-3); font-weight: 400; }
+    #task .count b { color: var(--accent); font-weight: 500; transition: color 0.3s; }
+    #task .bar { margin-top: 14px; width: 24px; height: 1px; background: var(--ink-3); }
+    #task .body {
+      margin-top: 24px;
+      padding-left: 22px;
+      border-left: 1px solid var(--line);
+    }
+    #task h2 {
+      font-size: 36px;
+      font-weight: 400;
+      line-height: 1.18;
+      letter-spacing: -0.01em;
+    }
+    #task p {
+      margin-top: 16px;
+      font-size: 18px;
+      line-height: 1.5;
+      color: var(--ink-2);
+    }
+    #task .feedback {
+      margin-top: 22px;
+      font-size: 17.5px;
+      line-height: 1.5;
+      color: var(--ink);
+      opacity: 0;
+      transform: translateY(6px);
+      transition: opacity 0.4s, transform 0.4s, color 0.3s;
+    }
+    #task .feedback.show { opacity: 1; transform: none; }
+    #task .feedback.danger { color: var(--danger); }
+    #task .feedback.warn { color: var(--accent); }
+
+    .ghost-btn {
+      margin-top: 24px;
+      display: none;
+      align-items: center;
+      gap: 12px;
+      background: transparent;
+      border: 1px solid var(--accent-dim);
+      color: var(--accent);
+      font: 500 16px 'Inter', sans-serif;
+      padding: 13px 20px;
+      border-radius: 2px;
+      cursor: pointer;
+      transition: background 0.2s, border-color 0.2s, color 0.2s;
+    }
+    .ghost-btn:hover { background: var(--accent-glow); border-color: var(--accent); }
+    .ghost-btn.show { display: inline-flex; }
+    .ghost-btn[disabled] { color: var(--ink-3); border-color: var(--line); cursor: default; background: transparent; }
+
+    /* ---------------------------------------------------------------
+       RIGHT · LIVE METRICS & MINI GZ CURVE
+       --------------------------------------------------------------- */
+    #readings {
+      position: absolute;
+      right: 64px;
+      top: 270px;
+      width: 320px;
+      pointer-events: none;
+      z-index: 20;
+    }
+    #readings .eyebrow {
+      font-size: 15px;
+      color: var(--ink-2);
+      padding-bottom: 18px;
+      border-bottom: 1px solid var(--line);
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+    }
+    .cell {
+      padding: 20px 0;
+      border-bottom: 1px solid var(--line);
+    }
+    .cell:nth-child(odd) { padding-right: 18px; border-right: 1px solid var(--line); }
+    .cell:nth-child(even) { padding-left: 22px; }
+    .cell .k { font-size: 16px; color: var(--ink-2); }
+    .cell .v {
+      margin-top: 6px;
+      font-size: 42px;
+      font-weight: 300;
+      color: var(--accent);
+      letter-spacing: -0.01em;
+      transition: color 0.25s;
+      white-space: nowrap;
+    }
+    .cell .v small { font-size: 19px; font-weight: 400; margin-left: 5px; }
+    .cell.alarm .v { color: var(--danger); }
+    .cell.warn .v { color: var(--accent); }
+
+    /* Compact Live Verdict */
+    #verdict {
+      margin-top: 24px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      font-size: 20px;
+      color: var(--accent);
+      transition: color 0.25s;
+    }
+    #verdict svg { width: 38px; height: 38px; flex: none; }
+    #verdict.alarm { color: var(--danger); }
+    #verdict.muted { color: var(--ink-2); }
+    #verdict .sub { display: block; font-size: 14px; color: var(--ink-3); margin-top: 3px; }
+
+    /* Miniature Embedded GZ Curve inside readings column */
+    #mini-gz-box {
+      margin-top: 24px;
+      padding-top: 16px;
+      border-top: 1px solid var(--line);
+    }
+    #mini-gz-box .curve-title {
+      font-size: 12px;
+      color: var(--ink-3);
+      letter-spacing: 0.1em;
+      display: flex;
+      justify-content: space-between;
+    }
+    #mini-gz-canvas {
+      width: 320px;
+      height: 120px;
+      margin-top: 8px;
+      display: block;
+    }
+
+    /* ---------------------------------------------------------------
+       BOTTOM DOCK (HEEL SLIDER & STEP PROCEED)
+       --------------------------------------------------------------- */
+    #dock {
+      position: absolute;
+      left: 200px;
+      right: 200px;
+      bottom: 44px;
+      height: 82px;
+      display: flex;
+      align-items: center;
+      gap: 34px;
+      padding: 0 40px;
+      border: 1px solid var(--line);
+      background: var(--card-bg);
+      border-radius: 3px;
+      z-index: 25;
+    }
+    #dock .label { font-size: 16px; color: var(--ink-2); white-space: nowrap; }
+    #dock .value {
+      font-size: 20px;
+      color: var(--ink);
+      width: 120px;
+      letter-spacing: 0.04em;
+      text-transform: none;
+    }
+    #dock .sep { width: 1px; height: 34px; background: var(--line); }
+
+    #heel-slider {
+      flex: 1;
+      -webkit-appearance: none;
+      appearance: none;
+      height: 3px;
+      border-radius: 2px;
+      outline: none;
+      cursor: pointer;
+      background: linear-gradient(90deg, var(--accent) 0%, var(--accent) var(--fill, 0%), rgba(244,245,247,0.16) var(--fill, 0%));
+    }
+    #heel-slider::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      background: #ffffff;
+      border: 4px solid var(--accent);
+      box-shadow: 0 0 14px var(--accent-glow);
+      transition: border-color 0.2s;
+    }
+    #heel-slider::-moz-range-thumb {
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: #ffffff;
+      border: 4px solid var(--accent);
+    }
+
+    #next {
+      background: none;
+      border: none;
+      font: 400 19px 'Inter', sans-serif;
+      color: var(--ink);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 14px;
+      width: 290px;
+      white-space: nowrap;
+      transition: color 0.2s, opacity 0.2s;
+    }
+    #next:hover:not([disabled]) { color: var(--accent); }
+    #next[disabled] { color: var(--ink-3); cursor: default; }
+
+    /* ---------------------------------------------------------------
+       RESULTS OVERLAY
+       --------------------------------------------------------------- */
+    #results {
+      position: absolute;
+      inset: 0;
+      background: rgba(6, 9, 12, 0.92);
+      backdrop-filter: blur(8px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.4s;
+      z-index: 50;
+    }
+    #results.show { opacity: 1; pointer-events: auto; }
+    #results .wrap { width: 1180px; }
+    #results .eyebrow { font-size: 15px; color: var(--ink-3); }
+    #results h2 { margin-top: 14px; font-size: 50px; font-weight: 300; }
+    #results table {
+      margin-top: 46px;
+      width: 100%;
+      border-collapse: collapse;
+    }
+    #results th {
+      text-align: left;
+      font: 400 14px 'JetBrains Mono', monospace;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--ink-3);
+      padding: 0 0 16px;
+      border-bottom: 1px solid var(--line);
+    }
+    #results td {
+      padding: 24px 0;
+      border-bottom: 1px solid var(--line);
+      font-size: 22px;
+      font-weight: 300;
+    }
+    #results td.n { color: var(--ink-3); font-size: 18px; width: 70px; }
+    #results td.bad { color: var(--danger); }
+    #results td.ok { color: var(--accent); }
+    #results td.warn { color: var(--ink-2); }
+    #results .takeaway {
+      margin-top: 40px;
+      padding-left: 22px;
+      border-left: 1px solid var(--accent);
+      font-size: 24px;
+      line-height: 1.45;
+      font-weight: 300;
+      max-width: 900px;
+    }
+    #results .actions { margin-top: 46px; }
+    #results .ghost-btn { display: inline-flex; margin-top: 0; }
+  </style>
+  <script src="assets/gsap.min.js"></script>
+</head>
+<body>
+  <div id="stage" data-theme="amber">
+    <!-- Layer 1: Stationary Studio Spotlight & Calm Water Horizon (0deg, never rotates) -->
+    <div id="bg-viewport">
+      <img id="bg-img" src="assets/ocean_studio_bg.jpg" alt="Stationary Ocean Studio Backdrop">
+    </div>
+
+    <!-- Layer 2: Isolated 3D Ship Hull + Internal Double-Bottom Tank Canvas (Rotates with heel) -->
+    <div id="ship-viewport">
+      <canvas id="tank-fx" width="1376" height="768"></canvas>
+      <img id="ship-img" src="assets/ship_hull.png" alt="Commercial Vessel Midship Transverse Cross-Section">
+    </div>
+
+    <!-- Layer 4: Interactive Hydrostatic Vectors Canvas -->
+    <canvas id="fx" width="1920" height="1080"></canvas>
+
+    <!-- Header -->
+    <div id="header">
+      <div class="eyebrow mono">Naval Architecture / Simulation 04</div>
+      <h1>Ship Hydrodynamics &amp; Stability</h1>
+      <div class="rule"></div>
+    </div>
+
+    <!-- Top Right Controls (Theme Switcher & Step Indicator) -->
+    <div id="top-bar">
+      <div class="theme-switcher">
+        <button class="theme-btn active" id="th-amber" onclick="setTheme('amber')">Amber</button>
+        <button class="theme-btn" id="th-cobalt" onclick="setTheme('cobalt')">Cobalt</button>
+        <button class="theme-btn" id="th-mono" onclick="setTheme('monochrome')">Monochrome</button>
+      </div>
+      <span class="sep"></span>
+      <span id="step-text" class="mono">Step 01 / 03</span>
+    </div>
+
+    <!-- Left: Task Column -->
+    <div id="task">
+      <div class="count mono"><b id="step-num">01</b> / 03</div>
+      <div class="bar"></div>
+      <div class="body">
+        <h2 id="task-title">Optimal Stowage &amp; Positive GM</h2>
+        <p id="task-desc">Center of gravity (G) is low near keel. Use the slider below to heel the vessel 15°–20° to starboard.</p>
+        <button class="ghost-btn" id="task-action-btn" onclick="triggerTaskAction()">Fill Slack Ballast Tanks (FSE)</button>
+        <div class="feedback" id="task-feedback"></div>
+      </div>
+    </div>
+
+    <!-- Right: Live Metrics & Mini GZ Curve -->
+    <div id="readings">
+      <div class="eyebrow mono">Live Telemetry &amp; Hydrostatics</div>
+      <div class="grid">
+        <div class="cell" id="c-gm">
+          <div class="k">GM<sub>eff</sub></div>
+          <div class="v"><span id="v-gm">+1.85</span><small>m</small></div>
+        </div>
+        <div class="cell" id="c-gz">
+          <div class="k">GZ (Righting Arm)</div>
+          <div class="v"><span id="v-gz">+0.58</span><small>m</small></div>
+        </div>
+        <div class="cell" id="c-kg">
+          <div class="k">KG (Solid)</div>
+          <div class="v"><span id="v-kg">7.35</span><small>m</small></div>
+        </div>
+        <div class="cell" id="c-km">
+          <div class="k">KM (Transverse Metacenter)</div>
+          <div class="v"><span id="v-km">9.20</span><small>m</small></div>
+        </div>
+      </div>
+
+      <div id="verdict">
+        <span id="verdict-icon"></span>
+        <span>
+          <span id="verdict-text">Stable Equilibrium</span>
+          <span class="sub" id="verdict-sub">Positive righting moment</span>
+        </span>
+      </div>
+
+      <!-- Embedded Mini GZ Curve -->
+      <div id="mini-gz-box">
+        <div class="curve-title mono">
+          <span>GZ Righting Arm Curve</span>
+          <span id="gz-live-tag">θ: 18°</span>
+        </div>
+        <canvas id="mini-gz-canvas" width="320" height="120"></canvas>
+      </div>
+    </div>
+
+    <!-- Bottom Dock -->
+    <div id="dock">
+      <span class="label mono">Heel Angle (θ)</span>
+      <input type="range" id="heel-slider" min="0" max="45" value="16" step="1">
+      <span class="value mono" id="heel-val">16.0°</span>
+      <span class="sep"></span>
+      <button id="next" disabled onclick="nextStep()">
+        <span id="next-label">Awaiting parameters</span><span>→</span>
+      </button>
+    </div>
+
+    <!-- Results Overlay -->
+    <div id="results">
+      <div class="wrap">
+        <div class="eyebrow mono">Assessment</div>
+        <h2>Hydrostatic Stability Debrief</h2>
+        <table>
+          <thead>
+            <tr>
+              <th></th><th>Condition</th><th>KG</th><th>GM (Effective)</th><th>Max GZ</th><th>IMO Intact Stability Compliance</th>
+            </tr>
+          </thead>
+          <tbody id="results-body"></tbody>
+        </table>
+        <div class="takeaway">
+          Free Surface Effect (FSE) and high deck stowage induce virtual vertical shifts in G, eroding righting levers (GZ). When GM drops below zero, the vessel cannot remain upright, listing into a hazardous Angle of Loll.
+        </div>
+        <div class="actions">
+          <button class="ghost-btn" onclick="restart()">Restart Simulation</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+  // =========================================================================
+  // 1. SHIP HYDROSTATICS & GEOMETRY CONSTANTS
+  // =========================================================================
+  const KM = 9.20;         // Metacenter height above Keel (m)
+  const KB = 4.70;         // Upright Center of Buoyancy (m)
+  const BM = 4.50;         // Metacentric radius KM - KB (m)
+  const DRAFT = 5.45;      // Waterline reference height above Keel (m)
+  const PX_PER_M = 34.0;   // Scaling factor on canvas (34 px per meter)
+
+  // Waterline pivot on 1920x1080 canvas (matches #ship-viewport 50% 58.5%)
+  const PIVOT = { x: 960, y: 553 };
+
+  // App State
+  const state = {
+    theme: 'amber',
+    step: 1,
+    heel: 16.0,            // Degrees (0 to 45)
+    solidKG: 7.35,         // Meters above Keel (6.2 to 9.6)
+    fseActive: false,      // Free surface slack tanks target state
+    fseFill: 0.0,          // Animated fill progress (0.0 = empty -> 1.0 = 50% slack tank)
+    isFillingTank: false,  // True while ballast water stream is actively pouring in
+    cargoRaised: false,    // High deck cargo target state
+    cargoFill: 0.0,        // Animated cargo lift progress (0.0 -> 1.0)
+    stepDone: false,
+    dwell: 0,              // Progress counter for dwelling in required state
+    records: {}
+  };
+
+  const STEPS = {
+    1: {
+      title: 'Optimal Stowage & Positive GM',
+      desc: 'Center of gravity (G) is low near keel. Use the slider below to heel the vessel 15°–22° to starboard.',
+      btnLabel: '',
+      cond: () => state.heel >= 14 && state.heel <= 25 && state.fseFill < 0.05 && state.cargoFill < 0.05,
+      done: 'G remains well below M. Robust positive GZ arm vigorously restores the vessel (Stable Equilibrium).',
+      doneClass: 'ok',
+      next: 'Next Phase'
+    },
+    2: {
+      title: 'Slack Tanks & Free Surface Loss',
+      desc: 'Introduce slack ballast tanks to activate FSE. Heel the hull 18°–26° to evaluate the eroded righting arm.',
+      btnLabel: 'Fill Slack Ballast Tanks (FSE)',
+      cond: () => state.fseFill >= 0.98 && state.heel >= 16 && state.heel <= 30,
+      done: 'Internal sloshing dynamically shifts G vertically to Gv (-0.95m GM loss). Restorative moment is severely degraded.',
+      doneClass: 'warn',
+      next: 'Next Phase'
+    },
+    3: {
+      title: 'Deck Stowage Overload & Angle of Loll',
+      desc: 'Raise top-heavy cargo to elevate solid KG. G surpasses Metacenter M (GM < 0), triggering an unstable Angle of Loll.',
+      btnLabel: 'Shift Cargo to Weather Deck',
+      cond: () => state.cargoFill >= 0.98 && state.heel >= 14,
+      done: 'Negative GM! Upright equilibrium is impossible; vessel lists to Angle of Loll (GZ = 0) with critical capsize danger.',
+      doneClass: 'danger',
+      next: 'Review Assessment'
+    }
+  };
+
+  // =========================================================================
+  // 2. MATHEMATICAL SOLVER (GM_eff, GZ curve, Angle of Loll)
+  // =========================================================================
+  function getEffectiveStability() {
+    // Free surface moment builds smoothly as liquid surface area expands during filling
+    const fseFactor = Math.sin(state.fseFill * (Math.PI / 2));
+    const fseLoss = fseFactor * 0.95;
+    const cargoLift = state.cargoFill * 1.45;
+    const virtualKG = state.solidKG + fseLoss + cargoLift;
+    const gmEff = KM - virtualKG;
+
+    return {
+      solidKG: state.solidKG,
+      fseLoss,
+      cargoLift,
+      virtualKG,
+      gmEff
+    };
+  }
+
+  function computeGZ(deg, gmEff) {
+    const rad = (deg * Math.PI) / 180;
+    const tanClamped = Math.min(Math.tan(rad), 1.15);
+    // Wall-sided stability formula
+    let gz = (gmEff + 0.5 * BM * tanClamped * tanClamped) * Math.sin(rad);
+
+    // Deck-edge immersion reduction for high heel angles
+    if (deg > 26) {
+      const excess = (deg - 26) / 34;
+      gz -= 1.6 * Math.pow(excess, 1.85);
+    }
+    return gz;
+  }
+
+  function computeCurveMetrics(gmEff) {
+    let maxGZ = -99;
+    let maxAngle = 0;
+    let vanishAngle = 60;
+    let foundPositive = false;
+
+    for (let a = 1; a <= 60; a++) {
+      const val = computeGZ(a, gmEff);
+      if (val > maxGZ) { maxGZ = val; maxAngle = a; }
+      if (val > 0.02) foundPositive = true;
+      if (foundPositive && val <= 0 && vanishAngle === 60) vanishAngle = a;
+    }
+    return { maxGZ: Math.max(0, maxGZ), maxAngle, vanishAngle };
+  }
+
+  // =========================================================================
+  // 3. CANVAS 2D OVERLAY (K-B-G-M VECTORS, DRAGGABLE MASS, SLOSHING TANKS)
+  // =========================================================================
+  const canvas = document.getElementById('fx');
+  const ctx = canvas.getContext('2d');
+  const tankCanvas = document.getElementById('tank-fx');
+  const tankCtx = tankCanvas.getContext('2d');
+  const miniCanvas = document.getElementById('mini-gz-canvas');
+  const miniCtx = miniCanvas.getContext('2d');
+
+  // Convert ship local coordinates (meters relative to Keel on centerline) to Canvas XY
+  function shipToCanvas(xMeters, yAboveKeel, heelDeg) {
+    const yAboveWL = yAboveKeel - DRAFT;
+    const rad = (heelDeg * Math.PI) / 180;
+    const cosA = Math.cos(rad);
+    const sinA = Math.sin(rad);
+    const rx = xMeters * cosA + yAboveWL * sinA;
+    const ry = -xMeters * sinA + yAboveWL * cosA;
+    return {
+      x: PIVOT.x + rx * PX_PER_M,
+      y: PIVOT.y - ry * PX_PER_M
+    };
+  }
+
+  function getThemeColor(propName) {
+    return getComputedStyle(document.getElementById('stage')).getPropertyValue(propName).trim();
+  }
+
+  // Spring-damper slosh state for realistic fluid inertia when heel changes
+  const slosh = {
+    lastHeel: state.heel,
+    angle: 0,
+    vel: 0
+  };
+
+  // Sleek White Pill Badge Helper (Automotive HMI 3D Callout Pin)
+  function drawPillLabel(c, keyText, valText, anchorX, anchorY, x, y, dotColor, align = 'left') {
+    c.save();
+
+    const fontKey = '600 12px "Inter", system-ui, sans-serif';
+    const fontVal = '500 11.5px "JetBrains Mono", monospace';
+
+    c.font = fontKey;
+    const keyW = c.measureText(keyText).width;
+    c.font = fontVal;
+    const valW = valText ? c.measureText(valText).width : 0;
+
+    const padL = 10;
+    const dotSize = 6;
+    const gapDot = 7;
+    const gapSep = valText ? 12 : 0;
+    const padR = 11;
+    const pillH = 24;
+    const pillW = padL + dotSize + gapDot + keyW + gapSep + valW + padR;
+
+    const pillX = align === 'left' ? x : (align === 'right' ? x - pillW : x - pillW / 2);
+    const pillY = y - pillH / 2;
+
+    // Subtle hairline leader line from vector point to pill edge
+    const edgeX = align === 'left' ? pillX : (align === 'right' ? pillX + pillW : pillX + pillW / 2);
+    if (Math.hypot(edgeX - anchorX, y - anchorY) > 6) {
+      c.strokeStyle = 'rgba(248, 250, 252, 0.45)';
+      c.lineWidth = 1;
+      c.beginPath();
+      c.moveTo(anchorX, anchorY);
+      c.lineTo(edgeX, y);
+      c.stroke();
+    }
+
+    // White capsule pill with soft elevation drop shadow
+    c.shadowColor = 'rgba(0, 0, 0, 0.50)';
+    c.shadowBlur = 12;
+    c.shadowOffsetY = 3;
+    c.fillStyle = 'rgba(248, 250, 252, 0.95)';
+    c.beginPath();
+    c.roundRect(pillX, pillY, pillW, pillH, pillH / 2);
+    c.fill();
+
+    // Reset shadow for crisp interior elements
+    c.shadowBlur = 0;
+    c.shadowOffsetY = 0;
+
+    // Colored indicator dot inside pill
+    let curX = pillX + padL + dotSize / 2;
+    c.fillStyle = dotColor;
+    c.beginPath();
+    c.arc(curX, y, dotSize / 2, 0, Math.PI * 2);
+    c.fill();
+    curX += dotSize / 2 + gapDot;
+
+    // Bold Key Text (#090d14)
+    c.font = fontKey;
+    c.fillStyle = '#090d14';
+    c.textAlign = 'left';
+    c.textBaseline = 'middle';
+    c.fillText(keyText, curX, y + 0.5);
+    curX += keyW;
+
+    // Separator dot & Value Text (#334155)
+    if (valText) {
+      c.fillStyle = '#94a3b8';
+      c.fillText('·', curX + 4, y);
+      curX += gapSep;
+
+      c.font = fontVal;
+      c.fillStyle = '#334155';
+      c.fillText(valText, curX, y + 0.5);
+    }
+
+    c.restore();
+  }
+
+  // Render photorealistic glassy sloshing water + animated filling streams physically INSIDE the 3D double-bottom cavities
+  function renderInternalTanks(timeSec, activeColor, isUnstable) {
+    tankCtx.clearRect(0, 0, 1376, 768);
+
+    // Base dark cavity backdrop inside the 4 double-bottom cells (x: 464..912, y: 492..604)
+    tankCtx.fillStyle = '#030609';
+    tankCtx.fillRect(464, 492, 448, 112);
+
+    if (state.fseFill <= 0.004) return;
+
+    const t = timeSec || 0;
+
+    // Update spring-damper sloshing physics when heel changes or while water jets are pouring in
+    const dHeel = state.heel - slosh.lastHeel;
+    slosh.lastHeel = state.heel;
+    slosh.vel += dHeel * 0.45;
+    if (state.isFillingTank) {
+      slosh.vel += Math.sin(t * 15.0) * 0.11;
+    }
+    slosh.vel += (-slosh.angle * 0.12);
+    slosh.vel *= 0.90;
+    slosh.angle += slosh.vel;
+
+    const effectiveTiltDeg = state.heel + slosh.angle;
+    const rad = (effectiveTiltDeg * Math.PI) / 180;
+    const tanA = Math.tan(rad);
+
+    // Port tank (x: 466..675, internal frame at 583) & Starboard tank (x: 700..910, internal frame at 792)
+    const banks = [
+      { x1: 466, x2: 675, yTop: 493, yBot: 603, phase: 0.0, baffleX: 583, nozzles: [510, 616] },
+      { x1: 700, x2: 910, yTop: 493, yBot: 603, phase: 1.4, baffleX: 792, nozzles: [732, 836] }
+    ];
+
+    banks.forEach((b, bankIdx) => {
+      const spanW = b.x2 - b.x1;
+      const centerX = (b.x1 + b.x2) / 2;
+
+      // Smoothly rising water level from tank floor (yBot=603) up to ~50% slack depth (~54px high)
+      const targetSlackDepth = (b.yBot - b.yTop) * 0.50;
+      const currentDepth = targetSlackDepth * state.fseFill;
+      const midY = b.yBot - currentDepth;
+
+      // Long-wavelength physical liquid surface (with turbulent ripples around nozzles during filling)
+      const getSurfaceY = (x, zDepth = 0) => {
+        const dx = x - centerX;
+        const gravitySlope = -dx * tanA * Math.min(1, state.fseFill * 1.35);
+        const normX = (x - b.x1) / spanW; // 0..1 across tank width
+
+        // Primary slosh mode + secondary swell + filling turbulence
+        const fillBoost = state.isFillingTank ? 2.2 : 0;
+        const sloshAmp = (1.5 + fillBoost + Math.min(5.0, Math.abs(slosh.vel) * 2.8)) * Math.min(1, state.fseFill * 2.2);
+        const mode1 = Math.cos(normX * Math.PI) * Math.sin(t * 2.6 + b.phase + zDepth * 0.5) * sloshAmp;
+        const mode2 = Math.sin(normX * Math.PI * 2) * Math.cos(t * 1.9 + b.phase - zDepth * 0.4) * (sloshAmp * 0.34);
+
+        // Local impact ripples radiating from pouring jets while filling
+        let jetRipple = 0;
+        if (state.isFillingTank) {
+          b.nozzles.forEach((nx, nIdx) => {
+            const hitX = nx + Math.max(0, midY - b.yTop) * tanA * 0.85;
+            const dist = Math.abs(x - hitX);
+            jetRipple += Math.sin(dist * 0.38 - t * 24 + nIdx) * Math.exp(-dist * 0.045) * 2.6;
+          });
+        }
+
+        // Realistic capillary meniscus climbing slightly up the steel walls and center baffle
+        const dL = Math.abs(x - b.x1);
+        const dR = Math.abs(x - b.x2);
+        const dB = Math.abs(x - b.baffleX);
+        const meniscus = -2.2 * (Math.exp(-dL * 0.22) + Math.exp(-dR * 0.22) + 0.65 * Math.exp(-dB * 0.25)) * Math.min(1, state.fseFill * 2);
+
+        return Math.max(b.yTop - 8, Math.min(b.yBot + 2, midY + gravitySlope + mode1 + mode2 + jetRipple + meniscus));
+      };
+
+      tankCtx.save();
+      tankCtx.beginPath();
+      tankCtx.rect(b.x1, b.yTop, spanW, b.yBot - b.yTop);
+      tankCtx.clip();
+
+      // 0. EARTH-VERTICAL TURBULENT WATER INFLOW STREAMS (drawn behind top surface ribbon when filling)
+      const jetAlpha = state.isFillingTank ? Math.min(1, Math.sin(state.fseFill * Math.PI) * 1.65 + 0.35) : 0;
+      if (jetAlpha > 0.02) {
+        b.nozzles.forEach((nx, nIdx) => {
+          const yHitRough = Math.min(b.yBot, getSurfaceY(nx + 18 * tanA, 0.0));
+          const hitX = nx + Math.max(0, yHitRough - b.yTop) * tanA * 0.85;
+          const yHit = Math.min(b.yBot, getSurfaceY(hitX, 0.0));
+          const fallDist = Math.max(4, yHit - b.yTop + 3);
+
+          const streamGrad = tankCtx.createLinearGradient(nx, b.yTop, hitX, yHit + 4);
+          streamGrad.addColorStop(0, `rgba(125, 211, 252, ${0.78 * jetAlpha})`);
+          streamGrad.addColorStop(0.5, `rgba(186, 230, 253, ${0.62 * jetAlpha})`);
+          streamGrad.addColorStop(1, `rgba(240, 249, 255, ${0.92 * jetAlpha})`);
+
+          // Build undulating falling liquid stream contour (downward-traveling wave packets)
+          tankCtx.beginPath();
+          const steps = 12;
+          for (let s = 0; s <= steps; s++) {
+            const frac = s / steps;
+            const sy = b.yTop - 2 + frac * fallDist;
+            const cx = nx + (sy - b.yTop) * tanA * 0.85;
+            const pulse = Math.sin(sy * 0.26 - t * 34 + nIdx * 2.1) * (0.9 + frac * 1.5);
+            const halfW = 2.6 + frac * 3.8 + pulse;
+            if (s === 0) tankCtx.moveTo(cx - halfW, sy);
+            else tankCtx.lineTo(cx - halfW, sy);
+          }
+          for (let s = steps; s >= 0; s--) {
+            const frac = s / steps;
+            const sy = b.yTop - 2 + frac * fallDist;
+            const cx = nx + (sy - b.yTop) * tanA * 0.85;
+            const pulse = Math.cos(sy * 0.24 - t * 31 + nIdx * 1.7) * (0.9 + frac * 1.5);
+            const halfW = 2.6 + frac * 3.8 + pulse;
+            tankCtx.lineTo(cx + halfW, sy);
+          }
+          tankCtx.closePath();
+          tankCtx.fillStyle = streamGrad;
+          tankCtx.fill();
+
+          // Animated falling water streaks / elongated droplets inside the stream
+          for (let k = 0; k < 4; k++) {
+            const dFrac = ((t * 4.2 + k * 0.25 + nIdx * 0.13) % 1.0);
+            const sy1 = b.yTop + dFrac * (fallDist - 8);
+            const sy2 = sy1 + 7 + dFrac * 5;
+            const sxOffset = (k - 1.5) * 1.4;
+            const sx1 = nx + (sy1 - b.yTop) * tanA * 0.85 + sxOffset;
+            const sx2 = nx + (sy2 - b.yTop) * tanA * 0.85 + sxOffset;
+
+            tankCtx.strokeStyle = `rgba(255, 255, 255, ${(0.85 - dFrac * 0.3) * jetAlpha})`;
+            tankCtx.lineWidth = 1.4;
+            tankCtx.beginPath();
+            tankCtx.moveTo(sx1, sy1);
+            tankCtx.lineTo(sx2, Math.min(yHit + 2, sy2));
+            tankCtx.stroke();
+          }
+        });
+      }
+
+      // 1. 3D RECEDING TOP WATER SURFACE PLANE (Fresnel specular reflection plane)
+      const planeDepthPx = 7.5 * Math.min(1, state.fseFill * 2.2);
+      tankCtx.beginPath();
+      for (let x = b.x1; x <= b.x2; x += 3) {
+        const yFront = getSurfaceY(x, 0.0);
+        const wetFactor = Math.max(0, Math.min(1, (b.yBot - yFront) / 10));
+        const yBack = getSurfaceY(x, 1.0) - planeDepthPx * wetFactor;
+        if (x === b.x1) tankCtx.moveTo(x, yBack);
+        else tankCtx.lineTo(x, yBack);
+      }
+      for (let x = b.x2; x >= b.x1; x -= 3) {
+        tankCtx.lineTo(x, getSurfaceY(x, 0.0));
+      }
+      tankCtx.closePath();
+
+      const topPlaneGrad = tankCtx.createLinearGradient(b.x1, midY - 28, b.x2, midY + 28);
+      topPlaneGrad.addColorStop(0, 'rgba(186, 230, 253, 0.26)');
+      topPlaneGrad.addColorStop(0.45, 'rgba(224, 242, 254, 0.56)');
+      topPlaneGrad.addColorStop(0.75, 'rgba(125, 211, 252, 0.40)');
+      topPlaneGrad.addColorStop(1, 'rgba(56, 189, 248, 0.26)');
+      tankCtx.fillStyle = topPlaneGrad;
+      tankCtx.fill();
+
+      // Back wall waterline contact rim
+      tankCtx.beginPath();
+      for (let x = b.x1; x <= b.x2; x += 3) {
+        const yFront = getSurfaceY(x, 0.0);
+        const wetFactor = Math.max(0, Math.min(1, (b.yBot - yFront) / 10));
+        const yBack = getSurfaceY(x, 1.0) - planeDepthPx * wetFactor;
+        if (x === b.x1) tankCtx.moveTo(x, yBack);
+        else tankCtx.lineTo(x, yBack);
+      }
+      tankCtx.strokeStyle = 'rgba(186, 230, 253, 0.34)';
+      tankCtx.lineWidth = 1;
+      tankCtx.stroke();
+
+      // 2. VOLUMETRIC LIQUID BODY (Glassy deep seawater with subsurface depth falloff)
+      tankCtx.beginPath();
+      tankCtx.moveTo(b.x1, b.yBot + 12);
+      for (let x = b.x1; x <= b.x2; x += 3) {
+        tankCtx.lineTo(x, getSurfaceY(x, 0.0));
+      }
+      tankCtx.lineTo(b.x2, b.yBot + 12);
+      tankCtx.closePath();
+
+      tankCtx.save();
+      tankCtx.clip(); // Clip all internal water effects strictly below the front wave meniscus!
+
+      const bodyGrad = tankCtx.createLinearGradient(0, Math.min(b.yTop + 20, midY), 0, b.yBot);
+      bodyGrad.addColorStop(0, 'rgba(38, 148, 196, 0.62)');
+      bodyGrad.addColorStop(0.30, 'rgba(16, 86, 124, 0.68)');
+      bodyGrad.addColorStop(0.72, 'rgba(8, 42, 66, 0.82)');
+      bodyGrad.addColorStop(1, 'rgba(4, 15, 26, 0.95)');
+      tankCtx.fillStyle = bodyGrad;
+      tankCtx.fillRect(b.x1, b.yTop, spanW, b.yBot - b.yTop + 12);
+
+      // Soft subsurface light bloom just below the free surface
+      for (let s = 0; s < 5; s++) {
+        const syOffset = 3 + s * 6.5;
+        const alpha = (0.14 - s * 0.024);
+        tankCtx.beginPath();
+        for (let x = b.x1; x <= b.x2; x += 6) {
+          const wy = getSurfaceY(x, 0.2 * s) + syOffset + Math.sin(x * 0.04 + t * 2.2 + s) * 1.2;
+          if (x === b.x1) tankCtx.moveTo(x, wy);
+          else tankCtx.lineTo(x, wy);
+        }
+        tankCtx.strokeStyle = `rgba(186, 230, 253, ${alpha})`;
+        tankCtx.lineWidth = 2.2;
+        tankCtx.stroke();
+      }
+
+      // Subsurface plunge plumes & rising aeration micro-bubbles during filling
+      if (jetAlpha > 0.02) {
+        b.nozzles.forEach((nx, nIdx) => {
+          const yHitRough = Math.min(b.yBot, getSurfaceY(nx + 18 * tanA, 0.0));
+          const hitX = nx + Math.max(0, yHitRough - b.yTop) * tanA * 0.85;
+          const yHit = Math.min(b.yBot, getSurfaceY(hitX, 0.0));
+
+          // Aerated underwater plunge bloom
+          const plungeR = 24;
+          const plungeGrad = tankCtx.createRadialGradient(hitX, yHit + 4, 2, hitX, yHit + 10, plungeR);
+          plungeGrad.addColorStop(0, `rgba(224, 242, 254, ${0.72 * jetAlpha})`);
+          plungeGrad.addColorStop(0.45, `rgba(56, 189, 248, ${0.38 * jetAlpha})`);
+          plungeGrad.addColorStop(1, 'rgba(14, 116, 144, 0)');
+          tankCtx.fillStyle = plungeGrad;
+          tankCtx.beginPath();
+          tankCtx.arc(hitX, yHit + 6, plungeR, 0, Math.PI * 2);
+          tankCtx.fill();
+
+          // Rising underwater micro-bubbles around each plunge point
+          for (let i = 0; i < 11; i++) {
+            const seed = (i * 1.73 + nIdx * 3.1 + bankIdx * 1.9);
+            const cycle = (t * 2.4 + seed) % 1.0;
+            const spreadX = Math.sin(seed * 4.7 + t * 5.0) * (6 + cycle * 18);
+            const bx = hitX + spreadX;
+            const maxDepth = Math.min(34, Math.max(6, b.yBot - yHit));
+            const by = yHit + (1.0 - cycle) * maxDepth;
+            const br = (1.1 + (i % 3) * 0.65) * (0.5 + 0.5 * cycle);
+
+            tankCtx.fillStyle = `rgba(224, 242, 254, ${(0.35 + cycle * 0.45) * jetAlpha})`;
+            tankCtx.beginPath();
+            tankCtx.arc(bx, by, br, 0, Math.PI * 2);
+            tankCtx.fill();
+          }
+        });
+      }
+
+      // Ambient occlusion shadows cast by the steel walls & center baffle girder into the water
+      const aoPositions = [b.x1, b.baffleX, b.x2];
+      aoPositions.forEach(ax => {
+        const aoGrad = tankCtx.createLinearGradient(ax - 18, 0, ax + 18, 0);
+        aoGrad.addColorStop(0, 'rgba(2, 5, 9, 0)');
+        aoGrad.addColorStop(0.5, 'rgba(2, 5, 9, 0.52)');
+        aoGrad.addColorStop(1, 'rgba(2, 5, 9, 0)');
+        tankCtx.fillStyle = aoGrad;
+        tankCtx.fillRect(ax - 18, b.yTop, 36, b.yBot - b.yTop + 10);
+      });
+
+      tankCtx.restore(); // End liquid body clip
+
+      // 3. RAZOR-SHARP FRONT MENISCUS SPECULAR RIM (Glassy water-edge highlight)
+      tankCtx.beginPath();
+      for (let x = b.x1; x <= b.x2; x += 2) {
+        const yf = getSurfaceY(x, 0.0);
+        if (x === b.x1) tankCtx.moveTo(x, yf);
+        else tankCtx.lineTo(x, yf);
+      }
+      tankCtx.strokeStyle = 'rgba(224, 242, 254, 0.88)';
+      tankCtx.lineWidth = 1.6;
+      tankCtx.shadowColor = 'rgba(56, 189, 248, 0.65)';
+      tankCtx.shadowBlur = 6;
+      tankCtx.stroke();
+      tankCtx.shadowBlur = 0;
+
+      // 4. SURFACE FOAM SPLASH CUSHION & LEAPING DROPLETS AT STREAM IMPACT POINTS
+      if (jetAlpha > 0.02) {
+        b.nozzles.forEach((nx, nIdx) => {
+          const yHitRough = Math.min(b.yBot, getSurfaceY(nx + 18 * tanA, 0.0));
+          const hitX = nx + Math.max(0, yHitRough - b.yTop) * tanA * 0.85;
+          const yHit = Math.min(b.yBot - 1, getSurfaceY(hitX, 0.0));
+          const foamW = 14 + Math.sin(t * 24 + nIdx) * 3.0;
+
+          tankCtx.save();
+          tankCtx.translate(hitX, yHit);
+          tankCtx.rotate(-rad * 0.75);
+          const foamGrad = tankCtx.createRadialGradient(0, 0, 1, 0, 0, foamW);
+          foamGrad.addColorStop(0, `rgba(255, 255, 255, ${0.95 * jetAlpha})`);
+          foamGrad.addColorStop(0.55, `rgba(186, 230, 253, ${0.68 * jetAlpha})`);
+          foamGrad.addColorStop(1, 'rgba(186, 230, 253, 0)');
+          tankCtx.fillStyle = foamGrad;
+          tankCtx.beginPath();
+          tankCtx.ellipse(0, 0, foamW, 3.4, 0, 0, Math.PI * 2);
+          tankCtx.fill();
+
+          // Leaping splash droplets above the foam crown
+          for (let d = 0; d < 5; d++) {
+            const dPhase = (t * 5.5 + d * 1.3 + nIdx * 0.7) % 1.0;
+            const dir = (d % 2 === 0 ? 1 : -1) * (3 + (d % 3) * 3.2);
+            const dropX = dir * dPhase;
+            const dropY = -Math.sin(dPhase * Math.PI) * (5.5 + (d % 2) * 3.5);
+            tankCtx.fillStyle = `rgba(224, 242, 254, ${(1 - dPhase) * 0.85 * jetAlpha})`;
+            tankCtx.beginPath();
+            tankCtx.arc(dropX, dropY, 1.3, 0, Math.PI * 2);
+            tankCtx.fill();
+          }
+          tankCtx.restore();
+        });
+      }
+
+      tankCtx.restore();
+    });
+  }
+
+  function render(timeSec) {
+    ctx.clearRect(0, 0, 1920, 1080);
+
+    const st = getEffectiveStability();
+    const gzNow = computeGZ(state.heel, st.gmEff);
+
+    // Color definitions from active CSS theme
+    const accentColor = getThemeColor('--accent') || '#f59e0b';
+    const dangerColor = getThemeColor('--danger') || '#ef4444';
+    const isUnstable = st.gmEff < 0 || gzNow <= 0.01;
+    const activeColor = isUnstable ? dangerColor : accentColor;
+
+    // 1. UPDATE ISOLATED SHIP VIEWPORT TILT (Background stays 0deg stationary!)
+    const shipViewport = document.getElementById('ship-viewport');
+    shipViewport.style.transform = `rotate(${state.heel}deg)`;
+
+    // 2. RENDER VOLUMETRIC 3D SLOSHING BALLAST BEHIND 3D STEEL GIRDERS
+    renderInternalTanks(timeSec, activeColor, isUnstable);
+
+    // 3. KEY HYDROSTATIC POINTS: K (Keel), B1 (Buoyancy), G (Solid), Gv (Virtual), M (Metacenter)
+    const ptK  = shipToCanvas(0, 0, state.heel);
+    const ptM  = shipToCanvas(0, KM, state.heel);
+    const ptG  = shipToCanvas(0, st.solidKG, state.heel);
+    const ptGv = shipToCanvas(0, st.virtualKG, state.heel);
+
+    // Centerline dashed axis (from K up through M)
+    ctx.save();
+    ctx.setLineDash([5, 5]);
+    ctx.strokeStyle = 'rgba(244, 245, 247, 0.35)';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.moveTo(ptK.x, ptK.y);
+    ctx.lineTo(ptM.x, ptM.y - 44);
+    ctx.stroke();
+    ctx.restore();
+
+    // Center of Buoyancy B1 (vertically aligned with M in earth frame)
+    const ptB1 = { x: ptM.x, y: ptM.y + (BM * PX_PER_M) };
+
+    // Buoyancy Force Vector (Upward through M)
+    ctx.save();
+    ctx.strokeStyle = '#38bdf8';
+    ctx.lineWidth = 2.8;
+    ctx.shadowColor = 'rgba(0, 0, 0, 0.75)';
+    ctx.shadowBlur = 6;
+    ctx.beginPath();
+    ctx.moveTo(ptB1.x, ptB1.y);
+    ctx.lineTo(ptM.x, ptM.y - 38);
+    ctx.stroke();
+
+    drawArrowHead(ctx, ptM.x, ptM.y - 38, -Math.PI / 2, 7, '#38bdf8');
+    ctx.restore();
+
+    // B1 dot + sleek white pill on right
+    ctx.save();
+    ctx.fillStyle = '#38bdf8';
+    ctx.beginPath();
+    ctx.arc(ptB1.x, ptB1.y, 4.5, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+    drawPillLabel(ctx, 'B₁', 'Buoyancy Δ', ptB1.x, ptB1.y, ptB1.x + 18, ptB1.y, '#0284c7', 'left');
+
+    // Downward Gravity Vector from active G/Gv
+    const hasVirtualShift = state.fseFill > 0.01 || state.cargoFill > 0.01;
+    const activePtG = hasVirtualShift ? ptGv : ptG;
+    const gravBottomY = activePtG.y + 108;
+
+    ctx.save();
+    ctx.strokeStyle = activeColor;
+    ctx.lineWidth = 2.8;
+    ctx.shadowColor = 'rgba(0, 0, 0, 0.75)';
+    ctx.shadowBlur = 6;
+    ctx.beginPath();
+    ctx.moveTo(activePtG.x, activePtG.y);
+    ctx.lineTo(activePtG.x, gravBottomY);
+    ctx.stroke();
+
+    drawArrowHead(ctx, activePtG.x, gravBottomY, Math.PI / 2, 7, activeColor);
+    ctx.restore();
+
+    // RIGHTING LEVER GZ (Horizontal segment between activePtG.x and ptM.x at Y = activePtG.y)
+    const ptZ = { x: ptM.x, y: activePtG.y };
+    ctx.save();
+    ctx.strokeStyle = activeColor;
+    ctx.lineWidth = 4;
+    ctx.shadowColor = 'rgba(0, 0, 0, 0.85)';
+    ctx.shadowBlur = 6;
+    ctx.beginPath();
+    ctx.moveTo(activePtG.x, activePtG.y);
+    ctx.lineTo(ptZ.x, ptZ.y);
+    ctx.stroke();
+
+    ctx.fillStyle = activeColor;
+    ctx.beginPath();
+    ctx.arc(ptZ.x, ptZ.y, 4.5, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+
+    // Smart vertical separation between M pill and GZ pill on the RIGHT side
+    let mLabelY = ptM.y - 4;
+    let gzLabelY = ptZ.y + 2;
+    if (Math.abs(gzLabelY - mLabelY) < 30) {
+      if (gzLabelY >= mLabelY) {
+        mLabelY -= 16;
+        gzLabelY += 16;
+      } else {
+        gzLabelY -= 16;
+        mLabelY += 16;
+      }
+    }
+
+    if (Math.abs(state.heel) > 2) {
+      const rightEdgeX = Math.max(ptZ.x, activePtG.x);
+      drawPillLabel(
+        ctx,
+        'GZ',
+        `${gzNow >= 0 ? '+' : ''}${gzNow.toFixed(2)}m`,
+        ptZ.x,
+        ptZ.y,
+        rightEdgeX + 18,
+        gzLabelY,
+        isUnstable ? '#dc2626' : '#d97706',
+        'left'
+      );
+    }
+
+    // Draw Metacenter M + sleek white pill on RIGHT
+    ctx.save();
+    ctx.fillStyle = '#38bdf8';
+    ctx.beginPath(); ctx.arc(ptM.x, ptM.y, 6, 0, Math.PI * 2); ctx.fill();
+    ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 2; ctx.stroke();
+    ctx.restore();
+    drawPillLabel(ctx, 'M', `KM ${KM.toFixed(1)}m`, ptM.x, ptM.y, ptM.x + 18, mLabelY, '#0284c7', 'left');
+
+    // Draw Keel K + sleek white pill
+    ctx.save();
+    ctx.fillStyle = '#f8fafc';
+    ctx.beginPath(); ctx.arc(ptK.x, ptK.y, 4.5, 0, Math.PI * 2); ctx.fill();
+    ctx.restore();
+    drawPillLabel(ctx, 'K', 'Keel', ptK.x, ptK.y, ptK.x + 16, ptK.y + 4, '#475569', 'left');
+
+    // If FSE or Cargo raised: show dashed shift from solid G to virtual Gv on LEFT side
+    if (hasVirtualShift) {
+      ctx.save();
+      ctx.setLineDash([4, 3]);
+      ctx.strokeStyle = activeColor;
+      ctx.lineWidth = 2.2;
+      ctx.beginPath();
+      ctx.moveTo(ptG.x, ptG.y);
+      ctx.lineTo(ptGv.x, ptGv.y);
+      ctx.stroke();
+
+      ctx.fillStyle = activeColor;
+      ctx.beginPath(); ctx.arc(ptGv.x, ptGv.y, 7.5, 0, Math.PI * 2); ctx.fill();
+      ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 1.8; ctx.stroke();
+      ctx.restore();
+
+      const leftEdgeX = Math.min(ptGv.x, ptZ.x);
+      drawPillLabel(
+        ctx,
+        'Gᵥ',
+        `Sanal ${st.virtualKG.toFixed(2)}m`,
+        ptGv.x,
+        ptGv.y,
+        leftEdgeX - 18,
+        ptGv.y,
+        isUnstable ? '#dc2626' : '#d97706',
+        'right'
+      );
+    }
+
+    // Solid Center of Gravity G (Always anchored cleanly to the LEFT of centerline)
+    ctx.save();
+    ctx.fillStyle = hasVirtualShift ? 'rgba(244, 245, 247, 0.45)' : accentColor;
+    ctx.beginPath(); ctx.arc(ptG.x, ptG.y, hasVirtualShift ? 6 : 8, 0, Math.PI * 2); ctx.fill();
+    ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 1.8; ctx.stroke();
+    ctx.restore();
+
+    drawPillLabel(
+      ctx,
+      'G',
+      `KG ${st.solidKG.toFixed(2)}m`,
+      ptG.x,
+      ptG.y,
+      ptG.x - 18,
+      ptG.y + (hasVirtualShift && Math.abs(ptG.y - ptGv.y) < 30 ? 15 : 0),
+      hasVirtualShift ? '#64748b' : '#d97706',
+      'right'
+    );
+
+    // Render Mini GZ Curve on the right
+    renderMiniGZCurve(st, gzNow);
+  }
+
+  function drawArrowHead(c, x, y, angleRad, size, color) {
+    c.save();
+    c.fillStyle = color;
+    c.translate(x, y);
+    c.rotate(angleRad);
+    c.beginPath();
+    c.moveTo(0, 0);
+    c.lineTo(-size * 1.5, -size * 0.8);
+    c.lineTo(-size * 1.5, size * 0.8);
+    c.closePath();
+    c.fill();
+    c.restore();
+  }
+
+  function varColor(name) {
+    return getComputedStyle(document.getElementById('stage')).getPropertyValue('--' + name).trim();
+  }
+
+  // =========================================================================
+  // 4. MINIATURE GZ CURVE RENDERING (RIGHT COLUMN)
+  // =========================================================================
+  function renderMiniGZCurve(st, gzNow) {
+    const w = miniCanvas.width;
+    const h = miniCanvas.height;
+    miniCtx.clearRect(0, 0, w, h);
+
+    const padL = 28, padR = 12, padTop = 14, padBot = 22;
+    const zeroY = padTop + (h - padTop - padBot) * 0.65; // GZ = 0m level
+
+    const degToX = d => padL + (d / 60) * (w - padL - padR);
+    const gzToY  = g => zeroY - (g / 1.6) * (zeroY - padTop);
+
+    // Horizontal Zero Axis
+    miniCtx.strokeStyle = 'rgba(244, 245, 247, 0.25)';
+    miniCtx.lineWidth = 1;
+    miniCtx.beginPath();
+    miniCtx.moveTo(padL, zeroY);
+    miniCtx.lineTo(w - padR, zeroY);
+    miniCtx.stroke();
+
+    // Degree Ticks
+    miniCtx.fillStyle = 'rgba(244, 245, 247, 0.4)';
+    miniCtx.font = '10px "JetBrains Mono", monospace';
+    [0, 20, 40, 60].forEach(deg => {
+      const gx = degToX(deg);
+      miniCtx.fillText(`${deg}°`, gx - 7, h - 6);
+    });
+
+    // Plot GZ Curve
+    const isUnstable = st.gmEff < 0.05;
+    const curveColor = isUnstable ? getThemeColor('--danger') : getThemeColor('--accent');
+
+    miniCtx.save();
+    miniCtx.strokeStyle = curveColor;
+    miniCtx.lineWidth = 2.5;
+    miniCtx.beginPath();
+
+    for (let d = 0; d <= 60; d += 2) {
+      const gVal = computeGZ(d, st.gmEff);
+      const px = degToX(d);
+      const py = Math.max(padTop - 4, Math.min(h - padBot + 6, gzToY(gVal)));
+      if (d === 0) miniCtx.moveTo(px, py);
+      else miniCtx.lineTo(px, py);
+    }
+    miniCtx.stroke();
+    miniCtx.restore();
+
+    // Current Heel Indicator Dot
+    const curX = degToX(state.heel);
+    const curY = Math.max(padTop - 4, Math.min(h - padBot + 6, gzToY(gzNow)));
+
+    miniCtx.save();
+    miniCtx.fillStyle = '#ffffff';
+    miniCtx.beginPath();
+    miniCtx.arc(curX, curY, 4.5, 0, Math.PI * 2);
+    miniCtx.fill();
+    miniCtx.strokeStyle = curveColor;
+    miniCtx.lineWidth = 2;
+    miniCtx.stroke();
+    miniCtx.restore();
+
+    document.getElementById('gz-live-tag').textContent = `θ:${state.heel.toFixed(0)}° GZ:${gzNow >= 0 ? '+' : ''}${gzNow.toFixed(2)}m`;
+  }
+
+  // =========================================================================
+  // 5. UI SYNC & STEP MANAGEMENT
+  // =========================================================================
+  const $ = id => document.getElementById(id);
+
+  const ICON_OK = '<svg viewBox="0 0 38 38" fill="none"><circle cx="19" cy="19" r="17.5" stroke="currentColor" stroke-width="1.5"/><path d="M12 19.5l4.5 4.5L26 14" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+  const ICON_BAD = '<svg viewBox="0 0 38 38" fill="none"><circle cx="19" cy="19" r="17.5" stroke="currentColor" stroke-width="1.5"/><path d="M13 13l12 12M25 13L13 25" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>';
+  const ICON_WARN = '<svg viewBox="0 0 38 38" fill="none"><circle cx="19" cy="19" r="17.5" stroke="currentColor" stroke-width="1.5" stroke-dasharray="4 3"/><path d="M13 19h12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>';
+
+  function syncUI() {
+    const st = getEffectiveStability();
+    const gzNow = computeGZ(state.heel, st.gmEff);
+
+    // Big Metrics Readout
+    $('v-gm').textContent = `${st.gmEff >= 0 ? '+' : ''}${st.gmEff.toFixed(2)}`;
+    $('v-gz').textContent = `${gzNow >= 0 ? '+' : ''}${gzNow.toFixed(2)}`;
+    $('v-kg').textContent = st.solidKG.toFixed(2);
+    $('v-km').textContent = KM.toFixed(2);
+
+    $('c-gm').className = 'cell' + (st.gmEff < 0.15 ? ' alarm' : (st.gmEff < 0.60 ? ' warn' : ''));
+    $('c-gz').className = 'cell' + (gzNow <= 0.02 ? ' alarm' : '');
+
+    // Verdict Box
+    const verdict = $('verdict');
+    if (st.gmEff < 0) {
+      verdict.className = 'alarm';
+      $('verdict-icon').innerHTML = ICON_BAD;
+      $('verdict-text').textContent = 'Angle of Loll (Negative GM)';
+      $('verdict-sub').textContent = 'Negatif GM — Alabora tehlikesi!';
+    } else if (state.fseFill > 0.10 || st.gmEff < 0.60) {
+      verdict.className = 'warn';
+      $('verdict-icon').innerHTML = ICON_WARN;
+      $('verdict-text').textContent = 'Degraded Righting Lever';
+      $('verdict-sub').textContent = state.isFillingTank ? 'Pumping ballast water...' : 'FSE virtual GM loss active devrede';
+    } else {
+      verdict.className = '';
+      $('verdict-icon').innerHTML = ICON_OK;
+      $('verdict-text').textContent = 'Stable Equilibrium';
+      $('verdict-sub').textContent = 'IMO IS Code Compliant';
+    }
+
+    // Slider sync
+    const slider = $('heel-slider');
+    slider.value = Math.round(state.heel);
+    slider.style.setProperty('--fill', ((state.heel / 45) * 100) + '%');
+    $('heel-val').textContent = state.heel.toFixed(1) + '°';
+  }
+
+  function showStep() {
+    const s = STEPS[state.step];
+    const n = String(state.step).padStart(2, '0');
+    $('step-num').textContent = n;
+    $('step-text').textContent = `Step ${n} / 03`;
+    $('task-title').textContent = s.title;
+    $('task-desc').textContent = s.desc;
+
+    const fb = $('task-feedback');
+    fb.className = 'feedback';
+    fb.textContent = '';
+
+    const btn = $('task-action-btn');
+    if (s.btnLabel) {
+      btn.classList.add('show');
+      btn.textContent = s.btnLabel;
+    } else {
+      btn.classList.remove('show');
+    }
+
+    $('next').disabled = true;
+    $('next-label').textContent = 'Awaiting target range';
+    state.stepDone = false;
+    state.dwell = 0;
+  }
+
+  function triggerTaskAction() {
+    if (state.step === 2) {
+      state.fseActive = !state.fseActive;
+      const targetFill = state.fseActive ? 1.0 : 0.0;
+      state.isFillingTank = state.fseActive;
+
+      gsap.killTweensOf(state, 'fseFill');
+      gsap.to(state, {
+        fseFill: targetFill,
+        duration: state.fseActive ? 2.6 : 1.5,
+        ease: state.fseActive ? 'power1.inOut' : 'power2.inOut',
+        onUpdate: () => {
+          const pct = Math.round(state.fseFill * 50);
+          if (state.fseActive) {
+            $('task-action-btn').textContent = `Ballasting... %${pct}`;
+          } else {
+            $('task-action-btn').textContent = `De-ballasting... %${pct}`;
+          }
+          syncUI();
+        },
+        onComplete: () => {
+          state.isFillingTank = false;
+          $('task-action-btn').textContent = state.fseActive ? 'FSE Active (50% Slack Tank)' : 'Fill Slack Ballast Tanks (FSE)';
+          syncUI();
+        }
+      });
+    } else if (state.step === 3) {
+      state.cargoRaised = !state.cargoRaised;
+      state.fseActive = true;
+      if (state.fseFill < 0.99) {
+        gsap.to(state, { fseFill: 1.0, duration: 0.8, ease: 'power1.out' });
+      }
+      gsap.killTweensOf(state, 'cargoFill');
+      gsap.to(state, {
+        cargoFill: state.cargoRaised ? 1.0 : 0.0,
+        duration: 1.25,
+        ease: 'power2.inOut',
+        onUpdate: () => syncUI()
+      });
+      $('task-action-btn').textContent = state.cargoRaised ? 'Deck Stowage Active (Elevated KG)' : 'Shift Cargo to Weather Deck';
+      if (state.cargoRaised && state.heel < 14) {
+        // Animate ship into Angle of Loll rest angle (~18 deg)
+        gsap.to(state, { heel: 18.0, duration: 1.2, ease: 'elastic.out(1, 0.45)', onUpdate: () => syncUI() });
+      }
+      syncUI();
+    }
+  }
+
+  function completeStep() {
+    const s = STEPS[state.step];
+    const st = getEffectiveStability();
+    state.stepDone = true;
+    state.records[state.step] = {
+      heel: state.heel,
+      solidKG: st.solidKG,
+      gmEff: st.gmEff,
+      maxGZ: computeCurveMetrics(st.gmEff).maxGZ
+    };
+
+    const fb = $('task-feedback');
+    fb.textContent = s.done;
+    fb.className = 'feedback show ' + s.doneClass;
+    $('next').disabled = false;
+    $('next-label').textContent = s.next;
+  }
+
+  function nextStep() {
+    if (!state.stepDone) return;
+    if (state.step < 3) {
+      state.step++;
+      showStep();
+      syncUI();
+    } else {
+      showResults();
+    }
+  }
+
+  function showResults() {
+    const r = state.records;
+    const rows = [
+      { n: '01', name: 'Optimal Stowage', rec: r[1], verdict: 'Compliant (Stable)', cls: 'ok' },
+      { n: '02', name: 'Slack Ballast Tanks (FSE)', rec: r[2], verdict: 'Degraded Arm', cls: 'warn' },
+      { n: '03', name: 'Deck Cargo Overload (Loll)', rec: r[3], verdict: 'Critical (Angle of Loll)', cls: 'bad' }
+    ];
+
+    $('results-body').innerHTML = rows.map(x => `
+      <tr>
+        <td class="n mono">${x.n}</td>
+        <td>${x.name}</td>
+        <td>${x.rec.solidKG.toFixed(2)} m</td>
+        <td class="${x.rec.gmEff < 0.15 ? 'bad' : 'ok'}">${x.rec.gmEff >= 0 ? '+' : ''}${x.rec.gmEff.toFixed(2)} m</td>
+        <td>${x.rec.maxGZ.toFixed(2)} m</td>
+        <td class="${x.cls}">${x.verdict}</td>
+      </tr>`).join('');
+    $('results').classList.add('show');
+
+    // Report to Storyline if embedded as Web Object
+    try {
+      const player = window.parent && window.parent.GetPlayer ? window.parent.GetPlayer() : null;
+      if (player) player.SetVar('StabiliteSimTamam', true);
+    } catch (e) { /* standalone */ }
+  }
+
+  function restart() {
+    $('results').classList.remove('show');
+    gsap.killTweensOf(state);
+    Object.assign(state, {
+      step: 1,
+      heel: 16.0,
+      solidKG: 7.35,
+      fseActive: false,
+      fseFill: 0.0,
+      isFillingTank: false,
+      cargoRaised: false,
+      cargoFill: 0.0,
+      stepDone: false,
+      dwell: 0,
+      records: {}
+    });
+    showStep();
+    syncUI();
+  }
+
+  // =========================================================================
+  // 6. THEME SWITCHER
+  // =========================================================================
+  function setTheme(t) {
+    state.theme = t;
+    $('stage').setAttribute('data-theme', t);
+    ['th-amber', 'th-cobalt', 'th-mono'].forEach(id => $(id).classList.remove('active'));
+    $('th-' + (t === 'monochrome' ? 'mono' : t)).classList.add('active');
+    syncUI();
+  }
+
+  // =========================================================================
+  // 7. INPUT HANDLING (HEEL SLIDER & 16:9 AUTO-SCALER)
+  // =========================================================================
+  $('heel-slider').addEventListener('input', e => {
+    state.heel = Number(e.target.value);
+    syncUI();
+  });
+
+  // Vertical dragging on cargo hold to adjust solid KG
+  let draggingKG = false;
+  canvas.addEventListener('pointerdown', e => {
+    const rect = canvas.getBoundingClientRect();
+    const my = (e.clientY - rect.top) * (1080 / rect.height);
+    const mx = (e.clientX - rect.left) * (1920 / rect.width);
+
+    // If clicking in central cargo hold area
+    if (mx > 780 && mx < 1140 && my > 320 && my < 740) {
+      draggingKG = true;
+      canvas.setPointerCapture(e.pointerId);
+      updateKGFromY(my);
+    }
+  });
+
+  canvas.addEventListener('pointermove', e => {
+    if (!draggingKG) return;
+    const rect = canvas.getBoundingClientRect();
+    const my = (e.clientY - rect.top) * (1080 / rect.height);
+    updateKGFromY(my);
+  });
+
+  canvas.addEventListener('pointerup', e => {
+    draggingKG = false;
+    canvas.releasePointerCapture(e.pointerId);
+  });
+
+  function updateKGFromY(canvasY) {
+    // Map canvas Y between 350 (top) and 680 (keel) to KG (9.4m down to 6.2m)
+    const t = Math.max(0, Math.min(1, (canvasY - 350) / 330));
+    state.solidKG = Number((9.4 - t * 3.2).toFixed(2));
+    syncUI();
+  }
+
+  // Auto-scaler for 16:9 Storyline Web Object
+  function fit() {
+    const s = Math.min(window.innerWidth / 1920, window.innerHeight / 1080);
+    document.getElementById('stage').style.transform = `translate(-50%, -50%) scale(${s})`;
+  }
+  window.addEventListener('resize', fit);
+
+  // Animation Loop
+  let lastTime = performance.now();
+  function loop(now) {
+    const dt = Math.min(0.05, (now - lastTime) / 1000);
+    lastTime = now;
+
+    if (!state.stepDone) {
+      if (STEPS[state.step].cond()) {
+        state.dwell = Math.min(1, state.dwell + dt / 1.1);
+        if (state.dwell >= 1) completeStep();
+      } else {
+        state.dwell = Math.max(0, state.dwell - dt * 2);
+      }
+    }
+
+    render(now / 1000);
+    requestAnimationFrame(loop);
+  }
+
+  // Initial Boot
+  showStep();
+  syncUI();
+  fit();
+  requestAnimationFrame(loop);
+  </script>
+</body>
+</html>
