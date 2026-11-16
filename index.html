@@ -3,9 +3,11 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Rıdvan Sağlam — Learning Experience Architect & Serious Game Developer</title>
+  <title>Rıdvan Sağlam — RS CREATIVE · Simulation & Serious Game Architect</title>
   <meta name="description" content="Senior Learning Experience Designer and Simulation Architect bridging cognitive science, kinetic physics simulators, and serious game development.">
   
+  <link rel="icon" type="image/png" href="assets/logo.png">
+
   <!-- Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -18,16 +20,15 @@
       theme: {
         extend: {
           colors: {
-            bg: '#07090e',
-            card: '#0f141c',
-            'card-border': '#1e2638',
-            amber: {
-              accent: '#f59e0b',
-              glow: 'rgba(245, 158, 11, 0.25)'
-            },
-            cyan: {
-              accent: '#38bdf8',
-              glow: 'rgba(56, 189, 248, 0.25)'
+            bg: '#090710',
+            card: '#120e1f',
+            'card-border': '#261c3b',
+            'card-hover': '#352554',
+            brand: {
+              magenta: '#ed1c90',
+              purple: '#792c91',
+              violet: '#a855f7',
+              glow: 'rgba(237, 28, 144, 0.3)'
             }
           },
           fontFamily: {
@@ -41,30 +42,48 @@
 
   <style>
     body {
-      background-color: #07090e;
+      background-color: #090710;
       color: #f1f5f9;
       font-family: 'Plus Jakarta Sans', sans-serif;
       overflow-x: hidden;
     }
     
-    /* Subtle background grid pattern */
+    /* Background subtle grid */
     .bg-grid {
       background-size: 40px 40px;
       background-image: 
-        linear-gradient(to right, rgba(255, 255, 255, 0.02) 1px, transparent 1px),
-        linear-gradient(to bottom, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+        linear-gradient(to right, rgba(237, 28, 144, 0.03) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(121, 44, 145, 0.03) 1px, transparent 1px);
     }
 
-    /* Glow backdrop effects */
-    .radial-glow {
-      background: radial-gradient(circle at 50% 0%, rgba(245, 158, 11, 0.08) 0%, rgba(7, 9, 14, 0) 65%);
+    /* Cosmic Brand Radial Glow */
+    .radial-brand-glow {
+      background: radial-gradient(circle at 50% 0%, rgba(237, 28, 144, 0.14) 0%, rgba(121, 44, 145, 0.08) 35%, rgba(9, 7, 16, 0) 70%);
     }
 
     .glass-nav {
-      background: rgba(7, 9, 14, 0.75);
-      backdrop-filter: blur(14px);
-      -webkit-backdrop-filter: blur(14px);
-      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+      background: rgba(9, 7, 16, 0.82);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border-bottom: 1px solid rgba(237, 28, 144, 0.12);
+    }
+
+    .brand-gradient-text {
+      background: linear-gradient(135deg, #ff41a8 0%, #ed1c90 40%, #c042e8 75%, #ffffff 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .brand-gradient-btn {
+      background: linear-gradient(135deg, #ed1c90 0%, #792c91 100%);
+      box-shadow: 0 8px 24px -6px rgba(237, 28, 144, 0.45);
+      transition: all 0.3s ease;
+    }
+
+    .brand-gradient-btn:hover {
+      box-shadow: 0 12px 32px -4px rgba(237, 28, 144, 0.65);
+      transform: translateY(-2px);
+      filter: brightness(1.1);
     }
 
     .project-card {
@@ -72,9 +91,9 @@
     }
 
     .project-card:hover {
-      transform: translateY(-4px);
-      border-color: rgba(245, 158, 11, 0.4);
-      box-shadow: 0 16px 36px -12px rgba(0, 0, 0, 0.7), 0 0 24px rgba(245, 158, 11, 0.12);
+      transform: translateY(-5px);
+      border-color: rgba(237, 28, 144, 0.45);
+      box-shadow: 0 20px 40px -12px rgba(0, 0, 0, 0.8), 0 0 30px rgba(237, 28, 144, 0.16);
     }
 
     /* Modal Animation */
@@ -93,35 +112,38 @@
     }
   </style>
 </head>
-<body class="bg-bg min-h-screen relative bg-grid selection:bg-amber-accent selection:text-black">
+<body class="bg-bg min-h-screen relative bg-grid selection:bg-brand-magenta selection:text-white">
 
-  <!-- Radial atmospheric glow -->
-  <div class="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-7xl h-[640px] radial-glow pointer-events-none z-0"></div>
+  <!-- Radial atmospheric cosmic glow -->
+  <div class="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-7xl h-[720px] radial-brand-glow pointer-events-none z-0"></div>
 
   <!-- NAVIGATION -->
   <nav class="fixed top-0 left-0 w-full z-50 glass-nav">
     <div class="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
-      <a href="#" class="group flex items-center gap-3">
-        <div class="w-9 h-9 rounded-lg bg-gradient-to-br from-amber-500 to-amber-700 flex items-center justify-center font-bold text-black font-mono text-base shadow-lg shadow-amber-500/20 group-hover:scale-105 transition-transform">
-          RS
+      <a href="#" class="group flex items-center gap-3.5">
+        <div class="w-11 h-11 relative flex items-center justify-center transition-transform group-hover:scale-105">
+          <img src="assets/logo.png" alt="RS Creative Logo" class="w-full h-full object-contain filter drop-shadow-[0_0_12px_rgba(237,28,144,0.45)]">
         </div>
         <div>
-          <span class="font-bold tracking-tight text-white text-base block group-hover:text-amber-400 transition-colors">Rıdvan Sağlam</span>
-          <span class="font-mono text-[10px] tracking-wider text-slate-400 uppercase block">Simulation &amp; LXD Architect</span>
+          <div class="flex items-center gap-2">
+            <span class="font-extrabold tracking-tight text-white text-base block group-hover:text-brand-magenta transition-colors">Rıdvan Sağlam</span>
+            <span class="px-1.5 py-0.5 rounded text-[9px] font-mono tracking-widest font-bold bg-brand-magenta/20 text-pink-300 border border-brand-magenta/40">CREATIVE</span>
+          </div>
+          <span class="font-mono text-[10px] tracking-wider text-slate-400 uppercase block">Simulation &amp; Game Architect</span>
         </div>
       </a>
 
       <div class="flex items-center gap-8 text-sm font-medium">
         <div class="hidden md:flex items-center gap-7 text-slate-300">
-          <a href="#simulations" class="hover:text-amber-400 transition-colors">Simulations &amp; Labs</a>
-          <a href="#gamelab" class="hover:text-amber-400 transition-colors">Game Lab</a>
-          <a href="#about" class="hover:text-amber-400 transition-colors">Methodology</a>
-          <a href="#contact" class="hover:text-amber-400 transition-colors">Contact</a>
+          <a href="#simulations" class="hover:text-brand-magenta transition-colors">Simulations &amp; Labs</a>
+          <a href="#gamelab" class="hover:text-brand-magenta transition-colors">Game Lab</a>
+          <a href="#about" class="hover:text-brand-magenta transition-colors">Methodology</a>
+          <a href="#contact" class="hover:text-brand-magenta transition-colors">Contact</a>
         </div>
 
-        <a href="#contact" class="hidden sm:inline-flex items-center gap-2 px-4 py-2 rounded-full border border-amber-500/30 bg-amber-500/10 text-amber-300 hover:bg-amber-500 hover:text-black font-mono text-xs transition-all duration-200">
+        <a href="#contact" class="hidden sm:inline-flex items-center gap-2 px-4 py-2 rounded-full border border-brand-magenta/40 bg-brand-magenta/10 text-pink-300 hover:bg-brand-magenta hover:text-white font-mono text-xs transition-all duration-200 shadow-sm shadow-brand-magenta/20">
           <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-          <span>Available for Projects</span>
+          <span>Available for Consultations</span>
         </a>
       </div>
     </div>
@@ -129,13 +151,13 @@
 
   <!-- HERO SECTION -->
   <header class="relative pt-36 pb-20 md:pt-44 md:pb-28 px-6 max-w-7xl mx-auto z-10">
-    <div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-slate-800 bg-slate-900/60 font-mono text-xs text-slate-300 mb-6 backdrop-blur">
-      <span class="text-amber-400">●</span>
-      <span>Learning Science · Kinetic Physics · Serious Games</span>
+    <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full border border-brand-magenta/30 bg-card font-mono text-xs text-pink-200 mb-6 backdrop-blur shadow-sm shadow-brand-magenta/10">
+      <span class="text-brand-magenta">◆</span>
+      <span>Learning Science · Real-Time Simulators · Serious Games</span>
     </div>
 
     <h1 class="text-4xl sm:text-6xl lg:text-7xl font-extrabold tracking-tight text-white max-w-5xl leading-[1.08] mb-8">
-      Engineering <span class="bg-clip-text text-transparent bg-gradient-to-r from-amber-400 via-amber-200 to-white">High-Consequence</span> Learning Experiences.
+      Engineering <span class="brand-gradient-text">High-Consequence</span> Learning Experiences.
     </h1>
 
     <p class="text-lg sm:text-xl text-slate-300 max-w-3xl font-light leading-relaxed mb-10">
@@ -143,28 +165,28 @@
     </p>
 
     <div class="flex flex-wrap items-center gap-4">
-      <a href="#simulations" class="px-6 py-3.5 rounded-lg bg-amber-500 hover:bg-amber-400 text-black font-semibold text-sm transition-all shadow-lg shadow-amber-500/20 inline-flex items-center gap-2">
+      <a href="#simulations" class="px-6 py-3.5 rounded-xl brand-gradient-btn text-white font-semibold text-sm inline-flex items-center gap-2">
         <span>Explore Interactive Labs</span>
         <span>↓</span>
       </a>
-      <a href="#about" class="px-6 py-3.5 rounded-lg border border-slate-800 bg-slate-900/50 hover:bg-slate-800 text-slate-200 font-medium text-sm transition-all inline-flex items-center gap-2">
+      <a href="#about" class="px-6 py-3.5 rounded-xl border border-card-border bg-card/60 hover:bg-card hover:border-brand-magenta/40 text-slate-200 font-medium text-sm transition-all inline-flex items-center gap-2">
         <span>Instructional Philosophy</span>
         <span>→</span>
       </a>
     </div>
 
     <!-- Telemetry Stats Strip -->
-    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mt-20 pt-10 border-t border-slate-800/80">
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mt-20 pt-10 border-t border-card-border">
       <div>
         <div class="font-mono text-2xl sm:text-3xl font-bold text-white">100%</div>
         <div class="text-xs text-slate-400 uppercase tracking-wider font-mono mt-1">Local &amp; Zero-Latency</div>
       </div>
       <div>
-        <div class="font-mono text-2xl sm:text-3xl font-bold text-amber-400">GSAP + Canvas</div>
+        <div class="font-mono text-2xl sm:text-3xl font-bold text-brand-magenta">GSAP + Canvas</div>
         <div class="text-xs text-slate-400 uppercase tracking-wider font-mono mt-1">Physics Engine</div>
       </div>
       <div>
-        <div class="font-mono text-2xl sm:text-3xl font-bold text-cyan-400">Live WebGL</div>
+        <div class="font-mono text-2xl sm:text-3xl font-bold text-purple-400">Live WebGL</div>
         <div class="text-xs text-slate-400 uppercase tracking-wider font-mono mt-1">Direct Browser Execution</div>
       </div>
       <div>
@@ -176,9 +198,9 @@
 
   <!-- SECTION: SIMULATIONS & LABS -->
   <section id="simulations" class="py-20 px-6 max-w-7xl mx-auto z-10 relative">
-    <div class="flex flex-col md:flex-row md:items-end justify-between mb-12 pb-4 border-b border-slate-800">
+    <div class="flex flex-col md:flex-row md:items-end justify-between mb-12 pb-4 border-b border-card-border">
       <div>
-        <span class="font-mono text-xs text-amber-400 tracking-wider uppercase block mb-1">Interactive Simulations &amp; Labs</span>
+        <span class="font-mono text-xs text-brand-magenta tracking-wider uppercase block mb-1">Interactive Simulations &amp; Labs</span>
         <h2 class="text-3xl sm:text-4xl font-bold text-white tracking-tight">Mission-Critical Simulators</h2>
       </div>
       <p class="text-slate-400 text-sm max-w-md mt-4 md:mt-0 font-light">
@@ -186,22 +208,22 @@
       </p>
     </div>
 
-    <!-- 2-COLUMN 16:9 GRID (Andreas Aesthetic) -->
+    <!-- 2-COLUMN 16:9 GRID -->
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
 
       <!-- PROJECT CARD 1: SHIP STABILITY -->
       <article class="project-card rounded-2xl bg-card border border-card-border overflow-hidden flex flex-col group">
         <!-- 16:9 Aspect Ratio Media Container -->
-        <div class="relative aspect-video w-full overflow-hidden bg-slate-950">
+        <div class="relative aspect-video w-full overflow-hidden bg-black">
           <img src="assets/ship_stability_showcase.png" alt="Ship Hydrodynamics & Stability Simulator Interface" class="w-full h-full object-cover group-hover:scale-[1.03] transition-transform duration-500 ease-out">
           <div class="absolute inset-0 bg-gradient-to-t from-card via-transparent to-transparent opacity-80"></div>
           
           <div class="absolute top-4 left-4 flex gap-2">
-            <span class="px-2.5 py-1 rounded bg-black/70 backdrop-blur border border-white/10 font-mono text-[11px] text-amber-400 font-medium">SIMULATION 04</span>
-            <span class="px-2.5 py-1 rounded bg-black/70 backdrop-blur border border-white/10 font-mono text-[11px] text-slate-300">HYDROSTATICS</span>
+            <span class="px-2.5 py-1 rounded bg-black/80 backdrop-blur border border-brand-magenta/40 font-mono text-[11px] text-pink-300 font-medium">SIMULATION 04</span>
+            <span class="px-2.5 py-1 rounded bg-black/80 backdrop-blur border border-white/10 font-mono text-[11px] text-slate-300">HYDROSTATICS</span>
           </div>
 
-          <a href="sims/ship-stability/index.html" target="_blank" class="absolute bottom-4 right-4 px-4 py-2 rounded-lg bg-amber-500 hover:bg-amber-400 text-black font-mono text-xs font-semibold shadow-lg shadow-black/80 flex items-center gap-2 transform translate-y-2 opacity-90 group-hover:translate-y-0 group-hover:opacity-100 transition-all">
+          <a href="sims/ship-stability/index.html" target="_blank" class="absolute bottom-4 right-4 px-4 py-2 rounded-lg brand-gradient-btn text-white font-mono text-xs font-semibold shadow-lg shadow-black/80 flex items-center gap-2 transform translate-y-2 opacity-90 group-hover:translate-y-0 group-hover:opacity-100 transition-all">
             <span>▶ Launch Live Sim</span>
             <span class="text-xs">↗</span>
           </a>
@@ -216,7 +238,7 @@
               <span class="text-xs font-mono text-emerald-400">IMO IS Code</span>
             </div>
 
-            <h3 class="text-2xl font-bold text-white group-hover:text-amber-400 transition-colors mb-3">
+            <h3 class="text-2xl font-bold text-white group-hover:text-brand-magenta transition-colors mb-3">
               Ship Hydrodynamics &amp; Equilibrium Lab
             </h3>
 
@@ -225,15 +247,15 @@
             </p>
 
             <div class="flex flex-wrap gap-2 mb-6">
-              <span class="px-2.5 py-1 rounded-md bg-slate-800/80 text-slate-300 font-mono text-xs border border-slate-700/60">GSAP Animation</span>
-              <span class="px-2.5 py-1 rounded-md bg-slate-800/80 text-slate-300 font-mono text-xs border border-slate-700/60">Canvas 2D Physics</span>
-              <span class="px-2.5 py-1 rounded-md bg-slate-800/80 text-slate-300 font-mono text-xs border border-slate-700/60">Dynamic GZ Solver</span>
-              <span class="px-2.5 py-1 rounded-md bg-slate-800/80 text-slate-300 font-mono text-xs border border-slate-700/60">Cockpit HMI</span>
+              <span class="px-2.5 py-1 rounded-md bg-purple-950/40 text-purple-200 font-mono text-xs border border-purple-800/40">GSAP Animation</span>
+              <span class="px-2.5 py-1 rounded-md bg-purple-950/40 text-purple-200 font-mono text-xs border border-purple-800/40">Canvas 2D Physics</span>
+              <span class="px-2.5 py-1 rounded-md bg-purple-950/40 text-purple-200 font-mono text-xs border border-purple-800/40">Dynamic GZ Solver</span>
+              <span class="px-2.5 py-1 rounded-md bg-purple-950/40 text-purple-200 font-mono text-xs border border-purple-800/40">Cockpit HMI</span>
             </div>
           </div>
 
-          <div class="pt-6 border-t border-slate-800/80 flex items-center justify-between">
-            <button onclick="openModal('ship-stability')" class="text-sm font-semibold text-amber-400 hover:text-amber-300 inline-flex items-center gap-1.5 transition-colors">
+          <div class="pt-6 border-t border-card-border flex items-center justify-between">
+            <button onclick="openModal('ship-stability')" class="text-sm font-semibold text-brand-magenta hover:text-pink-300 inline-flex items-center gap-1.5 transition-colors">
               <span>Read Case Study</span>
               <span>→</span>
             </button>
@@ -247,16 +269,16 @@
       <!-- PROJECT CARD 2: COLREG RADAR -->
       <article class="project-card rounded-2xl bg-card border border-card-border overflow-hidden flex flex-col group">
         <!-- 16:9 Aspect Ratio Media Container -->
-        <div class="relative aspect-video w-full overflow-hidden bg-slate-950">
+        <div class="relative aspect-video w-full overflow-hidden bg-black">
           <img src="assets/colreg_radar_showcase.png" alt="COLREG and ARPA Radar Collision Avoidance Simulator" class="w-full h-full object-cover group-hover:scale-[1.03] transition-transform duration-500 ease-out">
           <div class="absolute inset-0 bg-gradient-to-t from-card via-transparent to-transparent opacity-80"></div>
           
           <div class="absolute top-4 left-4 flex gap-2">
-            <span class="px-2.5 py-1 rounded bg-black/70 backdrop-blur border border-white/10 font-mono text-[11px] text-cyan-accent font-medium">SIMULATION 02</span>
-            <span class="px-2.5 py-1 rounded bg-black/70 backdrop-blur border border-white/10 font-mono text-[11px] text-slate-300">ARPA RADAR</span>
+            <span class="px-2.5 py-1 rounded bg-black/80 backdrop-blur border border-purple-500/40 font-mono text-[11px] text-purple-300 font-medium">SIMULATION 02</span>
+            <span class="px-2.5 py-1 rounded bg-black/80 backdrop-blur border border-white/10 font-mono text-[11px] text-slate-300">ARPA RADAR</span>
           </div>
 
-          <a href="sims/colreg-radar/index.html" target="_blank" class="absolute bottom-4 right-4 px-4 py-2 rounded-lg bg-cyan-accent hover:bg-sky-300 text-black font-mono text-xs font-semibold shadow-lg shadow-black/80 flex items-center gap-2 transform translate-y-2 opacity-90 group-hover:translate-y-0 group-hover:opacity-100 transition-all">
+          <a href="sims/colreg-radar/index.html" target="_blank" class="absolute bottom-4 right-4 px-4 py-2 rounded-lg brand-gradient-btn text-white font-mono text-xs font-semibold shadow-lg shadow-black/80 flex items-center gap-2 transform translate-y-2 opacity-90 group-hover:translate-y-0 group-hover:opacity-100 transition-all">
             <span>▶ Launch Live Sim</span>
             <span class="text-xs">↗</span>
           </a>
@@ -268,10 +290,10 @@
             <div class="flex items-center gap-3 mb-3">
               <span class="text-xs font-mono text-slate-400">Maritime Collision Avoidance</span>
               <span class="text-slate-600">•</span>
-              <span class="text-xs font-mono text-amber-400">Rules 7, 8, 15 &amp; 16</span>
+              <span class="text-xs font-mono text-brand-magenta">Rules 7, 8, 15 &amp; 16</span>
             </div>
 
-            <h3 class="text-2xl font-bold text-white group-hover:text-cyan-accent transition-colors mb-3">
+            <h3 class="text-2xl font-bold text-white group-hover:text-brand-magenta transition-colors mb-3">
               ARPA &amp; COLREG Vector Collision Radar
             </h3>
 
@@ -280,15 +302,15 @@
             </p>
 
             <div class="flex flex-wrap gap-2 mb-6">
-              <span class="px-2.5 py-1 rounded-md bg-slate-800/80 text-slate-300 font-mono text-xs border border-slate-700/60">Vector Math</span>
-              <span class="px-2.5 py-1 rounded-md bg-slate-800/80 text-slate-300 font-mono text-xs border border-slate-700/60">Phosphor Radar Shader</span>
-              <span class="px-2.5 py-1 rounded-md bg-slate-800/80 text-slate-300 font-mono text-xs border border-slate-700/60">CPA/TCPA Telemetry</span>
-              <span class="px-2.5 py-1 rounded-md bg-slate-800/80 text-slate-300 font-mono text-xs border border-slate-700/60">Rule Evaluation</span>
+              <span class="px-2.5 py-1 rounded-md bg-purple-950/40 text-purple-200 font-mono text-xs border border-purple-800/40">Vector Math</span>
+              <span class="px-2.5 py-1 rounded-md bg-purple-950/40 text-purple-200 font-mono text-xs border border-purple-800/40">Phosphor Radar Shader</span>
+              <span class="px-2.5 py-1 rounded-md bg-purple-950/40 text-purple-200 font-mono text-xs border border-purple-800/40">CPA/TCPA Telemetry</span>
+              <span class="px-2.5 py-1 rounded-md bg-purple-950/40 text-purple-200 font-mono text-xs border border-purple-800/40">Rule Evaluation</span>
             </div>
           </div>
 
-          <div class="pt-6 border-t border-slate-800/80 flex items-center justify-between">
-            <button onclick="openModal('colreg-radar')" class="text-sm font-semibold text-cyan-accent hover:text-sky-300 inline-flex items-center gap-1.5 transition-colors">
+          <div class="pt-6 border-t border-card-border flex items-center justify-between">
+            <button onclick="openModal('colreg-radar')" class="text-sm font-semibold text-brand-magenta hover:text-pink-300 inline-flex items-center gap-1.5 transition-colors">
               <span>Read Case Study</span>
               <span>→</span>
             </button>
@@ -304,9 +326,9 @@
 
   <!-- SECTION: GAME LAB -->
   <section id="gamelab" class="py-20 px-6 max-w-7xl mx-auto z-10 relative">
-    <div class="flex flex-col md:flex-row md:items-end justify-between mb-12 pb-4 border-b border-slate-800">
+    <div class="flex flex-col md:flex-row md:items-end justify-between mb-12 pb-4 border-b border-card-border">
       <div>
-        <span class="font-mono text-xs text-rose-400 tracking-wider uppercase block mb-1">Independent Experiments &amp; Systems</span>
+        <span class="font-mono text-xs text-brand-magenta tracking-wider uppercase block mb-1">Independent Experiments &amp; Systems</span>
         <h2 class="text-3xl sm:text-4xl font-bold text-white tracking-tight">Game Lab</h2>
       </div>
       <p class="text-slate-400 text-sm max-w-md mt-4 md:mt-0 font-light">
@@ -317,14 +339,14 @@
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
       
       <!-- GAME 1: ZOMBIES ONBOARD -->
-      <div class="p-7 rounded-2xl bg-card border border-card-border hover:border-rose-500/40 transition-all flex flex-col justify-between group">
+      <div class="p-7 rounded-2xl bg-card border border-card-border hover:border-brand-magenta/50 transition-all flex flex-col justify-between group">
         <div>
           <div class="flex items-center justify-between mb-4">
-            <span class="px-2.5 py-1 rounded bg-rose-500/10 border border-rose-500/30 font-mono text-[11px] text-rose-400 font-medium">CORE GAMEPLAY</span>
+            <span class="px-2.5 py-1 rounded bg-brand-magenta/15 border border-brand-magenta/40 font-mono text-[11px] text-pink-300 font-medium">CORE GAMEPLAY</span>
             <span class="text-xs font-mono text-slate-500">In Development</span>
           </div>
 
-          <h3 class="text-xl font-bold text-white group-hover:text-rose-400 transition-colors mb-2">
+          <h3 class="text-xl font-bold text-white group-hover:text-brand-magenta transition-colors mb-2">
             Zombies Onboard
           </h3>
 
@@ -333,27 +355,27 @@
           </p>
 
           <div class="flex flex-wrap gap-1.5 mb-6">
-            <span class="px-2 py-0.5 rounded bg-slate-800/80 text-slate-400 font-mono text-[11px]">Hit-Stop Juice</span>
-            <span class="px-2 py-0.5 rounded bg-slate-800/80 text-slate-400 font-mono text-[11px]">Horde Pathfinding</span>
-            <span class="px-2 py-0.5 rounded bg-slate-800/80 text-slate-400 font-mono text-[11px]">Weapon Physics</span>
+            <span class="px-2 py-0.5 rounded bg-purple-950/40 text-purple-300 font-mono text-[11px]">Hit-Stop Juice</span>
+            <span class="px-2 py-0.5 rounded bg-purple-950/40 text-purple-300 font-mono text-[11px]">Horde Pathfinding</span>
+            <span class="px-2 py-0.5 rounded bg-purple-950/40 text-purple-300 font-mono text-[11px]">Weapon Physics</span>
           </div>
         </div>
 
-        <div class="pt-4 border-t border-slate-800/80 text-xs font-mono text-slate-400 flex items-center justify-between">
+        <div class="pt-4 border-t border-card-border text-xs font-mono text-slate-400 flex items-center justify-between">
           <span>Engine: Custom WebGL/Canvas</span>
-          <span class="text-rose-400">Prototype Active</span>
+          <span class="text-brand-magenta">Prototype Active</span>
         </div>
       </div>
 
       <!-- GAME 2: ENGINE ROOM ESCAPE -->
-      <div class="p-7 rounded-2xl bg-card border border-card-border hover:border-amber-500/40 transition-all flex flex-col justify-between group">
+      <div class="p-7 rounded-2xl bg-card border border-card-border hover:border-purple-500/50 transition-all flex flex-col justify-between group">
         <div>
           <div class="flex items-center justify-between mb-4">
-            <span class="px-2.5 py-1 rounded bg-amber-500/10 border border-amber-500/30 font-mono text-[11px] text-amber-400 font-medium">PUZZLE &amp; MECHANICS</span>
+            <span class="px-2.5 py-1 rounded bg-purple-500/15 border border-purple-500/40 font-mono text-[11px] text-purple-300 font-medium">PUZZLE &amp; MECHANICS</span>
             <span class="text-xs font-mono text-slate-500">Pixi.js</span>
           </div>
 
-          <h3 class="text-xl font-bold text-white group-hover:text-amber-400 transition-colors mb-2">
+          <h3 class="text-xl font-bold text-white group-hover:text-purple-400 transition-colors mb-2">
             Engine Room Escape
           </h3>
 
@@ -362,27 +384,27 @@
           </p>
 
           <div class="flex flex-wrap gap-1.5 mb-6">
-            <span class="px-2 py-0.5 rounded bg-slate-800/80 text-slate-400 font-mono text-[11px]">Pixi Engine</span>
-            <span class="px-2 py-0.5 rounded bg-slate-800/80 text-slate-400 font-mono text-[11px]">State Machine</span>
-            <span class="px-2 py-0.5 rounded bg-slate-800/80 text-slate-400 font-mono text-[11px]">Environmental Audio</span>
+            <span class="px-2 py-0.5 rounded bg-purple-950/40 text-purple-300 font-mono text-[11px]">Pixi Engine</span>
+            <span class="px-2 py-0.5 rounded bg-purple-950/40 text-purple-300 font-mono text-[11px]">State Machine</span>
+            <span class="px-2 py-0.5 rounded bg-purple-950/40 text-purple-300 font-mono text-[11px]">Environmental Audio</span>
           </div>
         </div>
 
-        <div class="pt-4 border-t border-slate-800/80 text-xs font-mono text-slate-400 flex items-center justify-between">
+        <div class="pt-4 border-t border-card-border text-xs font-mono text-slate-400 flex items-center justify-between">
           <span>Target: Mobile &amp; Desktop</span>
-          <span class="text-amber-400">Playable Lab</span>
+          <span class="text-purple-300">Playable Lab</span>
         </div>
       </div>
 
       <!-- GAME 3: THE ABYSSAL CODEX -->
-      <div class="p-7 rounded-2xl bg-card border border-card-border hover:border-cyan-500/40 transition-all flex flex-col justify-between group">
+      <div class="p-7 rounded-2xl bg-card border border-card-border hover:border-pink-500/50 transition-all flex flex-col justify-between group">
         <div>
           <div class="flex items-center justify-between mb-4">
-            <span class="px-2.5 py-1 rounded bg-cyan-500/10 border border-cyan-500/30 font-mono text-[11px] text-cyan-accent font-medium">NARRATIVE RPG</span>
+            <span class="px-2.5 py-1 rounded bg-pink-500/15 border border-pink-500/40 font-mono text-[11px] text-pink-300 font-medium">NARRATIVE RPG</span>
             <span class="text-xs font-mono text-slate-500">Experimental</span>
           </div>
 
-          <h3 class="text-xl font-bold text-white group-hover:text-cyan-accent transition-colors mb-2">
+          <h3 class="text-xl font-bold text-white group-hover:text-pink-300 transition-colors mb-2">
             The Abyssal Codex
           </h3>
 
@@ -391,15 +413,15 @@
           </p>
 
           <div class="flex flex-wrap gap-1.5 mb-6">
-            <span class="px-2 py-0.5 rounded bg-slate-800/80 text-slate-400 font-mono text-[11px]">Atmosphere Shaders</span>
-            <span class="px-2 py-0.5 rounded bg-slate-800/80 text-slate-400 font-mono text-[11px]">Branching Logic</span>
-            <span class="px-2 py-0.5 rounded bg-slate-800/80 text-slate-400 font-mono text-[11px]">Dynamic Soundscape</span>
+            <span class="px-2 py-0.5 rounded bg-purple-950/40 text-purple-300 font-mono text-[11px]">Atmosphere Shaders</span>
+            <span class="px-2 py-0.5 rounded bg-purple-950/40 text-purple-300 font-mono text-[11px]">Branching Logic</span>
+            <span class="px-2 py-0.5 rounded bg-purple-950/40 text-purple-300 font-mono text-[11px]">Dynamic Soundscape</span>
           </div>
         </div>
 
-        <div class="pt-4 border-t border-slate-800/80 text-xs font-mono text-slate-400 flex items-center justify-between">
+        <div class="pt-4 border-t border-card-border text-xs font-mono text-slate-400 flex items-center justify-between">
           <span>Format: Experimental Web</span>
-          <span class="text-cyan-accent">Concept Stage</span>
+          <span class="text-pink-300">Concept Stage</span>
         </div>
       </div>
 
@@ -411,7 +433,7 @@
     <div class="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
       
       <div class="lg:col-span-5">
-        <span class="font-mono text-xs text-amber-400 tracking-wider uppercase block mb-2">Philosophy &amp; Tech Stack</span>
+        <span class="font-mono text-xs text-brand-magenta tracking-wider uppercase block mb-2">Philosophy &amp; Tech Stack</span>
         <h2 class="text-3xl sm:text-4xl font-bold text-white tracking-tight leading-tight mb-6">
           Why I Reject Slide-Based "Click-Next" E-Learning.
         </h2>
@@ -424,21 +446,21 @@
 
         <div class="space-y-4">
           <div class="flex items-start gap-4">
-            <div class="w-8 h-8 rounded-lg bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400 font-mono text-xs shrink-0">01</div>
+            <div class="w-8 h-8 rounded-lg bg-brand-magenta/15 border border-brand-magenta/40 flex items-center justify-center text-brand-magenta font-mono text-xs shrink-0 font-bold">01</div>
             <div>
               <h4 class="text-white text-sm font-semibold mb-1">True Cognitive Fidelity</h4>
               <p class="text-slate-400 text-xs leading-relaxed">Exact mathematical calculations (metacentric height, ARPA CPA vectors) rather than canned animations.</p>
             </div>
           </div>
           <div class="flex items-start gap-4">
-            <div class="w-8 h-8 rounded-lg bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center text-cyan-accent font-mono text-xs shrink-0">02</div>
+            <div class="w-8 h-8 rounded-lg bg-purple-500/15 border border-purple-500/40 flex items-center justify-center text-purple-300 font-mono text-xs shrink-0 font-bold">02</div>
             <div>
               <h4 class="text-white text-sm font-semibold mb-1">Zero Superfluous Friction</h4>
               <p class="text-slate-400 text-xs leading-relaxed">Lightweight zero-dependency web execution. No heavy LMS bloat or plugin installs required.</p>
             </div>
           </div>
           <div class="flex items-start gap-4">
-            <div class="w-8 h-8 rounded-lg bg-rose-500/10 border border-rose-500/30 flex items-center justify-center text-rose-400 font-mono text-xs shrink-0">03</div>
+            <div class="w-8 h-8 rounded-lg bg-pink-500/15 border border-pink-500/40 flex items-center justify-center text-pink-300 font-mono text-xs shrink-0 font-bold">03</div>
             <div>
               <h4 class="text-white text-sm font-semibold mb-1">Pedagogy Meets Game Juice</h4>
               <p class="text-slate-400 text-xs leading-relaxed">Haptic sound design, screen shake, and visual tension heighten learner attention during safety-critical moments.</p>
@@ -456,35 +478,35 @@
 
         <div class="space-y-6">
           <div>
-            <div class="text-xs font-mono text-amber-400 uppercase tracking-wider mb-2.5">Simulations &amp; Real-Time Graphics</div>
+            <div class="text-xs font-mono text-brand-magenta uppercase tracking-wider mb-2.5">Simulations &amp; Real-Time Graphics</div>
             <div class="flex flex-wrap gap-2">
-              <span class="px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-800 text-slate-200 text-xs font-mono">HTML5 Canvas 2D</span>
-              <span class="px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-800 text-slate-200 text-xs font-mono">WebGL / Shaders</span>
-              <span class="px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-800 text-slate-200 text-xs font-mono">GSAP (GreenSock)</span>
-              <span class="px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-800 text-slate-200 text-xs font-mono">Pixi.js</span>
-              <span class="px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-800 text-slate-200 text-xs font-mono">PlayCanvas 3D</span>
-              <span class="px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-800 text-slate-200 text-xs font-mono">Rive State Machine</span>
+              <span class="px-3 py-1.5 rounded-lg bg-bg border border-card-border text-slate-200 text-xs font-mono">HTML5 Canvas 2D</span>
+              <span class="px-3 py-1.5 rounded-lg bg-bg border border-card-border text-slate-200 text-xs font-mono">WebGL / Shaders</span>
+              <span class="px-3 py-1.5 rounded-lg bg-bg border border-card-border text-slate-200 text-xs font-mono">GSAP (GreenSock)</span>
+              <span class="px-3 py-1.5 rounded-lg bg-bg border border-card-border text-slate-200 text-xs font-mono">Pixi.js</span>
+              <span class="px-3 py-1.5 rounded-lg bg-bg border border-card-border text-slate-200 text-xs font-mono">PlayCanvas 3D</span>
+              <span class="px-3 py-1.5 rounded-lg bg-bg border border-card-border text-slate-200 text-xs font-mono">Rive State Machine</span>
             </div>
           </div>
 
           <div>
-            <div class="text-xs font-mono text-cyan-accent uppercase tracking-wider mb-2.5">Instructional Design &amp; Authoring</div>
+            <div class="text-xs font-mono text-purple-300 uppercase tracking-wider mb-2.5">Instructional Design &amp; Authoring</div>
             <div class="flex flex-wrap gap-2">
-              <span class="px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-800 text-slate-200 text-xs font-mono">Articulate Storyline 360 (Advanced JS/DOM)</span>
-              <span class="px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-800 text-slate-200 text-xs font-mono">Adapt Framework v0.3</span>
-              <span class="px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-800 text-slate-200 text-xs font-mono">Scenario-Based Branching</span>
-              <span class="px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-800 text-slate-200 text-xs font-mono">Cognitive Load Theory</span>
-              <span class="px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-800 text-slate-200 text-xs font-mono">SCORM / xAPI Integration</span>
+              <span class="px-3 py-1.5 rounded-lg bg-bg border border-card-border text-slate-200 text-xs font-mono">Articulate Storyline 360 (Advanced JS/DOM)</span>
+              <span class="px-3 py-1.5 rounded-lg bg-bg border border-card-border text-slate-200 text-xs font-mono">Adapt Framework v0.3</span>
+              <span class="px-3 py-1.5 rounded-lg bg-bg border border-card-border text-slate-200 text-xs font-mono">Scenario-Based Branching</span>
+              <span class="px-3 py-1.5 rounded-lg bg-bg border border-card-border text-slate-200 text-xs font-mono">Cognitive Load Theory</span>
+              <span class="px-3 py-1.5 rounded-lg bg-bg border border-card-border text-slate-200 text-xs font-mono">SCORM / xAPI Integration</span>
             </div>
           </div>
 
           <div>
-            <div class="text-xs font-mono text-emerald-400 uppercase tracking-wider mb-2.5">3D Asset Gen &amp; Automation Pipelines</div>
+            <div class="text-xs font-mono text-pink-300 uppercase tracking-wider mb-2.5">3D Asset Gen &amp; Automation Pipelines</div>
             <div class="flex flex-wrap gap-2">
-              <span class="px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-800 text-slate-200 text-xs font-mono">Blender 5.2 (bpy Scripting)</span>
-              <span class="px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-800 text-slate-200 text-xs font-mono">Python Automation</span>
-              <span class="px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-800 text-slate-200 text-xs font-mono">Playwright Automated QA</span>
-              <span class="px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-800 text-slate-200 text-xs font-mono">Git / GitHub Actions</span>
+              <span class="px-3 py-1.5 rounded-lg bg-bg border border-card-border text-slate-200 text-xs font-mono">Blender 5.2 (bpy Scripting)</span>
+              <span class="px-3 py-1.5 rounded-lg bg-bg border border-card-border text-slate-200 text-xs font-mono">Python Automation</span>
+              <span class="px-3 py-1.5 rounded-lg bg-bg border border-card-border text-slate-200 text-xs font-mono">Playwright Automated QA</span>
+              <span class="px-3 py-1.5 rounded-lg bg-bg border border-card-border text-slate-200 text-xs font-mono">Git / GitHub Actions</span>
             </div>
           </div>
         </div>
@@ -495,8 +517,8 @@
 
   <!-- SECTION: CONTACT -->
   <section id="contact" class="py-24 px-6 max-w-4xl mx-auto z-10 relative text-center">
-    <div class="p-12 rounded-3xl bg-gradient-to-b from-card to-slate-950 border border-card-border shadow-2xl relative overflow-hidden">
-      <div class="w-16 h-16 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400 text-2xl mx-auto mb-6">
+    <div class="p-12 rounded-3xl bg-gradient-to-b from-card to-bg border border-card-border shadow-2xl relative overflow-hidden">
+      <div class="w-16 h-16 rounded-2xl bg-brand-magenta/15 border border-brand-magenta/40 flex items-center justify-center text-brand-magenta text-2xl mx-auto mb-6">
         ✉
       </div>
 
@@ -508,11 +530,11 @@
       </p>
 
       <div class="flex flex-wrap items-center justify-center gap-4">
-        <a href="mailto:ridvanbsaglam@gmail.com" class="px-7 py-3.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-black font-semibold text-sm transition-all shadow-lg shadow-amber-500/25 inline-flex items-center gap-2">
+        <a href="mailto:ridvanbsaglam@gmail.com" class="px-7 py-3.5 rounded-xl brand-gradient-btn text-white font-semibold text-sm inline-flex items-center gap-2">
           <span>Get in Touch</span>
           <span>→</span>
         </a>
-        <a href="https://github.com/ridvanbsaglam" target="_blank" class="px-6 py-3.5 rounded-xl border border-slate-800 bg-slate-900/60 hover:bg-slate-800 text-slate-200 font-mono text-xs font-medium transition-all inline-flex items-center gap-2">
+        <a href="https://github.com/ridvanbsaglam" target="_blank" class="px-6 py-3.5 rounded-xl border border-card-border bg-card/60 hover:bg-card hover:border-brand-magenta/40 text-slate-200 font-mono text-xs font-medium transition-all inline-flex items-center gap-2">
           <span>GitHub: @ridvanbsaglam</span>
           <span>↗</span>
         </a>
@@ -521,22 +543,23 @@
   </section>
 
   <!-- FOOTER -->
-  <footer class="py-12 border-t border-slate-800/80 px-6 max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between text-xs text-slate-500 font-mono gap-4">
-    <div>
-      © 2026 Rıdvan Sağlam. Engineered with precision.
+  <footer class="py-12 border-t border-card-border px-6 max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between text-xs text-slate-500 font-mono gap-4">
+    <div class="flex items-center gap-2">
+      <img src="assets/logo.png" alt="Logo" class="w-5 h-5 object-contain">
+      <span>© 2026 Rıdvan Sağlam · RS Creative. Engineered with precision.</span>
     </div>
     <div class="flex items-center gap-6">
       <a href="#simulations" class="hover:text-slate-300 transition-colors">Simulations</a>
       <a href="#gamelab" class="hover:text-slate-300 transition-colors">Game Lab</a>
       <a href="https://github.com/ridvanbsaglam" target="_blank" class="hover:text-slate-300 transition-colors">GitHub</a>
-      <a href="#top" class="hover:text-amber-400 transition-colors">Back to Top ↑</a>
+      <a href="#top" class="hover:text-brand-magenta transition-colors">Back to Top ↑</a>
     </div>
   </footer>
 
   <!-- CASE STUDY MODAL -->
-  <div id="case-modal" class="hidden-modal fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-black/80 backdrop-blur-md">
-    <div class="bg-card border border-card-border rounded-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto p-6 sm:p-10 shadow-2xl relative">
-      <button onclick="closeModal()" class="absolute top-6 right-6 w-9 h-9 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 flex items-center justify-center font-mono text-sm transition-colors">
+  <div id="case-modal" class="hidden-modal fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-black/85 backdrop-blur-md">
+    <div class="bg-card border border-brand-magenta/40 rounded-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto p-6 sm:p-10 shadow-2xl relative">
+      <button onclick="closeModal()" class="absolute top-6 right-6 w-9 h-9 rounded-lg bg-bg border border-card-border hover:border-brand-magenta/40 text-slate-300 flex items-center justify-center font-mono text-sm transition-colors">
         ✕
       </button>
 
@@ -556,17 +579,17 @@
         body: `
           <div class="space-y-6 text-slate-300 font-light text-sm sm:text-base leading-relaxed">
             <div>
-              <h4 class="text-xs font-mono uppercase tracking-wider text-amber-400 mb-2">The Instructional Challenge</h4>
+              <h4 class="text-xs font-mono uppercase tracking-wider text-brand-magenta mb-2">The Instructional Challenge</h4>
               <p>Traditional maritime e-learning teaches vessel stability using static 2D formulas. Officers struggle to intuitively translate mathematical values (KG, KM, GM) into physical reality, leading to dangerous capsize risks during sudden free-surface sloshing or improper deck cargo loading.</p>
             </div>
 
             <div>
-              <h4 class="text-xs font-mono uppercase tracking-wider text-amber-400 mb-2">The Kinetic Solution</h4>
+              <h4 class="text-xs font-mono uppercase tracking-wider text-brand-magenta mb-2">The Kinetic Solution</h4>
               <p>We engineered a real-time hydrostatic solver inside the browser. Learners manipulate heel angles and observe the simultaneous calculation of the center of buoyancy (B₁), righting arm (GZ), and water sloshing in internal double-bottom tanks.</p>
             </div>
 
             <div>
-              <h4 class="text-xs font-mono uppercase tracking-wider text-amber-400 mb-2">Technical Architecture</h4>
+              <h4 class="text-xs font-mono uppercase tracking-wider text-brand-magenta mb-2">Technical Architecture</h4>
               <ul class="list-disc list-inside space-y-1 text-slate-400 text-sm">
                 <li><strong class="text-white">Wall-sided Stability Solver:</strong> Real-time GZ arm calculation including deck immersion damping curves.</li>
                 <li><strong class="text-white">Kinetic Sloshing Canvas:</strong> Liquid dynamics visualizer representing dynamic virtual GM shifts.</li>
@@ -583,17 +606,17 @@
         body: `
           <div class="space-y-6 text-slate-300 font-light text-sm sm:text-base leading-relaxed">
             <div>
-              <h4 class="text-xs font-mono uppercase tracking-wider text-cyan-accent mb-2">The Instructional Challenge</h4>
+              <h4 class="text-xs font-mono uppercase tracking-wider text-brand-magenta mb-2">The Instructional Challenge</h4>
               <p>Memorizing IMO Collision Regulations (COLREGs) in a classroom fails when a deck officer is confronted with target radar vectors in dense fog. Misinterpreting relative motion often results in catastrophic late maneuvers.</p>
             </div>
 
             <div>
-              <h4 class="text-xs font-mono uppercase tracking-wider text-cyan-accent mb-2">The Kinetic Solution</h4>
+              <h4 class="text-xs font-mono uppercase tracking-wider text-brand-magenta mb-2">The Kinetic Solution</h4>
               <p>An interactive ARPA radar console placing learners in command. The system models target acquisition, calculates Closest Point of Approach (CPA/TCPA), and enforces Rules 7, 8, 15, and 16 with instant telemetry debriefs.</p>
             </div>
 
             <div>
-              <h4 class="text-xs font-mono uppercase tracking-wider text-cyan-accent mb-2">Technical Architecture</h4>
+              <h4 class="text-xs font-mono uppercase tracking-wider text-brand-magenta mb-2">Technical Architecture</h4>
               <ul class="list-disc list-inside space-y-1 text-slate-400 text-sm">
                 <li><strong class="text-white">Relative & True Motion Vector Math:</strong> Precise velocity resolution matching real marine radar specs.</li>
                 <li><strong class="text-white">Dynamic Phosphor Radar Sweep:</strong> Canvas 2D radial sweep with afterglow trail shaders.</li>
@@ -610,11 +633,11 @@
       if (!data) return;
       const content = document.getElementById('modal-content');
       content.innerHTML = \`
-        <span class="font-mono text-xs text-slate-400 tracking-wider uppercase block mb-2">\${data.badge}</span>
+        <span class="font-mono text-xs text-brand-magenta tracking-wider uppercase block mb-2">\${data.badge}</span>
         <h3 class="text-2xl sm:text-3xl font-bold text-white mb-6 tracking-tight">\${data.title}</h3>
         \${data.body}
-        <div class="mt-8 pt-6 border-t border-slate-800 flex items-center justify-between">
-          <a href="\${data.liveUrl}" target="_blank" class="px-5 py-2.5 rounded-lg bg-amber-500 hover:bg-amber-400 text-black font-semibold text-xs font-mono inline-flex items-center gap-2 transition-all">
+        <div class="mt-8 pt-6 border-t border-card-border flex items-center justify-between">
+          <a href="\${data.liveUrl}" target="_blank" class="px-5 py-2.5 rounded-xl brand-gradient-btn text-white font-semibold text-xs font-mono inline-flex items-center gap-2 transition-all">
             <span>▶ Launch Full Simulator</span>
             <span>↗</span>
           </a>
