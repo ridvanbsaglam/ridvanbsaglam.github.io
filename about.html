@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>About — Rıdvan Sağlam</title>
+  <meta name="description" content="Learning & Development Manager, Learning Experience Designer & Serious Game Developer. Bridging instructional science, simulation mechanics, and interactive engines.">
+  <link rel="icon" type="image/png" href="assets/logo.png">
+
+  <!-- Inter & Plus Jakarta Sans -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Plus+Jakarta+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            surface: '#0d0f12',
+            card: '#13161b',
+            border: '#1f242d',
+            muted: '#7e8695',
+            ink: '#f0f3f6'
+          },
+          fontFamily: {
+            sans: ['"Inter"', 'sans-serif'],
+            display: ['"Plus Jakarta Sans"', 'sans-serif'],
+            mono: ['"JetBrains Mono"', 'monospace']
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    body {
+      background-color: #0b0d10;
+      color: #f0f3f6;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      -webkit-font-smoothing: antialiased;
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between">
+
+  <!-- TOP MINIMAL NAVIGATION -->
+  <header class="w-full border-b border-white/[0.06] bg-[#0b0d10]/90 backdrop-blur sticky top-0 z-40">
+    <div class="max-w-6xl mx-auto px-6 h-20 flex items-center justify-between">
+      <a href="index.html" class="flex items-center gap-3 group">
+        <img src="assets/logo.png" alt="RS" class="w-8 h-8 rounded-full object-contain opacity-90 group-hover:opacity-100 transition-opacity">
+        <span class="font-display font-semibold tracking-tight text-white text-base">Rıdvan Sağlam</span>
+      </a>
+
+      <nav class="flex items-center gap-8 text-sm text-muted">
+        <a href="index.html#work" class="hover:text-white transition-colors">Work</a>
+        <a href="index.html#gamelab" class="hover:text-white transition-colors">Game Lab</a>
+        <a href="about.html" class="text-white font-medium transition-colors">About</a>
+        <a href="mailto:ridvanbsaglam@gmail.com" class="hover:text-white transition-colors">Contact</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="max-w-4xl mx-auto px-6 py-20 md:py-28">
+
+    <!-- HERO STATEMENT -->
+    <section class="mb-20">
+      <div class="text-xs font-mono tracking-widest text-muted uppercase mb-4">About / Philosophy</div>
+      <h1 class="font-display text-4xl sm:text-5xl font-semibold text-white tracking-tight leading-[1.2] mb-8">
+        “Knowledge doesn’t save lives. Behavior does.”
+      </h1>
+      <p class="text-lg sm:text-xl text-muted font-normal leading-relaxed">
+        I am a <strong class="text-white font-medium">Learning & Development Manager</strong>, Learning Experience Designer, and Serious Game Developer based in İzmir, Türkiye. Over the past decade, my work has focused on transforming mission-critical training from passive compliance checklists into living, consequential simulations.
+      </p>
+    </section>
+
+    <!-- CORE NARRATIVE / JOURNEY -->
+    <section class="py-12 border-t border-white/[0.06] space-y-6 text-muted text-base leading-relaxed">
+      <h2 class="text-xs font-mono tracking-widest text-white uppercase mb-6">The Journey</h2>
+      
+      <p>
+        My pedagogical foundation began with an academic background in <em>English Language Teaching &amp; Applied Linguistics</em> from Uludağ University. Teaching complex communication and cognitive patterns to adult learners taught me an indelible lesson: true competence is not measured by multiple-choice recall, but by situational judgment under pressure.
+      </p>
+      
+      <p>
+        Encountering the global Articulate community was a defining pivot. Recognizing that traditional e-learning authoring tools frequently limited authentic exploration, I began bridging instructional system design with custom frontend engines—integrating JavaScript, 2D Canvas physics solvers, WebGL shaders, and game design state machines directly into browser environments.
+      </p>
+
+      <p>
+        At <strong class="text-white">Maritime Trainer (MTR)</strong>, I lead learning and development initiatives for global maritime operations. In high-consequence industries where improper watchkeeping or ballast miscalculations risk human lives and millions of dollars, static training fails. My team designs zero-latency kinetic labs (ship stability, hydrodynamics, radar collision avoidance, enclosed-space gas hazards) and motion-comic scenario architectures that enable seafarers to test physical boundaries safely.
+      </p>
+
+      <p>
+        In parallel, as an active design volunteer and mentor with <strong class="text-white">GamFed Türkiye</strong> (International Gamification Federation), I advocate for purposeful game systems, visceral combat/game feel, and experiential learning models.
+      </p>
+    </section>
+
+    <!-- EXPERIENCE TIMELINE -->
+    <section class="py-16 border-t border-white/[0.06]">
+      <div class="flex items-baseline justify-between mb-10">
+        <h2 class="text-xs font-mono tracking-widest text-muted uppercase">Selected Experience</h2>
+        <span class="text-xs font-mono text-muted/60">2012 — Present</span>
+      </div>
+
+      <div class="space-y-12">
+
+        <!-- MTR Manager -->
+        <div class="grid grid-cols-1 md:grid-cols-12 gap-4">
+          <div class="md:col-span-4 text-xs font-mono text-muted">
+            <span>2024 — PRESENT</span>
+            <div class="text-white font-medium mt-1">Maritime Trainer</div>
+          </div>
+          <div class="md:col-span-8">
+            <h3 class="text-base font-display font-semibold text-white mb-2">Learning &amp; Development Manager</h3>
+            <p class="text-sm text-muted leading-relaxed">
+              Directing L&D strategy, interactive training architectures, and safety-focused behavioral learning frameworks for commercial shipping fleets globally.
+            </p>
+          </div>
+        </div>
+
+        <!-- MTR Specialist -->
+        <div class="grid grid-cols-1 md:grid-cols-12 gap-4">
+          <div class="md:col-span-4 text-xs font-mono text-muted">
+            <span>2022 — 2024</span>
+            <div class="text-white font-medium mt-1">Maritime Trainer</div>
+          </div>
+          <div class="md:col-span-8">
+            <h3 class="text-base font-display font-semibold text-white mb-2">Learning Technologies Specialist</h3>
+            <p class="text-sm text-muted leading-relaxed">
+              Engineered web-based interactive physics simulations, radar simulators, and motion comic scenario courses. Automated authoring pipelines with custom DOM/Canvas extensions.
+            </p>
+          </div>
+        </div>
+
+        <!-- RS Creative -->
+        <div class="grid grid-cols-1 md:grid-cols-12 gap-4">
+          <div class="md:col-span-4 text-xs font-mono text-muted">
+            <span>2018 — PRESENT</span>
+            <div class="text-white font-medium mt-1">RS Creative Works</div>
+          </div>
+          <div class="md:col-span-8">
+            <h3 class="text-base font-display font-semibold text-white mb-2">Lead Learning Experience &amp; Serious Game Designer</h3>
+            <p class="text-sm text-muted leading-relaxed">
+              Consulting for enterprise clients and indie development labs. Designing interactive micro-simulations, game prototypes (combat feel, horde AI), and pedagogical UX.
+            </p>
+          </div>
+        </div>
+
+        <!-- UKLA Academy -->
+        <div class="grid grid-cols-1 md:grid-cols-12 gap-4">
+          <div class="md:col-span-4 text-xs font-mono text-muted">
+            <span>2012 — 2018</span>
+            <div class="text-white font-medium mt-1">UKLA Academy</div>
+          </div>
+          <div class="md:col-span-8">
+            <h3 class="text-base font-display font-semibold text-white mb-2">E-Learning Developer &amp; Instructional Designer</h3>
+            <p class="text-sm text-muted leading-relaxed">
+              Pioneered digital curriculum transformation and developed mobile language apps (ELS Taboo iOS via Swift). Conducted adult EFL pedagogy.
+            </p>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- TECHNICAL ARSENAL -->
+    <section class="py-16 border-t border-white/[0.06]">
+      <h2 class="text-xs font-mono tracking-widest text-muted uppercase mb-8">Technical Arsenal &amp; Disciplines</h2>
+
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-8 text-xs font-mono">
+        <div class="p-6 rounded-xl bg-card/60 border border-border">
+          <div class="text-white font-medium text-sm mb-3">Simulation &amp; Graphics</div>
+          <ul class="space-y-2 text-muted">
+            <li>• HTML5 Canvas 2D</li>
+            <li>• GSAP 3 (Choreography)</li>
+            <li>• WebGL &amp; Custom Shaders</li>
+            <li>• Pixi.js &amp; Paper.js</li>
+            <li>• Vector Physics Solvers</li>
+          </ul>
+        </div>
+
+        <div class="p-6 rounded-xl bg-card/60 border border-border">
+          <div class="text-white font-medium text-sm mb-3">Instructional Design</div>
+          <ul class="space-y-2 text-muted">
+            <li>• Scenario Architecture</li>
+            <li>• Cognitive Task Analysis</li>
+            <li>• Behavioral Simulation</li>
+            <li>• Storyline 360 &amp; Adapt v0.3</li>
+            <li>• Gamification (GamFed)</li>
+          </ul>
+        </div>
+
+        <div class="p-6 rounded-xl bg-card/60 border border-border">
+          <div class="text-white font-medium text-sm mb-3">Code &amp; Pipelines</div>
+          <ul class="space-y-2 text-muted">
+            <li>• JavaScript (ES6+)</li>
+            <li>• Python &amp; Data Tools</li>
+            <li>• Blender bpy &amp; 3D Models</li>
+            <li>• Automated Web QA</li>
+            <li>• Git / Headless Deploy</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- CONTACT & CONNECT -->
+    <section class="py-16 border-t border-white/[0.06] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
+      <div>
+        <h3 class="font-display text-2xl font-semibold text-white mb-2">Let's build something consequential.</h3>
+        <p class="text-sm text-muted">Available for select advisory, serious game consultation, and speaking engagements.</p>
+      </div>
+
+      <div class="flex items-center gap-4">
+        <a href="mailto:ridvanbsaglam@gmail.com" class="px-5 py-2.5 rounded-lg bg-white text-black text-xs font-medium hover:bg-white/90 transition-colors inline-flex items-center gap-2">
+          <span>Get in Touch</span>
+          <span>→</span>
+        </a>
+        <a href="https://www.linkedin.com/in/ridvan-saglam/" target="_blank" class="px-5 py-2.5 rounded-lg border border-white/10 text-white text-xs font-medium hover:bg-white/5 transition-colors">
+          LinkedIn ↗
+        </a>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- MINIMAL FOOTER -->
+  <footer class="w-full border-t border-white/[0.06] py-12">
+    <div class="max-w-6xl mx-auto px-6 flex flex-col sm:flex-row items-center justify-between text-xs text-muted gap-4">
+      <div>© 2026 Rıdvan Sağlam. All rights reserved.</div>
+      <div class="flex items-center gap-6">
+        <a href="mailto:ridvanbsaglam@gmail.com" class="text-white hover:underline">ridvanbsaglam@gmail.com</a>
+        <a href="https://www.linkedin.com/in/ridvan-saglam/" target="_blank" class="hover:text-white transition-colors">LinkedIn</a>
+        <a href="https://github.com/ridvanbsaglam" target="_blank" class="hover:text-white transition-colors">GitHub</a>
+        <a href="#" class="hover:text-white transition-colors">Top ↑</a>
+      </div>
+    </div>
+  </footer>
+
+</body>
+</html>
