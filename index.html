@@ -189,6 +189,42 @@
           </div>
         </article>
 
+        <!-- PROJECT 3: ENCLOSED SPACE GAS SIM -->
+        <article class="flex flex-col group">
+          <a href="sims/enclosed-space-gas-sim/index.html" target="_blank" class="project-image-wrap aspect-video relative block mb-5">
+            <img src="assets/enclosed_space_showcase.png" alt="Enclosed Space Atmosphere Testing Simulation" class="w-full h-full object-cover">
+            <div class="absolute bottom-3 right-3 px-3 py-1.5 rounded bg-black/80 backdrop-blur text-xs font-mono text-white/90 border border-white/10 opacity-0 group-hover:opacity-100 transition-opacity">
+              Launch Simulator ↗
+            </div>
+          </a>
+
+          <div>
+            <div class="flex items-center justify-between text-xs font-mono text-muted mb-2">
+              <span>SAFETY SIMULATION · 3D</span>
+              <span>THREE.JS · WEBGL · GSAP</span>
+            </div>
+
+            <h3 class="text-xl font-display font-semibold text-white group-hover:text-white/80 transition-colors mb-2">
+              <a href="sims/enclosed-space-gas-sim/index.html" target="_blank">Enclosed Space Gas Strata Simulator</a>
+            </h3>
+
+            <p class="text-sm text-muted leading-relaxed font-normal mb-4">
+              Interactive 3D cutaway ballast tank simulating vapor density stratification (CH₄, CO, H₂S, O₂), 4-gas aspirator probe physics, pump dwell transit lag, and IMO A.1050(27) entry permits.
+            </p>
+
+            <div class="flex items-center gap-5 text-xs font-medium pt-1">
+              <a href="sims/enclosed-space-gas-sim/index.html" target="_blank" class="text-white hover:underline flex items-center gap-1">
+                <span>Play Live Demo</span>
+                <span>↗</span>
+              </a>
+              <span class="text-white/20">/</span>
+              <button onclick="openModal('enclosed-space-gas-sim')" class="text-muted hover:text-white transition-colors">
+                Case Study
+              </button>
+            </div>
+          </div>
+        </article>
+
       </div>
     </section>
 
@@ -348,6 +384,27 @@
             <div>
               <div class="text-xs font-mono uppercase text-white mb-1">Tech Stack</div>
               <p class="font-mono text-xs text-white/80">Vector Math Engine · Radial Phosphor Shader Simulation · STCW Assessment Logic</p>
+            </div>
+          </div>
+        `
+      },
+      'enclosed-space-gas-sim': {
+        title: 'Enclosed Space Atmosphere Testing Simulation',
+        tag: 'SAFETY CRITICAL LAB · VAPOR DENSITY & TOXIC GASES',
+        url: 'sims/enclosed-space-gas-sim/index.html',
+        body: `
+          <div class="space-y-5 text-sm text-muted leading-relaxed pt-4">
+            <div>
+              <div class="text-xs font-mono uppercase text-white mb-1">The Problem</div>
+              <p>Atmospheric testing in confined spaces (ballast tanks, cargo holds) is one of shipping's highest fatality areas. Operators mistakenly enter after a single-depth test, unaware that gases stratify dramatically by vapor density—lighter methane collects at the crown while toxic hydrogen sulfide pools at the bottom.</p>
+            </div>
+            <div>
+              <div class="text-xs font-mono uppercase text-white mb-1">The Solution</div>
+              <p>A real-time 3D cutaway simulation complying with IMO A.1050(27) & ISGOTT 6th Edition. Learners calibrate detector zero/bump checks, stop ventilation fans to allow gas settling, maneuver the brass probe across vertical strata, and wait for pump sample transit times (T90) before logging authorization permits.</p>
+            </div>
+            <div>
+              <div class="text-xs font-mono uppercase text-white mb-1">Tech Stack</div>
+              <p class="font-mono text-xs text-white/80">Three.js · OrbitControls · GSAP 3 · WebGL Stratum Shaders · Bilingual (EN/TR) Storyline Bridge</p>
             </div>
           </div>
         `

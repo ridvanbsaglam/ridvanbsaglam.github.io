@@ -1,0 +1,3060 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>IMO A.1050(27) &amp; ISGOTT 6th Ed. — Enclosed Space Atmosphere Testing Simulation</title>
+
+  <!-- Google Fonts: Inter (Industrial UI) & JetBrains Mono (Transflective LCD & Telemetry) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600;700;800&display=swap" rel="stylesheet" />
+
+  <!-- Three.js r128, OrbitControls & GSAP 3.12.5 via Reliable CDNs -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+
+  <style>
+    :root {
+      --bg-deck: #0B131E;
+      --bg-panel: rgba(15, 25, 38, 0.92);
+      --bg-panel-solid: #101C2B;
+      --bg-card: rgba(22, 35, 52, 0.88);
+      --border-slate: rgba(148, 163, 184, 0.22);
+      --border-highlight: rgba(245, 158, 11, 0.55);
+      --amber-case: #F59E0B;
+      --amber-dark: #B45309;
+      --lcd-bg: #8CA184;
+      --lcd-bg-alarm: #C86D61;
+      --lcd-ink: #0F1D11;
+      --cyan-accent: #06B6D4;
+      --green-safe: #10B981;
+      --red-hazard: #EF4444;
+      --amber-warn: #F59E0B;
+      --magenta-h2s: #D946EF;
+      --text-primary: #F1F5F9;
+      --text-secondary: #94A3B8;
+      --text-muted: #64748B;
+      --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      --font-mono: 'JetBrains Mono', monospace;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    html, body {
+      width: 100vw;
+      height: 100vh;
+      overflow: hidden;
+      background-color: var(--bg-deck);
+      font-family: var(--font-sans);
+      color: var(--text-primary);
+      font-size: 13px;
+      line-height: 1.4;
+    }
+
+    /* Main Application Grid Layout */
+    #app-shell {
+      position: relative;
+      width: 100vw;
+      height: 100vh;
+      display: grid;
+      grid-template-rows: 48px 1fr;
+      grid-template-columns: 310px 1fr 350px;
+      overflow: hidden;
+    }
+
+    /* Top Command Header */
+    #top-header {
+      grid-column: 1 / 4;
+      grid-row: 1;
+      background: linear-gradient(90deg, #080E17 0%, #111E30 50%, #080E17 100%);
+      border-bottom: 1px solid var(--border-slate);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 16px;
+      z-index: 40;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.45);
+    }
+
+    .brand-cluster {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .imo-badge {
+      background: rgba(245, 158, 11, 0.16);
+      border: 1px solid var(--amber-case);
+      color: var(--amber-case);
+      font-family: var(--font-mono);
+      font-size: 11px;
+      font-weight: 700;
+      padding: 3px 8px;
+      border-radius: 4px;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+    }
+
+    .sim-title {
+      font-weight: 700;
+      font-size: 14px;
+      color: var(--text-primary);
+      letter-spacing: 0.2px;
+    }
+
+    .sim-subtitle {
+      font-size: 11px;
+      color: var(--text-secondary);
+      margin-left: 4px;
+    }
+
+    .header-controls {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .scenario-pill {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(15, 23, 42, 0.85);
+      border: 1px solid var(--border-slate);
+      padding: 4px 10px;
+      border-radius: 6px;
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--cyan-accent);
+    }
+
+    .hdr-btn {
+      background: rgba(30, 41, 59, 0.85);
+      border: 1px solid var(--border-slate);
+      color: var(--text-primary);
+      font-family: var(--font-sans);
+      font-size: 11px;
+      font-weight: 600;
+      padding: 5px 10px;
+      border-radius: 5px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.18s ease;
+    }
+
+    .hdr-btn:hover {
+      border-color: var(--amber-case);
+      background: rgba(51, 65, 85, 0.9);
+    }
+
+    .hdr-btn.active {
+      background: rgba(245, 158, 11, 0.2);
+      border-color: var(--amber-case);
+      color: var(--amber-case);
+    }
+
+    /* Left Panel: Pre-Entry Operations & Probe Rig Controls */
+    #left-panel {
+      grid-column: 1;
+      grid-row: 2;
+      background: var(--bg-panel);
+      border-right: 1px solid var(--border-slate);
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      z-index: 20;
+      overflow-y: auto;
+      backdrop-filter: blur(10px);
+    }
+
+    /* Center Viewport: 3D Cutaway Ballast Tank */
+    #viewport-container {
+      grid-column: 2;
+      grid-row: 2;
+      position: relative;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: radial-gradient(circle at 50% 35%, #17263B 0%, #091019 100%);
+    }
+
+    #three-canvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+      cursor: grab;
+    }
+
+    #three-canvas:active {
+      cursor: grabbing;
+    }
+
+    /* Right Panel: Ruggedized 4-Gas Detector & Permit Log */
+    #right-panel {
+      grid-column: 3;
+      grid-row: 2;
+      background: var(--bg-panel);
+      border-left: 1px solid var(--border-slate);
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      z-index: 20;
+      overflow-y: auto;
+      backdrop-filter: blur(10px);
+    }
+
+    /* Section Cards */
+    .ctrl-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-slate);
+      border-radius: 8px;
+      padding: 10px 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+    }
+
+    .card-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid rgba(148, 163, 184, 0.14);
+      padding-bottom: 6px;
+    }
+
+    .card-title {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.7px;
+      color: var(--amber-case);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .step-badge {
+      background: rgba(245, 158, 11, 0.2);
+      color: var(--amber-case);
+      border: 1px solid rgba(245, 158, 11, 0.4);
+      font-family: var(--font-mono);
+      font-size: 10px;
+      padding: 1px 5px;
+      border-radius: 3px;
+    }
+
+    .status-pill {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      font-weight: 700;
+      padding: 2px 6px;
+      border-radius: 4px;
+      text-transform: uppercase;
+    }
+
+    .status-pill.pending {
+      background: rgba(148, 163, 184, 0.15);
+      color: var(--text-secondary);
+      border: 1px solid rgba(148, 163, 184, 0.3);
+    }
+
+    .status-pill.ok {
+      background: rgba(16, 185, 129, 0.18);
+      color: #34D399;
+      border: 1px solid rgba(16, 185, 129, 0.45);
+    }
+
+    .status-pill.warn {
+      background: rgba(245, 158, 11, 0.18);
+      color: #FBBF24;
+      border: 1px solid rgba(245, 158, 11, 0.45);
+    }
+
+    .status-pill.err {
+      background: rgba(239, 68, 68, 0.2);
+      color: #F87171;
+      border: 1px solid rgba(239, 68, 68, 0.5);
+    }
+
+    /* Action Buttons */
+    .btn-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 7px;
+    }
+
+    .sim-btn {
+      background: linear-gradient(180deg, #1E293B 0%, #0F172A 100%);
+      border: 1px solid rgba(148, 163, 184, 0.3);
+      color: var(--text-primary);
+      font-family: var(--font-sans);
+      font-size: 11px;
+      font-weight: 600;
+      padding: 8px 10px;
+      border-radius: 6px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      transition: all 0.16s ease;
+      text-align: center;
+    }
+
+    .sim-btn:hover:not(:disabled) {
+      border-color: var(--amber-case);
+      background: linear-gradient(180deg, #283548 0%, #162033 100%);
+      transform: translateY(-1px);
+    }
+
+    .sim-btn:disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+    }
+
+    .sim-btn.done {
+      background: rgba(16, 185, 129, 0.15);
+      border-color: var(--green-safe);
+      color: #34D399;
+    }
+
+    .sim-btn.amber {
+      background: linear-gradient(180deg, #D97706 0%, #B45309 100%);
+      border-color: #F59E0B;
+      color: #FFF;
+    }
+
+    .sim-btn.amber:hover:not(:disabled) {
+      background: linear-gradient(180deg, #F59E0B 0%, #D97706 100%);
+    }
+
+    .sim-btn.danger {
+      background: linear-gradient(180deg, #DC2626 0%, #991B1B 100%);
+      border-color: #EF4444;
+      color: #FFF;
+    }
+
+    .sim-btn.safe {
+      background: linear-gradient(180deg, #059669 0%, #065F46 100%);
+      border-color: #10B981;
+      color: #FFF;
+    }
+
+    /* Sliders & Probe Controls */
+    .slider-group {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .slider-label-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 11px;
+      color: var(--text-secondary);
+    }
+
+    .slider-val {
+      font-family: var(--font-mono);
+      font-weight: 700;
+      color: var(--cyan-accent);
+      font-size: 12px;
+    }
+
+    input[type="range"].industrial-slider {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 100%;
+      height: 6px;
+      background: #091019;
+      border: 1px solid rgba(148, 163, 184, 0.25);
+      border-radius: 4px;
+      outline: none;
+    }
+
+    input[type="range"].industrial-slider::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: var(--amber-case);
+      border: 2px solid #FFF;
+      cursor: pointer;
+      box-shadow: 0 0 8px rgba(245, 158, 11, 0.8);
+    }
+
+    .strata-quick-btns {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 4px;
+      margin-top: 2px;
+    }
+
+    .strata-btn {
+      background: rgba(15, 23, 42, 0.9);
+      border: 1px solid rgba(148, 163, 184, 0.25);
+      color: var(--text-secondary);
+      font-family: var(--font-mono);
+      font-size: 10px;
+      padding: 4px 2px;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .strata-btn:hover {
+      border-color: var(--cyan-accent);
+      color: var(--text-primary);
+    }
+
+    .strata-btn.active {
+      background: rgba(6, 182, 212, 0.18);
+      border-color: var(--cyan-accent);
+      color: var(--cyan-accent);
+      font-weight: 700;
+    }
+
+    /* Ruggedized 4-Gas Detector Casing */
+    #gas-detector {
+      background: linear-gradient(145deg, #F59E0B 0%, #D97706 60%, #B45309 100%);
+      border: 3px solid #1E293B;
+      border-radius: 16px;
+      padding: 10px;
+      box-shadow:
+        inset 0 2px 4px rgba(255, 255, 255, 0.35),
+        inset 0 -3px 6px rgba(0, 0, 0, 0.45),
+        0 8px 20px rgba(0, 0, 0, 0.55);
+      position: relative;
+    }
+
+    .detector-rubber-grip {
+      background: #131B26;
+      border-radius: 11px;
+      padding: 10px;
+      border: 2px solid #263346;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    /* Top LED Alarm Bezel */
+    .detector-alarm-bar {
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .alarm-led-strip {
+      height: 10px;
+      border-radius: 5px;
+      background: #2D1215;
+      border: 1px solid #4A1D22;
+      transition: all 0.08s ease;
+    }
+
+    .alarm-led-strip.flashing {
+      background: #FF1E27;
+      border-color: #FF8A8E;
+      box-shadow: 0 0 14px #FF1E27, 0 0 28px rgba(239, 68, 68, 0.9);
+    }
+
+    .detector-model-tag {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      font-weight: 800;
+      letter-spacing: 1px;
+      color: var(--amber-case);
+      text-align: center;
+    }
+
+    /* Transflective Backlit LCD Screen */
+    #detector-lcd {
+      background: var(--lcd-bg);
+      border: 3px solid #0B1118;
+      border-radius: 7px;
+      padding: 8px 10px;
+      color: var(--lcd-ink);
+      font-family: var(--font-mono);
+      box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.35);
+      transition: background-color 0.15s ease;
+      position: relative;
+    }
+
+    #detector-lcd.alarm-state {
+      background: var(--lcd-bg-alarm);
+    }
+
+    .lcd-top-status {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1.5px solid rgba(15, 29, 17, 0.35);
+      padding-bottom: 4px;
+      margin-bottom: 6px;
+      font-size: 10px;
+      font-weight: 700;
+    }
+
+    .lcd-pump-indicator {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .pump-rotor {
+      display: inline-block;
+      width: 10px;
+      height: 10px;
+      border: 2px solid var(--lcd-ink);
+      border-top-color: transparent;
+      border-radius: 50%;
+      animation: spinPump 0.9s linear infinite;
+    }
+
+    @keyframes spinPump {
+      to { transform: rotate(360deg); }
+    }
+
+    .lcd-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 6px;
+    }
+
+    .lcd-cell {
+      border: 1.5px solid rgba(15, 29, 17, 0.3);
+      border-radius: 4px;
+      padding: 4px 6px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      background: rgba(255, 255, 255, 0.08);
+    }
+
+    .lcd-cell.cell-hazard {
+      background: rgba(15, 29, 17, 0.85);
+      color: var(--lcd-bg-alarm);
+      border-color: var(--lcd-ink);
+    }
+
+    .lcd-gas-hdr {
+      display: flex;
+      justify-content: space-between;
+      font-size: 10px;
+      font-weight: 800;
+    }
+
+    .lcd-gas-val {
+      font-size: 20px;
+      font-weight: 800;
+      text-align: right;
+      line-height: 1.1;
+      letter-spacing: -0.5px;
+    }
+
+    .lcd-gas-unit {
+      font-size: 9px;
+      font-weight: 700;
+      text-align: right;
+      opacity: 0.85;
+    }
+
+    .lcd-footer-banner {
+      margin-top: 6px;
+      padding-top: 4px;
+      border-top: 1.5px solid rgba(15, 29, 17, 0.35);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 10px;
+      font-weight: 800;
+    }
+
+    /* Dwell Stabilization Bar inside Detector */
+    .dwell-bar-wrap {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+    }
+
+    .dwell-bar-track {
+      width: 100%;
+      height: 7px;
+      background: #091019;
+      border-radius: 4px;
+      overflow: hidden;
+      border: 1px solid rgba(148, 163, 184, 0.25);
+    }
+
+    .dwell-bar-fill {
+      height: 100%;
+      width: 100%;
+      background: linear-gradient(90deg, var(--amber-case), var(--green-safe));
+      transition: width 0.1s linear;
+    }
+
+    /* Strata Log Table */
+    .strata-log-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-family: var(--font-mono);
+      font-size: 10px;
+    }
+
+    .strata-log-table th {
+      text-align: left;
+      color: var(--text-secondary);
+      padding: 4px 4px;
+      border-bottom: 1px solid var(--border-slate);
+      font-weight: 600;
+    }
+
+    .strata-log-table td {
+      padding: 5px 4px;
+      border-bottom: 1px solid rgba(148, 163, 184, 0.1);
+    }
+
+    .strata-row-pending {
+      color: var(--text-muted);
+    }
+
+    .strata-row-logged {
+      color: var(--text-primary);
+    }
+
+    /* Spatial Contiguity 3D Floating Probe Telemetry Tag */
+    #probe-spatial-tag {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(22px, -50%);
+      background: rgba(11, 19, 30, 0.92);
+      border: 1.5px solid var(--amber-case);
+      border-radius: 8px;
+      padding: 8px 10px;
+      min-width: 188px;
+      pointer-events: auto;
+      z-index: 15;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.65);
+      backdrop-filter: blur(6px);
+      transition: border-color 0.2s ease;
+    }
+
+    #probe-spatial-tag::before {
+      content: '';
+      position: absolute;
+      left: -18px;
+      top: 50%;
+      width: 18px;
+      height: 2px;
+      background: var(--amber-case);
+    }
+
+    .spatial-hdr {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-family: var(--font-mono);
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--amber-case);
+      margin-bottom: 4px;
+    }
+
+    .spatial-zone-badge {
+      font-size: 9px;
+      padding: 1px 5px;
+      border-radius: 3px;
+      background: rgba(6, 182, 212, 0.2);
+      color: var(--cyan-accent);
+      border: 1px solid rgba(6, 182, 212, 0.4);
+    }
+
+    .spatial-dwell-row {
+      display: flex;
+      justify-content: space-between;
+      font-size: 10px;
+      color: var(--text-secondary);
+      margin-bottom: 3px;
+    }
+
+    .spatial-progress-bg {
+      width: 100%;
+      height: 5px;
+      background: #1E293B;
+      border-radius: 3px;
+      overflow: hidden;
+      margin-bottom: 6px;
+    }
+
+    .spatial-progress-fill {
+      height: 100%;
+      width: 100%;
+      background: var(--green-safe);
+      transition: width 0.08s linear;
+    }
+
+    .spatial-log-btn {
+      width: 100%;
+      background: linear-gradient(180deg, #F59E0B 0%, #D97706 100%);
+      border: 1px solid #FBBF24;
+      color: #091019;
+      font-family: var(--font-sans);
+      font-size: 11px;
+      font-weight: 800;
+      padding: 5px 8px;
+      border-radius: 4px;
+      cursor: pointer;
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+    }
+
+    .spatial-log-btn:hover {
+      background: #FBBF24;
+    }
+
+    /* Viewport HUD Overlays */
+    #viewport-legend {
+      position: absolute;
+      top: 12px;
+      left: 12px;
+      background: rgba(11, 19, 30, 0.84);
+      border: 1px solid var(--border-slate);
+      border-radius: 6px;
+      padding: 7px 10px;
+      font-size: 11px;
+      color: var(--text-secondary);
+      pointer-events: none;
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+      z-index: 12;
+    }
+
+    #xray-banner {
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      background: rgba(15, 23, 42, 0.92);
+      border: 1px solid var(--magenta-h2s);
+      border-radius: 8px;
+      padding: 8px 12px;
+      z-index: 16;
+      display: none;
+      flex-direction: column;
+      gap: 6px;
+      max-width: 250px;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6);
+    }
+
+    .xray-legend-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 11px;
+      font-family: var(--font-mono);
+    }
+
+    .xray-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    /* Debrief Modal / Overlay Drawer */
+    #debrief-card {
+      position: absolute;
+      bottom: 14px;
+      left: 14px;
+      right: 14px;
+      background: rgba(11, 19, 30, 0.96);
+      border: 1.5px solid var(--amber-case);
+      border-radius: 10px;
+      padding: 12px 16px;
+      z-index: 25;
+      display: none;
+      flex-direction: column;
+      gap: 8px;
+      box-shadow: 0 12px 36px rgba(0, 0, 0, 0.8);
+      backdrop-filter: blur(10px);
+    }
+
+    .debrief-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid var(--border-slate);
+      padding-bottom: 6px;
+    }
+
+    .debrief-score-badge {
+      font-family: var(--font-mono);
+      font-size: 16px;
+      font-weight: 800;
+      padding: 3px 10px;
+      border-radius: 6px;
+      background: rgba(245, 158, 11, 0.2);
+      border: 1px solid var(--amber-case);
+      color: var(--amber-case);
+    }
+
+    .debrief-flags {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 6px;
+      font-size: 11px;
+    }
+
+    .flag-item {
+      background: rgba(30, 41, 59, 0.7);
+      border: 1px solid var(--border-slate);
+      border-radius: 5px;
+      padding: 5px 8px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-family: var(--font-mono);
+      font-size: 10px;
+    }
+
+    /* Collapsible Developer Telemetry Console (Storyline Bridge Fallback) */
+    #dev-console {
+      position: fixed;
+      bottom: 0;
+      right: 360px;
+      width: 420px;
+      background: rgba(8, 14, 23, 0.97);
+      border: 1px solid var(--cyan-accent);
+      border-bottom: none;
+      border-radius: 8px 8px 0 0;
+      z-index: 100;
+      font-family: var(--font-mono);
+      font-size: 11px;
+      box-shadow: 0 -6px 24px rgba(0, 0, 0, 0.75);
+      transform: translateY(calc(100% - 30px));
+      transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    #dev-console.expanded {
+      transform: translateY(0);
+    }
+
+    .dev-hdr {
+      height: 30px;
+      padding: 0 12px;
+      background: rgba(6, 182, 212, 0.18);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      cursor: pointer;
+      color: var(--cyan-accent);
+      font-weight: 700;
+    }
+
+    .dev-body {
+      padding: 10px 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      max-height: 270px;
+      overflow-y: auto;
+    }
+
+    .dev-var-grid {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 3px 10px;
+      background: #05090F;
+      padding: 6px 8px;
+      border-radius: 5px;
+      border: 1px solid rgba(148, 163, 184, 0.2);
+    }
+
+    .dev-var-name {
+      color: var(--text-secondary);
+    }
+
+    .dev-var-val {
+      font-weight: 700;
+      color: #34D399;
+    }
+
+    .dev-var-val.bool-false {
+      color: #F87171;
+    }
+
+    /* Toast Notification Banner */
+    #toast-alert {
+      position: absolute;
+      top: 56px;
+      left: 50%;
+      transform: translateX(-50%) translateY(-20px);
+      background: rgba(15, 23, 42, 0.95);
+      border: 1.5px solid var(--amber-case);
+      color: var(--text-primary);
+      padding: 7px 14px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 600;
+      z-index: 60;
+      opacity: 0;
+      pointer-events: none;
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.6);
+    }
+
+    @media (max-width: 1120px) {
+      #app-shell {
+        grid-template-columns: 270px 1fr 300px;
+      }
+      #dev-console {
+        right: 310px;
+        width: 350px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <div id="app-shell">
+    <!-- TOP HEADER BAR -->
+    <header id="top-header">
+      <div class="brand-cluster">
+        <span class="imo-badge">IMO A.1050(27) / ISGOTT 6</span>
+        <div>
+          <span class="sim-title" id="ui-title">Enclosed Space Pre-Entry Atmosphere Testing</span>
+          <span class="sim-subtitle" id="ui-subtitle">No. 4 Port Wing Ballast Tank (Depth: 10.0m)</span>
+        </div>
+      </div>
+
+      <div class="header-controls">
+        <div class="scenario-pill">
+          <span id="ui-scen-label">SCENARIO:</span>
+          <strong id="ui-scen-name">2 — Stratified Multi-Gas</strong>
+        </div>
+        <button class="hdr-btn" id="btn-xray-toggle" style="display:none;" onclick="simApp.toggleXRay()">
+          <span>◉</span> <span id="ui-btn-xray">X-Ray Gas Strata</span>
+        </button>
+        <button class="hdr-btn active" id="btn-audio-toggle" onclick="simApp.toggleAudio()">
+          <span id="audio-icon">🔊</span> <span id="ui-btn-audio">Audio ON</span>
+        </button>
+        <button class="hdr-btn" id="btn-lang-toggle" onclick="simApp.toggleLanguage()">
+          <span>🌐</span> <span id="ui-lang-code">EN / TR</span>
+        </button>
+        <button class="hdr-btn" onclick="simApp.resetSimulation()">
+          <span>↺</span> <span id="ui-btn-reset">Reset</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- LEFT PANEL: PROCEDURAL STEPS & PROBE RIG CONTROLS -->
+    <aside id="left-panel">
+      <!-- STEP 1: INSTRUMENT CALIBRATION & BUMP TEST ON DECK -->
+      <div class="ctrl-card">
+        <div class="card-header">
+          <div class="card-title">
+            <span class="step-badge">01</span>
+            <span id="ui-step1-title">Deck Zero &amp; Bump Check</span>
+          </div>
+          <span class="status-pill pending" id="badge-step1">REQUIRED</span>
+        </div>
+        <div style="font-size:11px; color:var(--text-secondary);" id="ui-step1-desc">
+          Verify sensor baseline in Fresh Air Zone (0.0m) and apply quad-gas calibration cylinder before opening hatch port.
+        </div>
+        <div class="btn-row">
+          <button class="sim-btn" id="btn-fresh-zero" onclick="simApp.performFreshAirZero()">
+            <span>1.</span> <span id="ui-btn-zero">Fresh Air Zero</span>
+          </button>
+          <button class="sim-btn" id="btn-bump-test" onclick="simApp.performBumpTest()">
+            <span>2.</span> <span id="ui-btn-bump">Bump Check</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- STEP 2: MECHANICAL VENTILATION CONTROL -->
+      <div class="ctrl-card">
+        <div class="card-header">
+          <div class="card-title">
+            <span class="step-badge">02</span>
+            <span id="ui-step2-title">Mechanical Ventilation</span>
+          </div>
+          <span class="status-pill warn" id="badge-vent">FAN ON</span>
+        </div>
+        <div style="font-size:11px; color:var(--text-secondary);" id="ui-step2-desc">
+          ISGOTT 10.3: Stop portable blower fan ~10 mins prior to testing so stratified pockets settle to true vapor equilibrium.
+        </div>
+        <div class="btn-row">
+          <button class="sim-btn amber" id="btn-vent-on" onclick="simApp.setVentilation(true)">
+            <span>⚙</span> <span id="ui-btn-vent-on">Fan ON (Diluting)</span>
+          </button>
+          <button class="sim-btn" id="btn-vent-stop" onclick="simApp.setVentilation(false)">
+            <span>⏱</span> <span id="ui-btn-vent-stop">Stop &amp; Wait 10m</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- STEP 3: SAMPLING HOSE & PROBE POSITIONING -->
+      <div class="ctrl-card" style="flex:1;">
+        <div class="card-header">
+          <div class="card-title">
+            <span class="step-badge">03</span>
+            <span id="ui-step3-title">Aspirator Probe Control</span>
+          </div>
+          <span class="status-pill ok" id="badge-probe-zone">DECK 0.0m</span>
+        </div>
+
+        <!-- Vertical Depth Slider -->
+        <div class="slider-group">
+          <div class="slider-label-row">
+            <span id="ui-lbl-depth">Vertical Probe Depth (Y):</span>
+            <span class="slider-val" id="val-depth">0.0 m</span>
+          </div>
+          <input type="range" class="industrial-slider" id="slider-depth" min="0" max="10.0" step="0.1" value="0.0" />
+          <div class="strata-quick-btns">
+            <button class="strata-btn active" id="qbtn-deck" onclick="simApp.moveProbeTo(0.0, 0.0)">0.0m DECK</button>
+            <button class="strata-btn" id="qbtn-top" onclick="simApp.moveProbeTo(1.5, -0.4)">1.5m TOP</button>
+            <button class="strata-btn" id="qbtn-mid" onclick="simApp.moveProbeTo(5.0, 0.2)">5.0m MID</button>
+            <button class="strata-btn" id="qbtn-bot" onclick="simApp.moveProbeTo(9.2, 1.3)">9.2m BILGE</button>
+          </div>
+        </div>
+
+        <!-- Horizontal Offset Slider (Clearing Web Frames) -->
+        <div class="slider-group" style="margin-top:6px;">
+          <div class="slider-label-row">
+            <span id="ui-lbl-lateral">Lateral Baffle Offset (X):</span>
+            <span class="slider-val" id="val-lateral">0.0 m</span>
+          </div>
+          <input type="range" class="industrial-slider" id="slider-lateral" min="-2.2" max="2.2" step="0.1" value="0.0" />
+        </div>
+
+        <!-- T90 Pump Dwell Progress -->
+        <div class="dwell-bar-wrap" style="margin-top:6px;">
+          <div class="slider-label-row">
+            <span id="ui-lbl-dwell">T90 Hose Sample Transit (4s):</span>
+            <span class="slider-val" id="val-dwell">100%</span>
+          </div>
+          <div class="dwell-bar-track">
+            <div class="dwell-bar-fill" id="bar-dwell" style="width:100%;"></div>
+          </div>
+        </div>
+
+        <div style="font-size:10px; color:var(--text-muted); margin-top:auto;" id="ui-drag-hint">
+          💡 Tip: Drag the brass probe tip directly in 3D space or use sliders. Pause 4s per level before logging.
+        </div>
+      </div>
+    </aside>
+
+    <!-- CENTER 3D VIEWPORT -->
+    <main id="viewport-container">
+      <canvas id="three-canvas"></canvas>
+
+      <!-- Top-Left Camera & Vapor Density Legend -->
+      <div id="viewport-legend">
+        <div><strong style="color:var(--text-primary);" id="ui-leg-title">3D Tank Cutaway View</strong></div>
+        <div id="ui-leg-cam">• LMB: Orbit | RMB: Pan | Wheel: Zoom | Drag Brass Tip</div>
+        <div id="ui-leg-vd">• Vapor Density (Air=1.0): CH₄ (0.55 ↑) | CO (0.97 ≈) | H₂S (1.19 ↓)</div>
+      </div>
+
+      <!-- Top-Right X-Ray Volumetric Legend (Unlocked Post-Decision) -->
+      <div id="xray-banner">
+        <div style="font-weight:800; font-size:11px; color:var(--amber-case); text-transform:uppercase;" id="ui-xray-title">
+          X-Ray Gas Stratification Active
+        </div>
+        <div class="xray-legend-item">
+          <span class="xray-dot" style="background:#F59E0B; box-shadow:0 0 8px #F59E0B;"></span>
+          <span id="ui-xray-top">Top (0–2.5m): CH₄ (VD 0.55)</span>
+        </div>
+        <div class="xray-legend-item">
+          <span class="xray-dot" style="background:#38BDF8; box-shadow:0 0 8px #38BDF8;"></span>
+          <span id="ui-xray-mid">Mid (2.5–6.5m): CO / O₂ Zone</span>
+        </div>
+        <div class="xray-legend-item">
+          <span class="xray-dot" style="background:#D946EF; box-shadow:0 0 8px #D946EF;"></span>
+          <span id="ui-xray-bot">Bilge (6.5–10m): H₂S Pool (VD 1.19)</span>
+        </div>
+      </div>
+
+      <!-- SPATIAL CONTIGUITY FLOATING PROBE TAG -->
+      <div id="probe-spatial-tag">
+        <div class="spatial-hdr">
+          <span id="spatial-depth-txt">DEPTH: 0.0m</span>
+          <span class="spatial-zone-badge" id="spatial-zone-txt">DECK ZONE</span>
+        </div>
+        <div class="spatial-dwell-row">
+          <span id="ui-spatial-dwell-lbl">Pump Dwell:</span>
+          <strong id="spatial-dwell-txt" style="font-family:var(--font-mono); color:#34D399;">100% READY</strong>
+        </div>
+        <div class="spatial-progress-bg">
+          <div class="spatial-progress-fill" id="spatial-dwell-bar"></div>
+        </div>
+        <button class="spatial-log-btn" id="btn-spatial-log" onclick="simApp.logCurrentSample()">
+          + <span id="ui-btn-log-sample">Log Stratum Sample</span>
+        </button>
+      </div>
+
+      <!-- Toast Notification -->
+      <div id="toast-alert">Notification</div>
+
+      <!-- POST-DECISION DEBRIEF DRAWER -->
+      <div id="debrief-card">
+        <div class="debrief-top">
+          <div>
+            <div style="font-size:13px; font-weight:800; color:var(--text-primary);" id="debrief-headline">
+              PERMIT EVALUATION COMPLETE
+            </div>
+            <div style="font-size:11px; color:var(--text-secondary);" id="debrief-explanation">
+              Diagnostic breakdown of IMO A.1050(27) compliance:
+            </div>
+          </div>
+          <div style="display:flex; align-items:center; gap:8px;">
+            <span class="debrief-score-badge" id="debrief-score">SCORE: 100%</span>
+            <button class="hdr-btn active" onclick="simApp.toggleXRay()">
+              <span>◉</span> <span id="ui-debrief-xray">Toggle 3D Gas Strata</span>
+            </button>
+          </div>
+        </div>
+        <div class="debrief-flags" id="debrief-flags-grid"></div>
+      </div>
+    </main>
+
+    <!-- RIGHT PANEL: RUGGEDIZED 4-GAS MONITOR & ENTRY PERMIT DECISION -->
+    <aside id="right-panel">
+      <!-- RUGGEDIZED MULTI-GAS DETECTOR -->
+      <div id="gas-detector">
+        <div class="detector-rubber-grip">
+          <div class="detector-alarm-bar">
+            <div class="alarm-led-strip" id="led-left"></div>
+            <div class="detector-model-tag">ALTAIR-4X PUMP</div>
+            <div class="alarm-led-strip" id="led-right"></div>
+          </div>
+
+          <!-- Backlit Transflective LCD -->
+          <div id="detector-lcd">
+            <div class="lcd-top-status">
+              <div class="lcd-pump-indicator">
+                <span class="pump-rotor"></span>
+                <span id="lcd-status-mode">PUMP ACTIVE</span>
+              </div>
+              <span id="lcd-cal-flag">CAL: UNVERIFIED</span>
+            </div>
+
+            <div class="lcd-grid">
+              <!-- O2 Sensor -->
+              <div class="lcd-cell" id="cell-o2">
+                <div class="lcd-gas-hdr">
+                  <span>O₂</span>
+                  <span>20.9%</span>
+                </div>
+                <div class="lcd-gas-val" id="lcd-val-o2">20.9</div>
+                <div class="lcd-gas-unit">% VOL (19.5–21.5)</div>
+              </div>
+
+              <!-- LEL Sensor -->
+              <div class="lcd-cell" id="cell-lel">
+                <div class="lcd-gas-hdr">
+                  <span>COMB / CH₄</span>
+                  <span>&lt;1%</span>
+                </div>
+                <div class="lcd-gas-val" id="lcd-val-lel">0</div>
+                <div class="lcd-gas-unit">% LEL (MAX 1%)</div>
+              </div>
+
+              <!-- H2S Sensor -->
+              <div class="lcd-cell" id="cell-h2s">
+                <div class="lcd-gas-hdr">
+                  <span>H₂S</span>
+                  <span>&lt;5</span>
+                </div>
+                <div class="lcd-gas-val" id="lcd-val-h2s">0.0</div>
+                <div class="lcd-gas-unit">PPM (TLV 5 PPM)</div>
+              </div>
+
+              <!-- CO Sensor -->
+              <div class="lcd-cell" id="cell-co">
+                <div class="lcd-gas-hdr">
+                  <span>CO</span>
+                  <span>&lt;25</span>
+                </div>
+                <div class="lcd-gas-val" id="lcd-val-co">0</div>
+                <div class="lcd-gas-unit">PPM (OEL 25 PPM)</div>
+              </div>
+            </div>
+
+            <div class="lcd-footer-banner">
+              <span id="lcd-alarm-banner">STATUS: NORMAL</span>
+              <span id="lcd-depth-readout">D: 0.0m</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- STEP 4: MULTI-LEVEL ATMOSPHERE LOG BOOK -->
+      <div class="ctrl-card">
+        <div class="card-header">
+          <div class="card-title">
+            <span class="step-badge">04</span>
+            <span id="ui-step4-title">Multi-Strata Sample Log</span>
+          </div>
+          <button class="strata-btn active" onclick="simApp.logCurrentSample()" id="ui-btn-log-mini">+ Log Reading</button>
+        </div>
+
+        <table class="strata-log-table">
+          <thead>
+            <tr>
+              <th id="th-stratum">Stratum</th>
+              <th>O₂%</th>
+              <th>LEL%</th>
+              <th>H₂S</th>
+              <th>CO</th>
+              <th id="th-state">Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr id="log-row-top" class="strata-row-pending">
+              <td>TOP (0.5–2.5m)</td>
+              <td id="log-top-o2">--</td>
+              <td id="log-top-lel">--</td>
+              <td id="log-top-h2s">--</td>
+              <td id="log-top-co">--</td>
+              <td id="log-top-st">PENDING</td>
+            </tr>
+            <tr id="log-row-mid" class="strata-row-pending">
+              <td>MID (4.0–6.0m)</td>
+              <td id="log-mid-o2">--</td>
+              <td id="log-mid-lel">--</td>
+              <td id="log-mid-h2s">--</td>
+              <td id="log-mid-co">--</td>
+              <td id="log-mid-st">PENDING</td>
+            </tr>
+            <tr id="log-row-bot" class="strata-row-pending">
+              <td>BOT (8.0–9.8m)</td>
+              <td id="log-bot-o2">--</td>
+              <td id="log-bot-lel">--</td>
+              <td id="log-bot-h2s">--</td>
+              <td id="log-bot-co">--</td>
+              <td id="log-bot-st">PENDING</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- STEP 5: ENCLOSED SPACE ENTRY PERMIT DECISION -->
+      <div class="ctrl-card" style="margin-top:auto;">
+        <div class="card-header">
+          <div class="card-title">
+            <span class="step-badge">05</span>
+            <span id="ui-step5-title">Enclosed Space Entry Permit</span>
+          </div>
+          <span class="status-pill pending" id="badge-permit">AWAITING</span>
+        </div>
+        <div style="font-size:11px; color:var(--text-secondary);" id="ui-step5-desc">
+          Authorize entry ONLY if all three strata meet IMO A.1050(27) limits with ventilation stopped.
+        </div>
+        <div class="btn-row">
+          <button class="sim-btn safe" id="btn-grant-permit" onclick="simApp.submitPermitDecision('GRANT')">
+            <span>✔</span> <span id="ui-btn-grant">Grant Permit</span>
+          </button>
+          <button class="sim-btn danger" id="btn-deny-permit" onclick="simApp.submitPermitDecision('DENY')">
+            <span>✖</span> <span id="ui-btn-deny">Deny &amp; Ventilate</span>
+          </button>
+        </div>
+      </div>
+    </aside>
+  </div>
+
+  <!-- COLLAPSIBLE DEVELOPER TELEMETRY & STORYLINE 360 BRIDGE CONSOLE -->
+  <div id="dev-console">
+    <div class="dev-hdr" onclick="document.getElementById('dev-console').classList.toggle('expanded')">
+      <span>⚡ STORYLINE 360 API TELEMETRY &amp; SCENARIO OVERRIDE</span>
+      <span id="dev-bridge-mode">[STANDALONE MODE] ▲</span>
+    </div>
+    <div class="dev-body">
+      <div style="display:flex; justify-content:space-between; align-items:center; gap:6px;">
+        <span style="color:var(--text-secondary);">Switch `SL_ScenarioID`:</span>
+        <div style="display:flex; gap:4px;">
+          <button class="strata-btn" id="dev-scen-1" onclick="simApp.setScenario(1)">1: O₂ Rust</button>
+          <button class="strata-btn active" id="dev-scen-2" onclick="simApp.setScenario(2)">2: Stratified</button>
+          <button class="strata-btn" id="dev-scen-3" onclick="simApp.setScenario(3)">3: Safe Tank</button>
+        </div>
+      </div>
+      <div class="dev-var-grid" id="dev-vars-container"></div>
+    </div>
+  </div>
+
+  <script>
+    /***************************************************************************
+     * 1. BILINGUAL RUNTIME DICTIONARY (EN & TR)
+     * Covers all maritime terminology, UI labels, and diagnostic debriefing
+     ***************************************************************************/
+    const I18N = {
+      EN: {
+        title: "Enclosed Space Pre-Entry Atmosphere Testing",
+        subtitle: "No. 4 Port Wing Ballast Tank (Depth: 10.0m)",
+        scenLabel: "SCENARIO:",
+        scenNames: {
+          1: "1 — O₂-Depleted Rust Pocket",
+          2: "2 — Stratified Multi-Gas Hazard",
+          3: "3 — Gas-Freed Verification"
+        },
+        btnXray: "X-Ray Gas Strata",
+        btnAudioOn: "Audio ON",
+        btnAudioOff: "Audio MUTE",
+        btnReset: "Reset",
+        step1Title: "Deck Zero & Bump Check",
+        step1Desc: "Verify sensor baseline in Fresh Air Zone (0.0m) and apply quad-gas calibration cylinder before lowering hose.",
+        btnZero: "Fresh Air Zero",
+        btnBump: "Bump Check",
+        step2Title: "Mechanical Ventilation",
+        step2Desc: "ISGOTT 10.3: Stop portable blower fan 10 mins prior to testing so stratified pockets settle to equilibrium.",
+        btnVentOn: "Fan ON (Diluting)",
+        btnVentStop: "Stop & Wait 10m",
+        step3Title: "Aspirator Probe Control",
+        lblDepth: "Vertical Probe Depth (Y):",
+        lblLateral: "Lateral Baffle Offset (X):",
+        lblDwell: "T90 Hose Sample Transit (4s):",
+        dragHint: "💡 Tip: Drag the brass probe tip directly in 3D space or use sliders. Pause 4s per level before logging.",
+        legTitle: "3D Tank Cutaway View",
+        legCam: "• LMB: Orbit | RMB: Pan | Wheel: Zoom | Drag Brass Tip",
+        legVd: "• Vapor Density (Air=1.0): CH₄ (0.55 ↑) | CO (0.97 ≈) | H₂S (1.19 ↓)",
+        xrayTitle: "X-Ray Gas Stratification Active",
+        xrayTop: "Top (0–2.5m): CH₄ Pocket (VD 0.55)",
+        xrayMid: "Mid (2.5–6.5m): CO / O₂ Transition",
+        xrayBot: "Bilge (6.5–10m): H₂S Pool (VD 1.19)",
+        spatialDwellLbl: "Pump Dwell:",
+        btnLogSample: "Log Stratum Sample",
+        btnLogMini: "+ Log Reading",
+        step4Title: "Multi-Strata Sample Log",
+        thStratum: "Stratum",
+        thState: "Status",
+        step5Title: "Enclosed Space Entry Permit",
+        step5Desc: "Authorize entry ONLY if all three strata meet IMO A.1050(27) limits with ventilation stopped.",
+        btnGrant: "Grant Permit",
+        btnDeny: "Deny & Ventilate",
+        debriefXray: "Toggle 3D Gas Strata",
+        zoneDeck: "DECK ZONE",
+        zoneTop: "TOP STRATUM",
+        zoneMid: "MID STRATUM",
+        zoneBot: "BILGE / BOTTOM",
+        dwellReady: "100% STABLE",
+        dwellLag: "PUMP TRANSIT...",
+        fanOnBadge: "FAN ON",
+        fanOffBadge: "STOPPED (10m)",
+        calVerified: "CAL: OK (BUMPED)",
+        calZeroOnly: "CAL: ZEROED ONLY",
+        calUnverified: "CAL: UNVERIFIED",
+        alarmNormal: "STATUS: NORMAL",
+        alarmHazard: "⚠ HIGH GAS ALARM",
+        alarmLagging: "⏳ SAMPLE IN TRANSIT",
+        toastZeroOk: "✔ Fresh Air Zero calibrated at 20.9% O₂ on deck.",
+        toastZeroErr: "⚠ Return probe to Fresh Air Zone (0.0m Deck) before zeroing!",
+        toastBumpOk: "✔ Bump Check passed: All 4 sensors & dual-tone alarm verified.",
+        toastBumpOrder: "⚠ Perform Fresh Air Zero first before applying Bump Check gas!",
+        toastVentStopped: "⏱ Ventilation stopped. Simulated 10-minute settling period elapsed.",
+        toastVentRunning: "⚙ Mechanical ventilation running: High-velocity airflow active.",
+        toastErrBump: "⚠ PROCEDURAL ERROR: Probe lowered without completing Fresh Air Zero & Bump Check!",
+        toastErrVent: "⚠ PROCEDURAL ERROR: Testing while ventilation fan is ON dilutes shaft readings!",
+        toastErrDwell: "⚠ PROCEDURAL ERROR: Insufficient T90 dwell time (<4s)! Reading not stabilized.",
+        toastLogged: "✔ Stabilized sample recorded for ",
+        toastNotInStratum: "ℹ Move probe into Top (0.5–2.5m), Mid (4.0–6.0m), or Bottom (8.0–9.8m) zone to log.",
+        debriefPassTitle: "✔ CORRECT PERMIT DECISION",
+        debriefFailTitle: "✖ UNSAFE / INCORRECT PERMIT DECISION"
+      },
+      TR: {
+        title: "Kapalı Mahale Giriş Öncesi Atmosfer Ölçümü",
+        subtitle: "No. 4 İskele Kanat Balast Tankı (Derinlik: 10.0m)",
+        scenLabel: "SENARYO:",
+        scenNames: {
+          1: "1 — O₂ Eksikliği (Paslanma Cebinde)",
+          2: "2 — Katmanlı Çoklu Gaz Tehlikesi",
+          3: "3 — Gazdan Arındırılmış Güvenli Tank"
+        },
+        btnXray: "X-Ray Gaz Katmanları",
+        btnAudioOn: "Ses AÇIK",
+        btnAudioOff: "Ses KAPALI",
+        btnReset: "Sıfırla",
+        step1Title: "Temiz Hava Sıfırlama & Doğrulama Testi",
+        step1Desc: "Hortumu tanka indirmeden önce Güverte Temiz Hava Alanında (0.0m) sıfırlama ve doğrulama (Bump Test) yapın.",
+        btnZero: "Temiz Hava Sıfırla",
+        btnBump: "Doğrulama Testi",
+        step2Title: "Mekanik Havalandırma Kontrolü",
+        step2Desc: "ISGOTT 10.3: Ölçümden 10 dk önce fanı durdurun ki kemere ve posta arkasındaki gazlar dengeye ulaşsın.",
+        btnVentOn: "Fan AÇIK (Seyreltici)",
+        btnVentStop: "Durdur & 10dk Bekle",
+        step3Title: "Numune Hortumu & Prob Kontrolü",
+        lblDepth: "Dikey Prob Derinliği (Y):",
+        lblLateral: "Yatay Posta/Kemere Ofseti (X):",
+        lblDwell: "T90 Hortum Ölçüm Bekleme Süresi (4sn):",
+        dragHint: "💡 İpucu: Pirinç prob ucunu 3B alanda sürükleyin veya kaydırıcıyı kullanın. Kayıt öncesi 4sn bekleyin.",
+        legTitle: "3B Balast Tankı Kesit Görünümü",
+        legCam: "• Sol Tık: Döndür | Sağ Tık: Kaydır | Tekerlek: Yakınlaştır | Probu Sürükle",
+        legVd: "• Buhar Yoğunluğu (Hava=1.0): CH₄ (0.55 ↑) | CO (0.97 ≈) | H₂S (1.19 ↓)",
+        xrayTitle: "X-Ray Gaz Katmanlaşması Aktif",
+        xrayTop: "Üst (0–2.5m): CH₄ Cebi (BY 0.55)",
+        xrayMid: "Orta (2.5–6.5m): CO / O₂ Geçiş Bölgesi",
+        xrayBot: "Sintine (6.5–10m): H₂S Havuzu (BY 1.19)",
+        spatialDwellLbl: "Ölçüm Bekleme:",
+        btnLogSample: "Katman Ölçümünü Kaydet",
+        btnLogMini: "+ Ölçümü Kaydet",
+        step4Title: "Çok Katmanlı Atmosfer Kayıt Defteri",
+        thStratum: "Katman",
+        thState: "Durum",
+        step5Title: "Kapalı Mahale Giriş İzni Kararı",
+        step5Desc: "Giriş İznini SADECE fan kapalıyken her 3 katman IMO A.1050(27) sınırları içindeyse onaylayın.",
+        btnGrant: "Giriş İzni Ver",
+        btnDeny: "Girişi Reddet & Havalandır",
+        debriefXray: "3B Gaz Katmanlarını Göster",
+        zoneDeck: "GÜVERTE (0.0m)",
+        zoneTop: "ÜST KATMAN",
+        zoneMid: "ORTA KATMAN",
+        zoneBot: "ALT / SİNTİNE",
+        dwellReady: "%100 DENGELENDİ",
+        dwellLag: "POMPA AKIŞI...",
+        fanOnBadge: "FAN AÇIK",
+        fanOffBadge: "DURDURULDU (10dk)",
+        calVerified: "KAL: DOĞRULANDI",
+        calZeroOnly: "KAL: SADECE SIFIR",
+        calUnverified: "KAL: DOĞRULANMADI",
+        alarmNormal: "DURUM: NORMAL",
+        alarmHazard: "⚠ YÜKSEK GAZ ALARMI",
+        alarmLagging: "⏳ NUMUNE HORTUMDA",
+        toastZeroOk: "✔ Güvertede %20.9 O₂ Temiz Hava Sıfırlaması tamamlandı.",
+        toastZeroErr: "⚠ Sıfırlama için probu Güverte Temiz Hava Alanına (0.0m) çekin!",
+        toastBumpOk: "✔ Doğrulama Testi (Bump Test) başarılı: 4 sensör ve sesli alarm doğrulandı.",
+        toastBumpOrder: "⚠ Doğrulama gazı vermeden önce Temiz Hava Sıfırlaması yapın!",
+        toastVentStopped: "⏱ Havalandırma durduruldu. 10 dakikalık yerleşme süresi tamamlandı.",
+        toastVentRunning: "⚙ Mekanik havalandırma çalışıyor: Yüksek hızlı hava akımı aktif.",
+        toastErrBump: "⚠ PROSEDÜR HATASI: Doğrulama Testi (Bump Test) yapılmadan prob tanka indirildi!",
+        toastErrVent: "⚠ PROSEDÜR HATASI: Fan AÇIK iken ölçüm yapmak menhol hattını yapay seyreltir!",
+        toastErrDwell: "⚠ PROSEDÜR HATASI: Yetersiz Ölçüm Bekleme Süresi (<4sn)! Okuma dengelenmedi.",
+        toastLogged: "✔ Dengelenmiş atmosfer ölçümü kaydedildi: ",
+        toastNotInStratum: "ℹ Kayıt için probu Üst (0.5–2.5m), Orta (4.0–6.0m) veya Alt (8.0–9.8m) katmana getirin.",
+        debriefPassTitle: "✔ DOĞRU GİRİŞ İZNİ KARARI",
+        debriefFailTitle: "✖ GÜVENSİZ / HATALI GİRİŞ İZNİ KARARI"
+      }
+    };
+
+    /***************************************************************************
+     * 2. TWO-WAY ARTICULATE STORYLINE 360 API BRIDGE
+     * Safely communicates with window.parent.GetPlayer() with Dev Console fallback
+     ***************************************************************************/
+    class StorylineBridge {
+      constructor() {
+        this.player = null;
+        this.connected = false;
+        this.vars = {
+          SL_ScenarioID: 2,
+          SL_Lang: "EN",
+          Sim_Completed: false,
+          Sim_Score: 0,
+          Permit_Decision_Correct: false,
+          Depth_Top_Tested: false,
+          Depth_Mid_Tested: false,
+          Depth_Bot_Tested: false,
+          Err_SkippedBumpTest: false,
+          Err_VentLeftOn: false,
+          Err_InsufficientDwellTime: false
+        };
+        this.initConnection();
+      }
+
+      initConnection() {
+        try {
+          if (window.parent && typeof window.parent.GetPlayer === "function") {
+            this.player = window.parent.GetPlayer();
+            this.connected = Boolean(this.player);
+          } else if (typeof window.GetPlayer === "function") {
+            this.player = window.GetPlayer();
+            this.connected = Boolean(this.player);
+          }
+        } catch (err) {
+          this.connected = false;
+          this.player = null;
+        }
+
+        const badge = document.getElementById("dev-bridge-mode");
+        if (badge) {
+          badge.textContent = this.connected ? "[STORYLINE LINKED] ▲" : "[STANDALONE MODE] ▲";
+          badge.style.color = this.connected ? "#34D399" : "#06B6D4";
+        }
+
+        // Read Inbound Variables on Init
+        if (this.connected) {
+          try {
+            const rawScen = Number(this.player.GetVar("SL_ScenarioID"));
+            if ([1, 2, 3].includes(rawScen)) {
+              this.vars.SL_ScenarioID = rawScen;
+            }
+          } catch (e) {}
+
+          try {
+            const rawLang = String(this.player.GetVar("SL_Lang") || "").toUpperCase();
+            if (rawLang === "EN" || rawLang === "TR") {
+              this.vars.SL_Lang = rawLang;
+            }
+          } catch (e) {}
+        }
+
+        this.syncOutboundAll();
+      }
+
+      setVar(name, value) {
+        this.vars[name] = value;
+        if (this.connected && this.player) {
+          try {
+            this.player.SetVar(name, value);
+          } catch (e) {}
+        }
+        this.renderDevConsole();
+      }
+
+      syncOutboundAll() {
+        const outboundKeys = [
+          "Sim_Completed",
+          "Sim_Score",
+          "Permit_Decision_Correct",
+          "Depth_Top_Tested",
+          "Depth_Mid_Tested",
+          "Depth_Bot_Tested",
+          "Err_SkippedBumpTest",
+          "Err_VentLeftOn",
+          "Err_InsufficientDwellTime"
+        ];
+        outboundKeys.forEach((k) => {
+          if (this.connected && this.player) {
+            try {
+              this.player.SetVar(k, this.vars[k]);
+            } catch (e) {}
+          }
+        });
+        this.renderDevConsole();
+      }
+
+      renderDevConsole() {
+        const container = document.getElementById("dev-vars-container");
+        if (!container) return;
+        container.innerHTML = Object.entries(this.vars)
+          .map(([k, v]) => {
+            const isFalse = v === false || (k.startsWith("Err_") && v === true);
+            return `<div class="dev-var-name">${k}</div><div class="dev-var-val ${isFalse ? "bool-false" : ""}">${JSON.stringify(v)}</div>`;
+          })
+          .join("");
+      }
+    }
+
+    /***************************************************************************
+     * 3. WEB AUDIO API PROCEDURAL SOUND SYNTHESIZER
+     * Synthesizes diaphragm pump hum, button chirps, and 2800Hz/3200Hz piezo alarm
+     ***************************************************************************/
+    class ProceduralAudioEngine {
+      constructor() {
+        this.ctx = null;
+        this.enabled = true;
+        this.alarmActive = false;
+        this.pumpOsc = null;
+        this.pumpGain = null;
+        this.alarmInterval = null;
+      }
+
+      ensureContext() {
+        if (!this.enabled) return false;
+        if (!this.ctx) {
+          const AudioCtx = window.AudioContext || window.webkitAudioContext;
+          if (AudioCtx) {
+            this.ctx = new AudioCtx();
+            this.startPumpHum();
+          }
+        }
+        if (this.ctx && this.ctx.state === "suspended") {
+          this.ctx.resume().catch(() => {});
+        }
+        return Boolean(this.ctx);
+      }
+
+      startPumpHum() {
+        if (!this.ctx || this.pumpOsc) return;
+        try {
+          this.pumpOsc = this.ctx.createOscillator();
+          this.pumpGain = this.ctx.createGain();
+          this.pumpOsc.type = "sawtooth";
+          this.pumpOsc.frequency.setValueAtTime(58, this.ctx.currentTime);
+          this.pumpGain.gain.setValueAtTime(this.enabled ? 0.012 : 0.0, this.ctx.currentTime);
+          this.pumpOsc.connect(this.pumpGain);
+          this.pumpGain.connect(this.ctx.destination);
+          this.pumpOsc.start();
+        } catch (e) {}
+      }
+
+      playChirp(freq = 1850, duration = 0.06) {
+        if (!this.ensureContext()) return;
+        try {
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+          osc.type = "triangle";
+          osc.frequency.setValueAtTime(freq, this.ctx.currentTime);
+          gain.gain.setValueAtTime(0.08, this.ctx.currentTime);
+          gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + duration);
+          osc.connect(gain);
+          gain.connect(this.ctx.destination);
+          osc.start();
+          osc.stop(this.ctx.currentTime + duration);
+        } catch (e) {}
+      }
+
+      setAlarmState(shouldAlarm) {
+        if (this.alarmActive === shouldAlarm) return;
+        this.alarmActive = shouldAlarm;
+        if (this.alarmInterval) {
+          clearInterval(this.alarmInterval);
+          this.alarmInterval = null;
+        }
+        if (shouldAlarm) {
+          let toggle = false;
+          this.alarmInterval = setInterval(() => {
+            if (!this.enabled) return;
+            this.ensureContext();
+            if (!this.ctx) return;
+            try {
+              const now = this.ctx.currentTime;
+              const osc = this.ctx.createOscillator();
+              const gain = this.ctx.createGain();
+              osc.type = "square";
+              // Dual-tone piezoelectric alarm at 2800Hz / 3200Hz
+              osc.frequency.setValueAtTime(toggle ? 2800 : 3200, now);
+              toggle = !toggle;
+              gain.gain.setValueAtTime(0.075, now);
+              gain.gain.exponentialRampToValueAtTime(0.002, now + 0.13);
+              osc.connect(gain);
+              gain.connect(this.ctx.destination);
+              osc.start(now);
+              osc.stop(now + 0.135);
+            } catch (e) {}
+          }, 160);
+        }
+      }
+
+      setEnabled(flag) {
+        this.enabled = flag;
+        if (this.pumpGain && this.ctx) {
+          this.pumpGain.gain.setValueAtTime(flag ? 0.012 : 0.0, this.ctx.currentTime);
+        }
+      }
+    }
+
+    /***************************************************************************
+     * 4. PROCEDURAL PBR CANVAS TEXTURE GENERATOR
+     * Generates steel bulkhead plates, diamond tread deck, and toxic bilge sludge
+     ***************************************************************************/
+    function createSteelTexture() {
+      const canvas = document.createElement("canvas");
+      canvas.width = 512;
+      canvas.height = 512;
+      const ctx = canvas.getContext("2d");
+
+      ctx.fillStyle = "#2A394A";
+      ctx.fillRect(0, 0, 512, 512);
+
+      // Subtle rust & salt weathering streaks
+      for (let i = 0; i < 600; i++) {
+        const x = Math.random() * 512;
+        const y = Math.random() * 512;
+        const w = 2 + Math.random() * 14;
+        const h = 4 + Math.random() * 35;
+        ctx.fillStyle = Math.random() > 0.35 ? "rgba(18, 26, 36, 0.25)" : "rgba(120, 62, 34, 0.14)";
+        ctx.fillRect(x, y, w, h);
+      }
+
+      // Horizontal & vertical weld plate seams
+      ctx.strokeStyle = "rgba(10, 15, 22, 0.65)";
+      ctx.lineWidth = 3;
+      for (let y = 128; y < 512; y += 128) {
+        ctx.beginPath();
+        ctx.moveTo(0, y);
+        ctx.lineTo(512, y);
+        ctx.stroke();
+      }
+      for (let x = 256; x < 512; x += 256) {
+        ctx.beginPath();
+        ctx.moveTo(x, 0);
+        ctx.lineTo(x, 512);
+        ctx.stroke();
+      }
+
+      const tex = new THREE.CanvasTexture(canvas);
+      tex.wrapS = THREE.RepeatWrapping;
+      tex.wrapT = THREE.RepeatWrapping;
+      tex.repeat.set(2, 3);
+      return tex;
+    }
+
+    function createSludgeTexture() {
+      const canvas = document.createElement("canvas");
+      canvas.width = 256;
+      canvas.height = 256;
+      const ctx = canvas.getContext("2d");
+
+      ctx.fillStyle = "#2C1D14";
+      ctx.fillRect(0, 0, 256, 256);
+
+      for (let i = 0; i < 450; i++) {
+        ctx.fillStyle = i % 2 === 0 ? "rgba(92, 45, 22, 0.45)" : "rgba(35, 48, 30, 0.38)";
+        ctx.beginPath();
+        ctx.arc(Math.random() * 256, Math.random() * 256, 3 + Math.random() * 16, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      const tex = new THREE.CanvasTexture(canvas);
+      tex.wrapS = THREE.RepeatWrapping;
+      tex.wrapT = THREE.RepeatWrapping;
+      tex.repeat.set(3, 3);
+      return tex;
+    }
+
+    /***************************************************************************
+     * 5. MAIN SIMULATION APPLICATION CONTROLLER
+     ***************************************************************************/
+    class EnclosedSpaceSimApp {
+      constructor() {
+        this.bridge = new StorylineBridge();
+        this.audio = new ProceduralAudioEngine();
+
+        this.lang = this.bridge.vars.SL_Lang || "EN";
+        this.scenarioId = this.bridge.vars.SL_ScenarioID || 2;
+
+        // Operational state
+        this.freshAirZeroDone = false;
+        this.bumpTestDone = false;
+        this.isBumpingNow = false;
+        this.ventilationOn = true;
+
+        // Probe coordinates: depth (0.0m to 10.0m), lateralX (-2.2m to +2.2m)
+        // 3D Mapping: y_3D = 4.0 - depth (so +4.0m is 0.0m deck, -6.0m is 10.0m tank bottom)
+        this.probeDepth = 0.0;
+        this.probeLateralX = 0.0;
+        this.lastMovedTimestamp = performance.now();
+        this.dwellSeconds = 4.0;
+        this.dwellProgress = 1.0; // 0.0 to 1.0 (requires 4.0 seconds per stratum)
+        this.hasEnteredTank = false;
+        this.fastDropCheckedAtBottom = false;
+
+        // Current & lagging sensor readings
+        this.displayedGas = { o2: 20.9, lel: 0, h2s: 0.0, co: 0 };
+        this.lastStableGas = { o2: 20.9, lel: 0, h2s: 0.0, co: 0 };
+        this.targetGas = { o2: 20.9, lel: 0, h2s: 0.0, co: 0 };
+
+        // Logged samples per stratum
+        this.loggedStrata = {
+          top: null,
+          mid: null,
+          bot: null
+        };
+
+        this.xrayEnabled = false;
+        this.draggingProbe = false;
+        this.ledFlashTimer = 0;
+
+        this.initThreeScene();
+        this.initInteractionListeners();
+        this.applyLanguage();
+        this.setScenario(this.scenarioId, true);
+        this.animate();
+      }
+
+      /*************************************************************************
+       * THREE.JS CUTAWAY BALLAST TANK SCENE ARCHITECTURE
+       * Main Deck (y = +4.0m) down to Bilge Floor (y = -6.0m), Total Depth 10.0m
+       *************************************************************************/
+      initThreeScene() {
+        this.container = document.getElementById("viewport-container");
+        this.canvas = document.getElementById("three-canvas");
+
+        this.scene = new THREE.Scene();
+        this.scene.fog = new THREE.FogExp2(0x091019, 0.025);
+
+        const w = this.container.clientWidth || 800;
+        const h = this.container.clientHeight || 600;
+        this.camera = new THREE.PerspectiveCamera(42, w / h, 0.1, 100);
+        this.camera.position.set(0.6, 0.2, 16.2);
+
+        this.renderer = new THREE.WebGLRenderer({
+          canvas: this.canvas,
+          antialias: true,
+          powerPreference: "high-performance"
+        });
+        this.renderer.setSize(w, h);
+        this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        this.renderer.shadowMap.enabled = true;
+        this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
+        // WebGL Context Loss Protection
+        this.canvas.addEventListener("webglcontextlost", (e) => {
+          e.preventDefault();
+        }, false);
+
+        this.controls = new THREE.OrbitControls(this.camera, this.canvas);
+        this.controls.target.set(0, -1.0, 0);
+        this.controls.enableDamping = true;
+        this.controls.dampingFactor = 0.07;
+        this.controls.minDistance = 6;
+        this.controls.maxDistance = 26;
+        this.controls.maxPolarAngle = Math.PI * 0.85;
+
+        // Lighting Setup
+        const ambient = new THREE.AmbientLight(0x94A3B8, 0.65);
+        this.scene.add(ambient);
+
+        const sunLight = new THREE.DirectionalLight(0xFFFBEB, 1.1);
+        sunLight.position.set(6, 12, 10);
+        sunLight.castShadow = true;
+        this.scene.add(sunLight);
+
+        // Hatch shaft daylight beam
+        const hatchSpot = new THREE.SpotLight(0x38BDF8, 1.4, 16, Math.PI / 5, 0.6, 1.2);
+        hatchSpot.position.set(-0.5, 5.5, 0);
+        hatchSpot.target.position.set(-0.5, -6.0, 0);
+        this.scene.add(hatchSpot);
+        this.scene.add(hatchSpot.target);
+
+        const internalPoint = new THREE.PointLight(0x64748B, 0.8, 14);
+        internalPoint.position.set(1.5, -1.5, 3.5);
+        this.scene.add(internalPoint);
+
+        // Shared Procedural PBR Materials
+        const steelTex = createSteelTexture();
+        this.matSteelHull = new THREE.MeshStandardMaterial({
+          map: steelTex,
+          roughness: 0.62,
+          metalness: 0.68
+        });
+
+        this.matWebFrame = new THREE.MeshStandardMaterial({
+          color: 0x334155,
+          roughness: 0.55,
+          metalness: 0.72
+        });
+
+        this.matDeckPlate = new THREE.MeshStandardMaterial({
+          color: 0x1E293B,
+          roughness: 0.48,
+          metalness: 0.78
+        });
+
+        this.matSafetyYellow = new THREE.MeshStandardMaterial({
+          color: 0xF59E0B,
+          roughness: 0.35,
+          metalness: 0.3
+        });
+
+        this.buildBallastTankStructure();
+        this.buildDeckEquipmentAndVentilation();
+        this.buildSamplingHoseAndProbe();
+        this.buildXRayVolumetricStrata();
+      }
+
+      buildBallastTankStructure() {
+        this.tankGroup = new THREE.Group();
+        this.scene.add(this.tankGroup);
+
+        // Tank dimensions: X from -3.0m to +3.0m (6m wide), Y from -6.0m to +4.0m (10m deep), Z from -2.2m to +2.2m
+        // 1. Back Bulkhead Wall (z = -2.2)
+        const backWall = new THREE.Mesh(new THREE.BoxGeometry(6.2, 10.2, 0.16), this.matSteelHull);
+        backWall.position.set(0, -1.0, -2.2);
+        backWall.receiveShadow = true;
+        this.tankGroup.add(backWall);
+
+        // 2. Port & Starboard Side Bulkheads (x = -3.0 and x = +3.0)
+        const leftWall = new THREE.Mesh(new THREE.BoxGeometry(0.16, 10.2, 4.4), this.matSteelHull);
+        leftWall.position.set(-3.0, -1.0, 0);
+        this.tankGroup.add(leftWall);
+
+        const rightWall = new THREE.Mesh(new THREE.BoxGeometry(0.16, 10.2, 4.4), this.matSteelHull);
+        rightWall.position.set(3.0, -1.0, 0);
+        this.tankGroup.add(rightWall);
+
+        // 3. Main Deck Plate at y = +4.0m (with Manhole Opening around x = -0.4, z = 0)
+        const deckLeft = new THREE.Mesh(new THREE.BoxGeometry(1.9, 0.22, 4.4), this.matDeckPlate);
+        deckLeft.position.set(-2.05, 4.0, 0);
+        this.tankGroup.add(deckLeft);
+
+        const deckRight = new THREE.Mesh(new THREE.BoxGeometry(2.9, 0.22, 4.4), this.matDeckPlate);
+        deckRight.position.set(1.55, 4.0, 0);
+        this.tankGroup.add(deckRight);
+
+        // 4. Tank Floor Plate at y = -6.0m & Animated Bilge/Sludge Layer (y = -5.85m)
+        const bottomPlate = new THREE.Mesh(new THREE.BoxGeometry(6.2, 0.2, 4.4), this.matDeckPlate);
+        bottomPlate.position.set(0, -6.0, 0);
+        this.tankGroup.add(bottomPlate);
+
+        this.sludgeTex = createSludgeTexture();
+        const sludgeMat = new THREE.MeshPhysicalMaterial({
+          map: this.sludgeTex,
+          color: 0x3E2723,
+          roughness: 0.25,
+          metalness: 0.15,
+          clearcoat: 0.85,
+          clearcoatRoughness: 0.2
+        });
+        this.sludgeMesh = new THREE.Mesh(new THREE.BoxGeometry(5.84, 0.22, 4.2), sludgeMat);
+        this.sludgeMesh.position.set(0, -5.88, 0);
+        this.tankGroup.add(this.sludgeMesh);
+
+        // 5. Two Horizontal Stringers / Platforms at y = +1.0m (Upper Stage, 3.0m depth) & y = -2.5m (Lower Stage, 6.5m depth)
+        this.buildStringerPlatform(1.0);
+        this.buildStringerPlatform(-2.5);
+
+        // 6. Transverse Web Frames & Longitudinal Stiffeners at Bottom (y = -6.0m to -4.2m) creating stagnant gas pockets
+        const webFramePositionsX = [-1.6, 0.1, 1.6];
+        webFramePositionsX.forEach((wx) => {
+          const webPlate = new THREE.Mesh(new THREE.BoxGeometry(0.14, 1.75, 4.2), this.matWebFrame);
+          webPlate.position.set(wx, -5.1, 0);
+          this.tankGroup.add(webPlate);
+
+          // Lightening holes (dark cylindrical cutouts)
+          const holeMat = new THREE.MeshBasicMaterial({ color: 0x0B131E });
+          [-1.1, 0.0, 1.1].forEach((hz) => {
+            const hole = new THREE.Mesh(new THREE.CylinderGeometry(0.32, 0.32, 0.16, 18), holeMat);
+            hole.rotation.z = Math.PI / 2;
+            hole.position.set(wx, -5.15, hz);
+            this.tankGroup.add(hole);
+          });
+        });
+
+        // Longitudinal stiffeners along back bulkhead
+        for (let sy = 3.0; sy >= -5.0; sy -= 1.6) {
+          const stiffener = new THREE.Mesh(new THREE.BoxGeometry(5.8, 0.12, 0.35), this.matWebFrame);
+          stiffener.position.set(0, sy, -1.95);
+          this.tankGroup.add(stiffener);
+        }
+
+        // 7. Vertical Access Ladder (x = -0.85m, extending from y = +4.1m down to y = -5.9m) with Safety Cages
+        const ladderGroup = new THREE.Group();
+        const railGeo = new THREE.CylinderGeometry(0.03, 0.03, 10.0, 8);
+        const railL = new THREE.Mesh(railGeo, this.matSafetyYellow);
+        railL.position.set(-0.85, -1.0, -0.55);
+        const railR = new THREE.Mesh(railGeo, this.matSafetyYellow);
+        railR.position.set(-0.85, -1.0, -0.15);
+        ladderGroup.add(railL, railR);
+
+        // Ladder rungs every 0.35m
+        const rungGeo = new THREE.CylinderGeometry(0.02, 0.02, 0.4, 8);
+        for (let ry = -5.7; ry <= 3.9; ry += 0.35) {
+          const rung = new THREE.Mesh(rungGeo, this.matSafetyYellow);
+          rung.rotation.x = Math.PI / 2;
+          rung.position.set(-0.85, ry, -0.35);
+          ladderGroup.add(rung);
+        }
+
+        // Safety cage hoops
+        const hoopGeo = new THREE.TorusGeometry(0.38, 0.02, 8, 20, Math.PI * 1.4);
+        for (let hy = 3.2; hy >= -4.5; hy -= 1.1) {
+          if (Math.abs(hy - 1.0) < 0.45 || Math.abs(hy - -2.5) < 0.45) continue;
+          const hoop = new THREE.Mesh(hoopGeo, this.matSafetyYellow);
+          hoop.rotation.x = Math.PI / 2;
+          hoop.rotation.z = -Math.PI * 0.2;
+          hoop.position.set(-0.65, hy, -0.35);
+          ladderGroup.add(hoop);
+        }
+        this.tankGroup.add(ladderGroup);
+
+        // 8. Painted Depth Scale Markers on Back Bulkhead (0m at y=+4.0 down to 10m at y=-6.0)
+        for (let d = 0; d <= 10; d += 2) {
+          const yPos = 4.0 - d;
+          const markerCanvas = document.createElement("canvas");
+          markerCanvas.width = 128;
+          markerCanvas.height = 48;
+          const mctx = markerCanvas.getContext("2d");
+          mctx.fillStyle = "rgba(15, 23, 42, 0.85)";
+          mctx.fillRect(0, 0, 128, 48);
+          mctx.strokeStyle = "#F59E0B";
+          mctx.lineWidth = 3;
+          mctx.strokeRect(2, 2, 124, 44);
+          mctx.fillStyle = "#F8FAFC";
+          mctx.font = "bold 24px monospace";
+          mctx.textAlign = "center";
+          mctx.textBaseline = "middle";
+          mctx.fillText(`${d.toFixed(0)}.0m`, 64, 25);
+
+          const mTex = new THREE.CanvasTexture(markerCanvas);
+          const mPlane = new THREE.Mesh(
+            new THREE.PlaneGeometry(0.75, 0.28),
+            new THREE.MeshBasicMaterial({ map: mTex })
+          );
+          mPlane.position.set(-2.45, yPos, -2.08);
+          this.tankGroup.add(mPlane);
+        }
+      }
+
+      buildStringerPlatform(yLevel) {
+        const platGroup = new THREE.Group();
+        // Left & Right stringer walkways leaving central hatch shaft open (-1.05 to +0.35)
+        const leftDeck = new THREE.Mesh(new THREE.BoxGeometry(1.85, 0.14, 4.2), this.matWebFrame);
+        leftDeck.position.set(-2.05, yLevel, 0);
+        platGroup.add(leftDeck);
+
+        const rightDeck = new THREE.Mesh(new THREE.BoxGeometry(2.5, 0.14, 4.2), this.matWebFrame);
+        rightDeck.position.set(1.7, yLevel, 0);
+        platGroup.add(rightDeck);
+
+        // Safety handrail along open shaft edge
+        const handrail = new THREE.Mesh(new THREE.BoxGeometry(2.4, 0.04, 0.04), this.matSafetyYellow);
+        handrail.position.set(1.65, yLevel + 0.85, 1.2);
+        platGroup.add(handrail);
+
+        this.tankGroup.add(platGroup);
+      }
+
+      buildDeckEquipmentAndVentilation() {
+        // 1. Manhole Coaming & Hinged Hatch Cover at (x = -0.45, y = +4.0, z = 0)
+        const coamingGeo = new THREE.CylinderGeometry(0.58, 0.58, 0.45, 24, 1, true);
+        const coaming = new THREE.Mesh(
+          coamingGeo,
+          new THREE.MeshStandardMaterial({ color: 0xD97706, side: THREE.DoubleSide, roughness: 0.4 })
+        );
+        coaming.position.set(-0.45, 4.22, 0);
+        this.scene.add(coaming);
+
+        // Hinged open hatch lid
+        const hatchLid = new THREE.Mesh(
+          new THREE.CylinderGeometry(0.6, 0.6, 0.08, 24),
+          new THREE.MeshStandardMaterial({ color: 0xD97706, roughness: 0.4 })
+        );
+        hatchLid.rotation.z = Math.PI * 0.42;
+        hatchLid.position.set(-1.12, 4.72, 0);
+        this.scene.add(hatchLid);
+
+        // 2. Portable Mechanical Ventilation Blower Fan & Flexible Yellow Ducting (x = 0.85, y = 4.45, z = -0.4)
+        this.fanGroup = new THREE.Group();
+        const fanHousing = new THREE.Mesh(
+          new THREE.CylinderGeometry(0.36, 0.36, 0.48, 20),
+          this.matSafetyYellow
+        );
+        fanHousing.rotation.z = Math.PI / 2;
+        fanHousing.position.set(0.85, 4.48, -0.4);
+        this.fanGroup.add(fanHousing);
+
+        // Rotating Impeller Blades
+        this.fanBlades = new THREE.Mesh(
+          new THREE.BoxGeometry(0.06, 0.56, 0.14),
+          new THREE.MeshStandardMaterial({ color: 0x0F172A })
+        );
+        this.fanBlades.position.set(1.1, 4.48, -0.4);
+        this.fanGroup.add(this.fanBlades);
+
+        // Yellow Flexible Ducting curving into manhole coaming
+        const ductCurve = new THREE.CatmullRomCurve3([
+          new THREE.Vector3(0.65, 4.48, -0.4),
+          new THREE.Vector3(0.15, 4.65, -0.35),
+          new THREE.Vector3(-0.22, 4.35, -0.25),
+          new THREE.Vector3(-0.25, 3.55, -0.25)
+        ]);
+        const ductGeo = new THREE.TubeGeometry(ductCurve, 24, 0.18, 14, false);
+        const ductMesh = new THREE.Mesh(
+          ductGeo,
+          new THREE.MeshStandardMaterial({ color: 0xEAB308, roughness: 0.6 })
+        );
+        this.fanGroup.add(ductMesh);
+        this.scene.add(this.fanGroup);
+
+        // 3. Ventilation Airflow Stream Particles (visible when fan is ON)
+        const airCount = 120;
+        const airPos = new Float32Array(airCount * 3);
+        for (let i = 0; i < airCount; i++) {
+          airPos[i * 3] = -0.3 + (Math.random() - 0.5) * 0.9;
+          airPos[i * 3 + 1] = 3.6 - Math.random() * 7.8;
+          airPos[i * 3 + 2] = (Math.random() - 0.5) * 0.9;
+        }
+        const airGeo = new THREE.BufferGeometry();
+        airGeo.setAttribute("position", new THREE.BufferAttribute(airPos, 3));
+        const airMat = new THREE.PointsMaterial({
+          color: 0x7DD3FC,
+          size: 0.09,
+          transparent: true,
+          opacity: 0.55
+        });
+        this.ventStreamPoints = new THREE.Points(airGeo, airMat);
+        this.scene.add(this.ventStreamPoints);
+
+        // 4. Fresh Air Calibration & Bump Check Gas Cylinder Rig on Deck (x = -1.9, y = 4.45, z = 0.6)
+        const calRig = new THREE.Group();
+        const bottle = new THREE.Mesh(
+          new THREE.CylinderGeometry(0.14, 0.14, 0.68, 16),
+          new THREE.MeshStandardMaterial({ color: 0x10B981, metalness: 0.5, roughness: 0.3 })
+        );
+        bottle.position.set(-1.9, 4.45, 0.6);
+        calRig.add(bottle);
+
+        // Fresh Air Zone Ring on Deck above hatch
+        const zoneRing = new THREE.Mesh(
+          new THREE.RingGeometry(0.35, 0.44, 24),
+          new THREE.MeshBasicMaterial({ color: 0x10B981, side: THREE.DoubleSide })
+        );
+        zoneRing.rotation.x = Math.PI / 2;
+        zoneRing.position.set(-0.45, 4.14, 0.45);
+        calRig.add(zoneRing);
+        this.scene.add(calRig);
+      }
+
+      buildSamplingHoseAndProbe() {
+        // Weighted Brass Probe Tip Group
+        this.probeGroup = new THREE.Group();
+
+        const brassMat = new THREE.MeshStandardMaterial({
+          color: 0xFBBF24,
+          metalness: 0.85,
+          roughness: 0.22,
+          emissive: 0x451A03,
+          emissiveIntensity: 0.35
+        });
+
+        const probeBody = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.06, 0.42, 16), brassMat);
+        this.probeGroup.add(probeBody);
+
+        // Glowing Telemetry Ring around Probe Tip for high visibility & easy raycast grabbing
+        this.probeBeaconRing = new THREE.Mesh(
+          new THREE.TorusGeometry(0.16, 0.025, 12, 24),
+          new THREE.MeshBasicMaterial({ color: 0x06B6D4 })
+        );
+        this.probeBeaconRing.rotation.x = Math.PI / 2;
+        this.probeGroup.add(this.probeBeaconRing);
+
+        // Invisible larger hit-sphere for forgiving 3D mouse/touch dragging
+        this.probeHitSphere = new THREE.Mesh(
+          new THREE.SphereGeometry(0.55, 12, 12),
+          new THREE.MeshBasicMaterial({ visible: false })
+        );
+        this.probeGroup.add(this.probeHitSphere);
+
+        this.scene.add(this.probeGroup);
+
+        // Flexible Tygon Aspirator Hose Mesh (rebuilt dynamically when probe moves)
+        this.hoseMat = new THREE.MeshStandardMaterial({
+          color: 0x38BDF8,
+          roughness: 0.3,
+          metalness: 0.1,
+          transparent: true,
+          opacity: 0.85
+        });
+        this.hoseMesh = null;
+
+        // Animated sample pulse bead traveling up the hose during T90 transit
+        this.transitPulseMesh = new THREE.Mesh(
+          new THREE.SphereGeometry(0.075, 12, 12),
+          new THREE.MeshBasicMaterial({ color: 0xF59E0B })
+        );
+        this.scene.add(this.transitPulseMesh);
+
+        this.updateProbeAndHoseGeometry();
+      }
+
+      updateProbeAndHoseGeometry() {
+        // Convert depth (0.0m to 10.0m) -> 3D Y (+4.0m down to -6.0m)
+        const y3D = 4.0 - this.probeDepth;
+        const x3D = this.probeDepth < 0.3 ? -0.45 : this.probeLateralX;
+        const z3D = 0.25;
+
+        this.probeGroup.position.set(x3D, y3D, z3D);
+
+        // Build smooth catenary spline from Deck Detector (-1.35, 4.55, 0.4) -> Coaming (-0.45, 4.35, 0.25) -> Probe Tip
+        const p0 = new THREE.Vector3(-1.35, 4.55, 0.4);
+        const p1 = new THREE.Vector3(-0.45, 4.38, 0.25);
+        const midY = (4.38 + y3D) * 0.5;
+        const p2 = new THREE.Vector3(x3D * 0.45 - 0.2, midY, 0.25);
+        const p3 = new THREE.Vector3(x3D, y3D + 0.2, z3D);
+
+        this.hoseCurve = new THREE.CatmullRomCurve3([p0, p1, p2, p3]);
+
+        if (this.hoseMesh) {
+          this.hoseMesh.geometry.dispose();
+          this.hoseMesh.geometry = new THREE.TubeGeometry(this.hoseCurve, 32, 0.032, 10, false);
+        } else {
+          const geo = new THREE.TubeGeometry(this.hoseCurve, 32, 0.032, 10, false);
+          this.hoseMesh = new THREE.Mesh(geo, this.hoseMat);
+          this.scene.add(this.hoseMesh);
+        }
+      }
+
+      buildXRayVolumetricStrata() {
+        this.xrayGroup = new THREE.Group();
+        this.xrayGroup.visible = false;
+
+        // 1. Top Zone (Depth 0.0m–2.5m => y = +4.0m down to +1.5m): CH4 Amber Layer
+        this.xrayTopBox = new THREE.Mesh(
+          new THREE.BoxGeometry(5.75, 2.4, 4.1),
+          new THREE.MeshBasicMaterial({
+            color: 0xF59E0B,
+            transparent: true,
+            opacity: 0.24,
+            depthWrite: false
+          })
+        );
+        this.xrayTopBox.position.set(0, 2.75, 0);
+        this.xrayGroup.add(this.xrayTopBox);
+
+        // 2. Middle Zone (Depth 2.5m–6.5m => y = +1.5m down to -2.5m): CO Cyan/Blue Band
+        this.xrayMidBox = new THREE.Mesh(
+          new THREE.BoxGeometry(5.75, 3.9, 4.1),
+          new THREE.MeshBasicMaterial({
+            color: 0x38BDF8,
+            transparent: true,
+            opacity: 0.16,
+            depthWrite: false
+          })
+        );
+        this.xrayMidBox.position.set(0, -0.5, 0);
+        this.xrayGroup.add(this.xrayMidBox);
+
+        // 3. Bottom / Bilge Zone (Depth 6.5m–10.0m => y = -2.5m down to -6.0m): H2S Toxic Magenta Pool
+        this.xrayBotBox = new THREE.Mesh(
+          new THREE.BoxGeometry(5.75, 3.4, 4.1),
+          new THREE.MeshBasicMaterial({
+            color: 0xD946EF,
+            transparent: true,
+            opacity: 0.30,
+            depthWrite: false
+          })
+        );
+        this.xrayBotBox.position.set(0, -4.25, 0);
+        this.xrayGroup.add(this.xrayBotBox);
+
+        // Volumetric Suspended Gas Cloud Particles inside strata
+        const pCount = 260;
+        const pPos = new Float32Array(pCount * 3);
+        const pCol = new Float32Array(pCount * 3);
+        for (let i = 0; i < pCount; i++) {
+          const x = (Math.random() - 0.5) * 5.4;
+          const y = -5.8 + Math.random() * 9.6;
+          const z = (Math.random() - 0.5) * 3.8;
+          pPos[i * 3] = x;
+          pPos[i * 3 + 1] = y;
+          pPos[i * 3 + 2] = z;
+
+          const c = new THREE.Color(y > 1.5 ? 0xF59E0B : y > -2.5 ? 0x38BDF8 : 0xD946EF);
+          pCol[i * 3] = c.r;
+          pCol[i * 3 + 1] = c.g;
+          pCol[i * 3 + 2] = c.b;
+        }
+        const pGeo = new THREE.BufferGeometry();
+        pGeo.setAttribute("position", new THREE.BufferAttribute(pPos, 3));
+        pGeo.setAttribute("color", new THREE.BufferAttribute(pCol, 3));
+        const pMat = new THREE.PointsMaterial({
+          size: 0.14,
+          vertexColors: true,
+          transparent: true,
+          opacity: 0.75
+        });
+        this.xrayParticles = new THREE.Points(pGeo, pMat);
+        this.xrayGroup.add(this.xrayParticles);
+
+        this.scene.add(this.xrayGroup);
+      }
+
+      /*************************************************************************
+       * 3D RAYCAST DRAGGING & UI SLIDER BINDINGS
+       *************************************************************************/
+      initInteractionListeners() {
+        const depthSlider = document.getElementById("slider-depth");
+        const latSlider = document.getElementById("slider-lateral");
+
+        depthSlider.addEventListener("input", (e) => {
+          this.setProbePosition(parseFloat(e.target.value), this.probeLateralX);
+        });
+
+        latSlider.addEventListener("input", (e) => {
+          this.setProbePosition(this.probeDepth, parseFloat(e.target.value));
+        });
+
+        // 3D Direct Raycast Dragging of the Brass Probe Tip
+        this.raycaster = new THREE.Raycaster();
+        this.pointer = new THREE.Vector2();
+        this.dragPlane = new THREE.Plane(new THREE.Vector3(0, 0, 1), -0.25);
+        this.dragIntersectPoint = new THREE.Vector3();
+
+        const updatePointer = (clientX, clientY) => {
+          const rect = this.canvas.getBoundingClientRect();
+          this.pointer.x = ((clientX - rect.left) / rect.width) * 2 - 1;
+          this.pointer.y = -((clientY - rect.top) / rect.height) * 2 + 1;
+        };
+
+        this.canvas.addEventListener("pointerdown", (e) => {
+          this.audio.ensureContext();
+          updatePointer(e.clientX, e.clientY);
+          this.raycaster.setFromCamera(this.pointer, this.camera);
+          const hits = this.raycaster.intersectObject(this.probeHitSphere, true);
+          if (hits.length > 0) {
+            this.draggingProbe = true;
+            this.controls.enabled = false;
+            this.canvas.style.cursor = "ns-resize";
+          }
+        });
+
+        window.addEventListener("pointermove", (e) => {
+          if (!this.draggingProbe) return;
+          updatePointer(e.clientX, e.clientY);
+          this.raycaster.setFromCamera(this.pointer, this.camera);
+          if (this.raycaster.ray.intersectPlane(this.dragPlane, this.dragIntersectPoint)) {
+            const newDepth = Math.max(0.0, Math.min(10.0, 4.0 - this.dragIntersectPoint.y));
+            const newLatX = Math.max(-2.2, Math.min(2.2, this.dragIntersectPoint.x));
+            this.setProbePosition(newDepth, newLatX);
+          }
+        });
+
+        window.addEventListener("pointerup", () => {
+          if (this.draggingProbe) {
+            this.draggingProbe = false;
+            this.controls.enabled = true;
+            this.canvas.style.cursor = "grab";
+          }
+        });
+
+        window.addEventListener("resize", () => {
+          if (!this.container || !this.renderer || !this.camera) return;
+          const w = this.container.clientWidth;
+          const h = this.container.clientHeight;
+          this.camera.aspect = w / h;
+          this.camera.updateProjectionMatrix();
+          this.renderer.setSize(w, h);
+        });
+      }
+
+      /*************************************************************************
+       * PROBE MOVEMENT, T90 DWELL TRACKING & PROCEDURAL SHORTCUT DETECTION
+       *************************************************************************/
+      moveProbeTo(targetDepth, targetLatX) {
+        this.audio.playChirp(1400, 0.05);
+        const state = { d: this.probeDepth, x: this.probeLateralX };
+        gsap.to(state, {
+          d: targetDepth,
+          x: targetLatX,
+          duration: 0.65,
+          ease: "power2.out",
+          onUpdate: () => {
+            this.setProbePosition(state.d, state.x);
+          }
+        });
+      }
+
+      setProbePosition(newDepth, newLatX) {
+        const prevDepth = this.probeDepth;
+        const prevLat = this.probeLateralX;
+
+        this.probeDepth = Math.round(Math.max(0.0, Math.min(10.0, newDepth)) * 10) / 10;
+        this.probeLateralX = Math.round(Math.max(-2.2, Math.min(2.2, newLatX)) * 10) / 10;
+
+        // Sync UI Sliders
+        document.getElementById("slider-depth").value = this.probeDepth;
+        document.getElementById("slider-lateral").value = this.probeLateralX;
+        document.getElementById("val-depth").textContent = `${this.probeDepth.toFixed(1)} m`;
+        document.getElementById("val-lateral").textContent = `${this.probeLateralX.toFixed(1)} m`;
+
+        // Quick Stratum Button Highlights
+        document.getElementById("qbtn-deck").classList.toggle("active", this.probeDepth < 0.4);
+        document.getElementById("qbtn-top").classList.toggle("active", this.probeDepth >= 0.5 && this.probeDepth <= 2.5);
+        document.getElementById("qbtn-mid").classList.toggle("active", this.probeDepth >= 4.0 && this.probeDepth <= 6.0);
+        document.getElementById("qbtn-bot").classList.toggle("active", this.probeDepth >= 8.0);
+
+        // If significant movement occurred (> 0.15m), reset T90 Pump Dwell Timer
+        if (Math.abs(this.probeDepth - prevDepth) > 0.12 || Math.abs(this.probeLateralX - prevLat) > 0.18) {
+          this.lastStableGas = { ...this.displayedGas };
+          this.lastMovedTimestamp = performance.now();
+          this.dwellProgress = 0.0;
+        }
+
+        // CRITICAL CHECK 1: Lowering probe into tank (> 0.3m) without Fresh Air Zero & Bump Check
+        if (this.probeDepth > 0.3 && (!this.freshAirZeroDone || !this.bumpTestDone)) {
+          if (!this.bridge.vars.Err_SkippedBumpTest) {
+            this.bridge.setVar("Err_SkippedBumpTest", true);
+            this.showToast(I18N[this.lang].toastErrBump, true);
+          }
+        }
+
+        // CRITICAL CHECK 2: Lowering probe into tank (> 0.5m) while Mechanical Ventilation is still ON
+        if (this.probeDepth > 0.5 && this.ventilationOn) {
+          if (!this.bridge.vars.Err_VentLeftOn) {
+            this.bridge.setVar("Err_VentLeftOn", true);
+            this.showToast(I18N[this.lang].toastErrVent, true);
+          }
+        }
+
+        // CRITICAL CHECK 3: Lowering probe straight to bottom (> 8.0m) without testing Top & Middle strata
+        if (
+          this.probeDepth >= 8.0 &&
+          (!this.bridge.vars.Depth_Top_Tested || !this.bridge.vars.Depth_Mid_Tested) &&
+          !this.fastDropCheckedAtBottom
+        ) {
+          this.fastDropCheckedAtBottom = true;
+          this.bridge.setVar("Err_InsufficientDwellTime", true);
+          this.showToast(I18N[this.lang].toastErrDwell, true);
+        }
+
+        this.updateProbeAndHoseGeometry();
+      }
+
+      /*************************************************************************
+       * PHYSICS-BASED GAS STRATIFICATION ENGINE (VAPOR DENSITY MATH)
+       *************************************************************************/
+      computeTrueAtmosphereAt(depth, lateralX) {
+        // Above deck in Fresh Air Calibration Zone (0.0m to 0.25m)
+        if (depth <= 0.25) {
+          return { o2: 20.9, lel: 0, h2s: 0.0, co: 0 };
+        }
+
+        // SCENARIO 1: Oxygen-Depleted Rust Pocket (Severe oxidation below 4.0m depth)
+        if (this.scenarioId === 1) {
+          let o2 = 20.9;
+          if (depth > 2.5 && depth <= 4.0) {
+            const t = (depth - 2.5) / 1.5;
+            o2 = 20.9 - t * 3.1; // Drops toward 17.8%
+          } else if (depth > 4.0) {
+            o2 = 16.4;
+          }
+          // Ventilation dilution effect near shaft
+          if (this.ventilationOn && Math.abs(lateralX) < 0.7) {
+            o2 = Math.min(20.6, o2 + 2.8);
+          }
+          return {
+            o2: Number(o2.toFixed(1)),
+            lel: 0,
+            h2s: 0.0,
+            co: 0
+          };
+        }
+
+        // SCENARIO 2: Stratified Multi-Gas Hazard (Default)
+        if (this.scenarioId === 2) {
+          // 1. Top Zone (0.25m - 2.5m): Methane (CH4, VD 0.55) trapped under deck head
+          if (depth <= 2.5) {
+            const ventDilution = this.ventilationOn && Math.abs(lateralX) < 0.65 ? 0.35 : 1.0;
+            const lel = Math.round(18 * ventDilution);
+            const o2 = Number((20.9 - 0.5 * ventDilution).toFixed(1));
+            return { o2, lel, h2s: 0.0, co: 0 };
+          }
+
+          // 2. Middle Zone (2.5m - 6.5m): Deceptively clean if fan ON (12 ppm CO), or 35 ppm CO when fan STOPPED
+          if (depth <= 6.5) {
+            const co = this.ventilationOn ? 12 : 35;
+            return { o2: 20.8, lel: 0, h2s: 0.0, co };
+          }
+
+          // 3. Bottom / Bilge Zone (6.5m - 10.0m): H2S (VD 1.19) pooling in bilge behind web frames
+          // If ventilation is ON and learner only tests the central shaft (|X| < 0.6m), airflow dilutes H2S to 3.5 ppm!
+          // Behind web frames (|X| >= 0.6m) or when ventilation is STOPPED, true lethal 28 ppm H2S is present.
+          const inBafflePocket = !this.ventilationOn || Math.abs(lateralX) >= 0.6;
+          const h2s = inBafflePocket ? 28.0 : 3.5;
+          const o2 = inBafflePocket ? 19.1 : 20.5;
+          const co = inBafflePocket ? 8 : 2;
+          return { o2, lel: 0, h2s, co };
+        }
+
+        // SCENARIO 3: Safe for Entry Verification (Properly gas-freed tank)
+        return { o2: 20.9, lel: 0, h2s: 0.0, co: 0 };
+      }
+
+      /*************************************************************************
+       * OPERATIONAL CONTROLS: ZERO, BUMP CHECK, VENTILATION, LOGGING & PERMIT
+       *************************************************************************/
+      performFreshAirZero() {
+        this.audio.ensureContext();
+        if (this.probeDepth > 0.25) {
+          this.audio.playChirp(520, 0.15);
+          this.showToast(I18N[this.lang].toastZeroErr, true);
+          return;
+        }
+        this.freshAirZeroDone = true;
+        this.audio.playChirp(1950, 0.08);
+        document.getElementById("btn-fresh-zero").classList.add("done");
+        this.updateStep1Badge();
+        this.showToast(I18N[this.lang].toastZeroOk, false);
+      }
+
+      performBumpTest() {
+        this.audio.ensureContext();
+        if (!this.freshAirZeroDone) {
+          this.audio.playChirp(520, 0.15);
+          this.showToast(I18N[this.lang].toastBumpOrder, true);
+          return;
+        }
+        if (this.probeDepth > 0.25) {
+          this.audio.playChirp(520, 0.15);
+          this.showToast(I18N[this.lang].toastZeroErr, true);
+          return;
+        }
+
+        // Simulate 2.2-second calibration gas injection spike (O2: 18.0%, LEL: 25%, H2S: 15ppm, CO: 50ppm)
+        this.isBumpingNow = true;
+        this.bumpTestDone = true;
+        document.getElementById("btn-bump-test").classList.add("done");
+        this.updateStep1Badge();
+        this.showToast(I18N[this.lang].toastBumpOk, false);
+
+        setTimeout(() => {
+          this.isBumpingNow = false;
+        }, 2200);
+      }
+
+      updateStep1Badge() {
+        const badge = document.getElementById("badge-step1");
+        const calFlag = document.getElementById("lcd-cal-flag");
+        const t = I18N[this.lang];
+
+        if (this.freshAirZeroDone && this.bumpTestDone) {
+          badge.textContent = "VERIFIED";
+          badge.className = "status-pill ok";
+          calFlag.textContent = t.calVerified;
+        } else if (this.freshAirZeroDone) {
+          badge.textContent = "ZEROED";
+          badge.className = "status-pill warn";
+          calFlag.textContent = t.calZeroOnly;
+        } else {
+          badge.textContent = "REQUIRED";
+          badge.className = "status-pill pending";
+          calFlag.textContent = t.calUnverified;
+        }
+      }
+
+      setVentilation(isOn) {
+        this.audio.playChirp(isOn ? 1200 : 1650, 0.07);
+        this.ventilationOn = isOn;
+
+        const btnOn = document.getElementById("btn-vent-on");
+        const btnStop = document.getElementById("btn-vent-stop");
+        const badge = document.getElementById("badge-vent");
+        const t = I18N[this.lang];
+
+        if (isOn) {
+          btnOn.classList.add("amber");
+          btnStop.classList.remove("done");
+          badge.textContent = t.fanOnBadge;
+          badge.className = "status-pill warn";
+          this.ventStreamPoints.visible = true;
+          this.showToast(t.toastVentRunning, false);
+        } else {
+          btnOn.classList.remove("amber");
+          btnStop.classList.add("done");
+          badge.textContent = t.fanOffBadge;
+          badge.className = "status-pill ok";
+          this.ventStreamPoints.visible = false;
+          this.showToast(t.toastVentStopped, false);
+        }
+
+        // Reset dwell timer so sensor transitions to new equilibrium
+        this.lastStableGas = { ...this.displayedGas };
+        this.lastMovedTimestamp = performance.now();
+        this.dwellProgress = 0.0;
+      }
+
+      logCurrentSample() {
+        this.audio.ensureContext();
+        const t = I18N[this.lang];
+
+        // Check if learner skipped Bump Test before logging
+        if (!this.freshAirZeroDone || !this.bumpTestDone) {
+          this.bridge.setVar("Err_SkippedBumpTest", true);
+          this.showToast(t.toastErrBump, true);
+        }
+
+        // Check if learner left ventilation ON
+        if (this.ventilationOn && this.probeDepth > 0.25) {
+          this.bridge.setVar("Err_VentLeftOn", true);
+          this.showToast(t.toastErrVent, true);
+        }
+
+        // Check if T90 Pump Dwell time (< 4.0 seconds / < 100%) is incomplete
+        if (this.dwellProgress < 0.99) {
+          this.bridge.setVar("Err_InsufficientDwellTime", true);
+          this.audio.playChirp(480, 0.16);
+          this.showToast(t.toastErrDwell, true);
+          return;
+        }
+
+        // Determine which stratum is being logged
+        let stratumKey = null;
+        let stratumLabel = "";
+        if (this.probeDepth >= 0.5 && this.probeDepth <= 2.5) {
+          stratumKey = "top";
+          stratumLabel = "TOP (0.5–2.5m)";
+          this.bridge.setVar("Depth_Top_Tested", true);
+        } else if (this.probeDepth >= 4.0 && this.probeDepth <= 6.0) {
+          stratumKey = "mid";
+          stratumLabel = "MID (4.0–6.0m)";
+          this.bridge.setVar("Depth_Mid_Tested", true);
+        } else if (this.probeDepth >= 8.0 && this.probeDepth <= 9.8) {
+          stratumKey = "bot";
+          stratumLabel = "BOT (8.0–9.8m)";
+          this.bridge.setVar("Depth_Bot_Tested", true);
+        } else {
+          this.audio.playChirp(620, 0.12);
+          this.showToast(t.toastNotInStratum, true);
+          return;
+        }
+
+        const g = { ...this.displayedGas };
+        const isHazard = g.o2 < 20.8 || g.o2 > 21.5 || g.lel >= 1 || g.h2s >= 5 || g.co >= 25;
+        this.loggedStrata[stratumKey] = { ...g, isHazard };
+
+        // Update Log Table Row
+        const row = document.getElementById(`log-row-${stratumKey}`);
+        row.className = "strata-row-logged";
+        document.getElementById(`log-${stratumKey}-o2`).textContent = g.o2.toFixed(1);
+        document.getElementById(`log-${stratumKey}-lel`).textContent = g.lel.toFixed(0);
+        document.getElementById(`log-${stratumKey}-h2s`).textContent = g.h2s.toFixed(1);
+        document.getElementById(`log-${stratumKey}-co`).textContent = g.co.toFixed(0);
+
+        const stCell = document.getElementById(`log-${stratumKey}-st`);
+        stCell.textContent = isHazard ? "HAZARD" : "SAFE";
+        stCell.style.color = isHazard ? "#F87171" : "#34D399";
+        stCell.style.fontWeight = "800";
+
+        this.audio.playChirp(2100, 0.09);
+        this.showToast(`${t.toastLogged}${stratumLabel}`, false);
+      }
+
+      submitPermitDecision(decision) {
+        this.audio.ensureContext();
+        const t = I18N[this.lang];
+
+        // Evaluate whether the permit decision is correct
+        // Scenario 1 & 2 contain lethal/unsafe pockets -> MUST DENY.
+        // Scenario 3 is safe ONLY if all 3 strata were tested with ventilation stopped -> GRANT.
+        const allStrataTested =
+          this.bridge.vars.Depth_Top_Tested &&
+          this.bridge.vars.Depth_Mid_Tested &&
+          this.bridge.vars.Depth_Bot_Tested;
+
+        let decisionCorrect = false;
+        if (this.scenarioId === 1 || this.scenarioId === 2) {
+          decisionCorrect = decision === "DENY";
+        } else if (this.scenarioId === 3) {
+          decisionCorrect = decision === "GRANT" && allStrataTested && !this.ventilationOn;
+        }
+
+        // Calculate Composite Score (0 to 100)
+        let score = 0;
+        if (!this.bridge.vars.Err_SkippedBumpTest && this.freshAirZeroDone && this.bumpTestDone) score += 15;
+        if (!this.bridge.vars.Err_VentLeftOn && !this.ventilationOn) score += 15;
+        if (this.bridge.vars.Depth_Top_Tested) score += 10;
+        if (this.bridge.vars.Depth_Mid_Tested) score += 10;
+        if (this.bridge.vars.Depth_Bot_Tested) score += 10;
+        if (!this.bridge.vars.Err_InsufficientDwellTime) score += 10;
+        if (decisionCorrect) score += 30;
+
+        // Write Outbound Variables to Storyline 360
+        this.bridge.setVar("Permit_Decision_Correct", decisionCorrect);
+        this.bridge.setVar("Sim_Score", score);
+        this.bridge.setVar("Sim_Completed", true);
+        this.bridge.syncOutboundAll();
+
+        // Update UI Badge
+        const badge = document.getElementById("badge-permit");
+        badge.textContent = decisionCorrect ? "PASS" : "FAIL";
+        badge.className = `status-pill ${decisionCorrect ? "ok" : "err"}`;
+
+        // Unlock Post-Decision X-Ray Gas Layer Visualizer & Show Debrief
+        document.getElementById("btn-xray-toggle").style.display = "flex";
+        this.toggleXRay(true);
+        this.renderDebriefModal(decisionCorrect, score);
+      }
+
+      renderDebriefModal(decisionCorrect, score) {
+        const t = I18N[this.lang];
+        const card = document.getElementById("debrief-card");
+        card.style.display = "flex";
+
+        const headline = document.getElementById("debrief-headline");
+        headline.textContent = decisionCorrect ? t.debriefPassTitle : t.debriefFailTitle;
+        headline.style.color = decisionCorrect ? "#34D399" : "#F87171";
+
+        document.getElementById("debrief-score").textContent = `SCORE: ${score}%`;
+
+        const flags = [
+          {
+            label: "Bump & Zero Check",
+            ok: !this.bridge.vars.Err_SkippedBumpTest && this.freshAirZeroDone && this.bumpTestDone
+          },
+          {
+            label: "Ventilation Stopped",
+            ok: !this.bridge.vars.Err_VentLeftOn && !this.ventilationOn
+          },
+          {
+            label: "T90 Dwell (>4s)",
+            ok: !this.bridge.vars.Err_InsufficientDwellTime
+          },
+          {
+            label: "Top Stratum (CH₄)",
+            ok: this.bridge.vars.Depth_Top_Tested
+          },
+          {
+            label: "Mid Stratum (CO)",
+            ok: this.bridge.vars.Depth_Mid_Tested
+          },
+          {
+            label: "Bilge Stratum (H₂S)",
+            ok: this.bridge.vars.Depth_Bot_Tested
+          }
+        ];
+
+        const grid = document.getElementById("debrief-flags-grid");
+        grid.innerHTML = flags
+          .map(
+            (f) => `
+          <div class="flag-item" style="border-color:${f.ok ? "rgba(16,185,129,0.45)" : "rgba(239,68,68,0.5)"}">
+            <span>${f.label}</span>
+            <strong style="color:${f.ok ? "#34D399" : "#F87171"}">${f.ok ? "✔ OK" : "✖ ERR"}</strong>
+          </div>`
+          )
+          .join("");
+
+        gsap.fromTo(card, { y: 30, opacity: 0 }, { y: 0, opacity: 1, duration: 0.35, ease: "power2.out" });
+      }
+
+      toggleXRay(forceState) {
+        this.xrayEnabled = typeof forceState === "boolean" ? forceState : !this.xrayEnabled;
+        this.xrayGroup.visible = this.xrayEnabled;
+        document.getElementById("xray-banner").style.display = this.xrayEnabled ? "flex" : "none";
+        document.getElementById("btn-xray-toggle").classList.toggle("active", this.xrayEnabled);
+      }
+
+      toggleAudio() {
+        this.audio.setEnabled(!this.audio.enabled);
+        const btn = document.getElementById("btn-audio-toggle");
+        const t = I18N[this.lang];
+        btn.classList.toggle("active", this.audio.enabled);
+        document.getElementById("audio-icon").textContent = this.audio.enabled ? "🔊" : "🔇";
+        document.getElementById("ui-btn-audio").textContent = this.audio.enabled ? t.btnAudioOn : t.btnAudioOff;
+      }
+
+      toggleLanguage() {
+        this.lang = this.lang === "EN" ? "TR" : "EN";
+        this.bridge.setVar("SL_Lang", this.lang);
+        this.applyLanguage();
+      }
+
+      applyLanguage() {
+        const t = I18N[this.lang];
+        document.getElementById("ui-title").textContent = t.title;
+        document.getElementById("ui-subtitle").textContent = t.subtitle;
+        document.getElementById("ui-scen-label").textContent = t.scenLabel;
+        document.getElementById("ui-scen-name").textContent = t.scenNames[this.scenarioId];
+        document.getElementById("ui-btn-xray").textContent = t.btnXray;
+        document.getElementById("ui-btn-audio").textContent = this.audio.enabled ? t.btnAudioOn : t.btnAudioOff;
+        document.getElementById("ui-btn-reset").textContent = t.btnReset;
+
+        document.getElementById("ui-step1-title").textContent = t.step1Title;
+        document.getElementById("ui-step1-desc").textContent = t.step1Desc;
+        document.getElementById("ui-btn-zero").textContent = t.btnZero;
+        document.getElementById("ui-btn-bump").textContent = t.btnBump;
+
+        document.getElementById("ui-step2-title").textContent = t.step2Title;
+        document.getElementById("ui-step2-desc").textContent = t.step2Desc;
+        document.getElementById("ui-btn-vent-on").textContent = t.btnVentOn;
+        document.getElementById("ui-btn-vent-stop").textContent = t.btnVentStop;
+
+        document.getElementById("ui-step3-title").textContent = t.step3Title;
+        document.getElementById("ui-lbl-depth").textContent = t.lblDepth;
+        document.getElementById("ui-lbl-lateral").textContent = t.lblLateral;
+        document.getElementById("ui-lbl-dwell").textContent = t.lblDwell;
+        document.getElementById("ui-drag-hint").textContent = t.dragHint;
+
+        document.getElementById("ui-leg-title").textContent = t.legTitle;
+        document.getElementById("ui-leg-cam").textContent = t.legCam;
+        document.getElementById("ui-leg-vd").textContent = t.legVd;
+
+        document.getElementById("ui-xray-title").textContent = t.xrayTitle;
+        document.getElementById("ui-xray-top").textContent = t.xrayTop;
+        document.getElementById("ui-xray-mid").textContent = t.xrayMid;
+        document.getElementById("ui-xray-bot").textContent = t.xrayBot;
+
+        document.getElementById("ui-spatial-dwell-lbl").textContent = t.spatialDwellLbl;
+        document.getElementById("ui-btn-log-sample").textContent = t.btnLogSample;
+        document.getElementById("ui-btn-log-mini").textContent = t.btnLogMini;
+
+        document.getElementById("ui-step4-title").textContent = t.step4Title;
+        document.getElementById("th-stratum").textContent = t.thStratum;
+        document.getElementById("th-state").textContent = t.thState;
+
+        document.getElementById("ui-step5-title").textContent = t.step5Title;
+        document.getElementById("ui-step5-desc").textContent = t.step5Desc;
+        document.getElementById("ui-btn-grant").textContent = t.btnGrant;
+        document.getElementById("ui-btn-deny").textContent = t.btnDeny;
+        document.getElementById("ui-debrief-xray").textContent = t.debriefXray;
+
+        this.updateStep1Badge();
+      }
+
+      setScenario(scenId, skipReset = false) {
+        this.scenarioId = scenId;
+        this.bridge.setVar("SL_ScenarioID", scenId);
+        document.getElementById("ui-scen-name").textContent = I18N[this.lang].scenNames[scenId];
+
+        [1, 2, 3].forEach((id) => {
+          const btn = document.getElementById(`dev-scen-${id}`);
+          if (btn) btn.classList.toggle("active", id === scenId);
+        });
+
+        // Adjust X-Ray Volumetric Layer visual colors per Scenario
+        if (this.xrayTopBox && this.xrayMidBox && this.xrayBotBox) {
+          if (scenId === 1) {
+            this.xrayTopBox.material.opacity = 0.05;
+            this.xrayMidBox.material.color.setHex(0xEF4444);
+            this.xrayMidBox.material.opacity = 0.25;
+            this.xrayBotBox.material.color.setHex(0xDC2626);
+            this.xrayBotBox.material.opacity = 0.35;
+          } else if (scenId === 2) {
+            this.xrayTopBox.material.color.setHex(0xF59E0B);
+            this.xrayTopBox.material.opacity = 0.25;
+            this.xrayMidBox.material.color.setHex(0x38BDF8);
+            this.xrayMidBox.material.opacity = 0.16;
+            this.xrayBotBox.material.color.setHex(0xD946EF);
+            this.xrayBotBox.material.opacity = 0.32;
+          } else {
+            this.xrayTopBox.material.color.setHex(0x10B981);
+            this.xrayTopBox.material.opacity = 0.12;
+            this.xrayMidBox.material.color.setHex(0x10B981);
+            this.xrayMidBox.material.opacity = 0.12;
+            this.xrayBotBox.material.color.setHex(0x10B981);
+            this.xrayBotBox.material.opacity = 0.12;
+          }
+        }
+
+        if (!skipReset) {
+          this.resetSimulation();
+        }
+      }
+
+      resetSimulation() {
+        this.freshAirZeroDone = false;
+        this.bumpTestDone = false;
+        this.isBumpingNow = false;
+        this.ventilationOn = true;
+        this.fastDropCheckedAtBottom = false;
+
+        this.bridge.setVar("Sim_Completed", false);
+        this.bridge.setVar("Sim_Score", 0);
+        this.bridge.setVar("Permit_Decision_Correct", false);
+        this.bridge.setVar("Depth_Top_Tested", false);
+        this.bridge.setVar("Depth_Mid_Tested", false);
+        this.bridge.setVar("Depth_Bot_Tested", false);
+        this.bridge.setVar("Err_SkippedBumpTest", false);
+        this.bridge.setVar("Err_VentLeftOn", false);
+        this.bridge.setVar("Err_InsufficientDwellTime", false);
+
+        document.getElementById("btn-fresh-zero").classList.remove("done");
+        document.getElementById("btn-bump-test").classList.remove("done");
+        this.updateStep1Badge();
+
+        this.setVentilation(true);
+        this.setProbePosition(0.0, 0.0);
+        this.dwellProgress = 1.0;
+
+        ["top", "mid", "bot"].forEach((k) => {
+          this.loggedStrata[k] = null;
+          document.getElementById(`log-row-${k}`).className = "strata-row-pending";
+          document.getElementById(`log-${k}-o2`).textContent = "--";
+          document.getElementById(`log-${k}-lel`).textContent = "--";
+          document.getElementById(`log-${k}-h2s`).textContent = "--";
+          document.getElementById(`log-${k}-co`).textContent = "--";
+          const st = document.getElementById(`log-${k}-st`);
+          st.textContent = "PENDING";
+          st.style.color = "";
+        });
+
+        document.getElementById("badge-permit").textContent = "AWAITING";
+        document.getElementById("badge-permit").className = "status-pill pending";
+        document.getElementById("debrief-card").style.display = "none";
+        document.getElementById("btn-xray-toggle").style.display = "none";
+        this.toggleXRay(false);
+      }
+
+      showToast(msg, isWarning = false) {
+        const toast = document.getElementById("toast-alert");
+        toast.textContent = msg;
+        toast.style.borderColor = isWarning ? "#EF4444" : "#F59E0B";
+        gsap.killTweensOf(toast);
+        gsap.fromTo(
+          toast,
+          { opacity: 0, y: -16 },
+          {
+            opacity: 1,
+            y: 0,
+            duration: 0.25,
+            onComplete: () => {
+              gsap.to(toast, { opacity: 0, y: -12, delay: 3.2, duration: 0.3 });
+            }
+          }
+        );
+      }
+
+      /*************************************************************************
+       * REAL-TIME ANIMATION, SENSOR INTERPOLATION & SPATIAL TAG PROJECTION
+       *************************************************************************/
+      updateSensorAndUI(now) {
+        const t = I18N[this.lang];
+
+        // 1. Update T90 Pump Sample Dwell Progress (4.0 seconds required)
+        if (this.probeDepth <= 0.25) {
+          this.dwellProgress = 1.0;
+        } else {
+          const elapsedSec = (now - this.lastMovedTimestamp) / 1000;
+          this.dwellProgress = Math.min(1.0, elapsedSec / this.dwellSeconds);
+        }
+
+        const dwellPct = Math.round(this.dwellProgress * 100);
+        document.getElementById("val-dwell").textContent = `${dwellPct}%`;
+        document.getElementById("bar-dwell").style.width = `${dwellPct}%`;
+
+        // 2. Compute Target Gas & Interpolate Display with T90 Lag
+        if (this.isBumpingNow) {
+          this.displayedGas = { o2: 18.0, lel: 25, h2s: 15.0, co: 50 };
+        } else {
+          this.targetGas = this.computeTrueAtmosphereAt(this.probeDepth, this.probeLateralX);
+          const easeFactor = Math.pow(this.dwellProgress, 1.6);
+          this.displayedGas = {
+            o2: Number((this.lastStableGas.o2 + (this.targetGas.o2 - this.lastStableGas.o2) * easeFactor).toFixed(1)),
+            lel: Math.round(this.lastStableGas.lel + (this.targetGas.lel - this.lastStableGas.lel) * easeFactor),
+            h2s: Number((this.lastStableGas.h2s + (this.targetGas.h2s - this.lastStableGas.h2s) * easeFactor).toFixed(1)),
+            co: Math.round(this.lastStableGas.co + (this.targetGas.co - this.lastStableGas.co) * easeFactor)
+          };
+        }
+
+        // 3. Update 4-Gas Detector LCD Readouts & Threshold Alarms
+        const g = this.displayedGas;
+        document.getElementById("lcd-val-o2").textContent = g.o2.toFixed(1);
+        document.getElementById("lcd-val-lel").textContent = g.lel.toFixed(0);
+        document.getElementById("lcd-val-h2s").textContent = g.h2s.toFixed(1);
+        document.getElementById("lcd-val-co").textContent = g.co.toFixed(0);
+        document.getElementById("lcd-depth-readout").textContent = `D: ${this.probeDepth.toFixed(1)}m`;
+
+        const o2Hazard = g.o2 < 20.8 || g.o2 > 21.5;
+        const lelHazard = g.lel >= 1;
+        const h2sHazard = g.h2s >= 5.0;
+        const coHazard = g.co >= 25;
+        const anyAlarm = o2Hazard || lelHazard || h2sHazard || coHazard;
+
+        document.getElementById("cell-o2").classList.toggle("cell-hazard", o2Hazard);
+        document.getElementById("cell-lel").classList.toggle("cell-hazard", lelHazard);
+        document.getElementById("cell-h2s").classList.toggle("cell-hazard", h2sHazard);
+        document.getElementById("cell-co").classList.toggle("cell-hazard", coHazard);
+
+        const lcd = document.getElementById("detector-lcd");
+        lcd.classList.toggle("alarm-state", anyAlarm);
+
+        const banner = document.getElementById("lcd-alarm-banner");
+        if (anyAlarm) {
+          banner.textContent = t.alarmHazard;
+        } else if (this.dwellProgress < 0.99) {
+          banner.textContent = t.alarmLagging;
+        } else {
+          banner.textContent = t.alarmNormal;
+        }
+
+        // Dual-tone piezoelectric alarm & LED strobe
+        this.audio.setAlarmState(anyAlarm);
+        const ledL = document.getElementById("led-left");
+        const ledR = document.getElementById("led-right");
+        if (anyAlarm) {
+          const flashOn = Math.floor(now / 150) % 2 === 0;
+          ledL.classList.toggle("flashing", flashOn);
+          ledR.classList.toggle("flashing", !flashOn);
+        } else {
+          ledL.classList.remove("flashing");
+          ledR.classList.remove("flashing");
+        }
+
+        // 4. Update Spatial Contiguity 3D Floating Tag beside Probe Tip
+        let zoneName = t.zoneDeck;
+        if (this.probeDepth >= 0.5 && this.probeDepth <= 2.5) zoneName = t.zoneTop;
+        else if (this.probeDepth > 2.5 && this.probeDepth < 6.5) zoneName = t.zoneMid;
+        else if (this.probeDepth >= 6.5) zoneName = t.zoneBot;
+
+        document.getElementById("badge-probe-zone").textContent = `${zoneName} (${this.probeDepth.toFixed(1)}m)`;
+        document.getElementById("spatial-depth-txt").textContent = `DEPTH: ${this.probeDepth.toFixed(1)}m`;
+        document.getElementById("spatial-zone-txt").textContent = zoneName;
+
+        const spDwellTxt = document.getElementById("spatial-dwell-txt");
+        const spDwellBar = document.getElementById("spatial-dwell-bar");
+        spDwellBar.style.width = `${dwellPct}%`;
+        if (this.dwellProgress >= 0.99) {
+          spDwellTxt.textContent = t.dwellReady;
+          spDwellTxt.style.color = "#34D399";
+          spDwellBar.style.background = "#10B981";
+        } else {
+          spDwellTxt.textContent = `${dwellPct}% ${t.dwellLag}`;
+          spDwellTxt.style.color = "#FBBF24";
+          spDwellBar.style.background = "#F59E0B";
+        }
+
+        // Project 3D Probe Tip position to 2D Viewport Coordinates
+        if (this.probeGroup && this.camera && this.container) {
+          const worldPos = new THREE.Vector3();
+          this.probeGroup.getWorldPosition(worldPos);
+          worldPos.project(this.camera);
+
+          const cw = this.container.clientWidth;
+          const ch = this.container.clientHeight;
+          const screenX = Math.min(cw - 210, Math.max(24, (worldPos.x * 0.5 + 0.5) * cw));
+          const screenY = Math.min(ch - 90, Math.max(55, (-worldPos.y * 0.5 + 0.5) * ch));
+
+          const tag = document.getElementById("probe-spatial-tag");
+          tag.style.left = `${screenX}px`;
+          tag.style.top = `${screenY}px`;
+          tag.style.borderColor = anyAlarm ? "#EF4444" : "#F59E0B";
+        }
+      }
+
+      animate() {
+        requestAnimationFrame(() => this.animate());
+        const now = performance.now();
+
+        // 1. Rotate Ventilation Blower Fan & Animate Airflow Stream if ON
+        if (this.ventilationOn && this.fanBlades) {
+          this.fanBlades.rotation.x += 0.32;
+          if (this.ventStreamPoints) {
+            const posAttr = this.ventStreamPoints.geometry.attributes.position;
+            for (let i = 0; i < posAttr.count; i++) {
+              let py = posAttr.getY(i) - 0.14;
+              if (py < -4.2) py = 3.6;
+              posAttr.setY(i, py);
+            }
+            posAttr.needsUpdate = true;
+          }
+        }
+
+        // 2. Subtle Bilge Sludge Ripple Animation
+        if (this.sludgeTex) {
+          this.sludgeTex.offset.x = Math.sin(now * 0.0004) * 0.04;
+          this.sludgeTex.offset.y = Math.cos(now * 0.0003) * 0.04;
+        }
+
+        // 3. Animate Sample Transit Bead traveling up the hose toward the detector
+        if (this.hoseCurve && this.transitPulseMesh) {
+          const tPos = 1.0 - ((now * 0.0006) % 1.0);
+          const pt = this.hoseCurve.getPointAt(tPos);
+          this.transitPulseMesh.position.copy(pt);
+        }
+
+        this.updateSensorAndUI(now);
+        this.controls.update();
+        this.renderer.render(this.scene, this.camera);
+      }
+    }
+
+    // Bootstrap Simulation on DOM Ready
+    let simApp;
+    window.addEventListener("DOMContentLoaded", () => {
+      simApp = new EnclosedSpaceSimApp();
+    });
+  </script>
+</body>
+</html>
