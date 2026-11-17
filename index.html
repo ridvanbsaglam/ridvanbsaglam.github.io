@@ -225,6 +225,42 @@
           </div>
         </article>
 
+        <!-- PROJECT 4: TELL ME! STORYTELLING CARD GAME -->
+        <article class="flex flex-col group">
+          <a href="sims/tell-me-story/index.html" target="_blank" class="project-image-wrap aspect-video relative block mb-5">
+            <img src="assets/tell_me_story_showcase.jpg" alt="Tell Me! Storytelling Card Game" class="w-full h-full object-cover">
+            <div class="absolute bottom-3 right-3 px-3 py-1.5 rounded bg-black/80 backdrop-blur text-xs font-mono text-white/90 border border-white/10 opacity-0 group-hover:opacity-100 transition-opacity">
+              Launch Game ↗
+            </div>
+          </a>
+
+          <div>
+            <div class="flex items-center justify-between text-xs font-mono text-muted mb-2">
+              <span>NARRATIVE GAME · E-LEARNING</span>
+              <span>RIVE &amp; LUAU · HTML5 CANVAS</span>
+            </div>
+
+            <h3 class="text-xl font-display font-semibold text-white group-hover:text-white/80 transition-colors mb-2">
+              <a href="sims/tell-me-story/index.html" target="_blank">Tell Me! — A Storytelling Card Lab</a>
+            </h3>
+
+            <p class="text-sm text-muted leading-relaxed font-normal mb-4">
+              Interactive 4-difficulty narrative game ported from Articulate Storyline into native Rive &amp; Luau. Features 72 hand-crafted watercolor assets, 30s improv timer, mystery plot twists, and a real-time story writing studio.
+            </p>
+
+            <div class="flex items-center gap-5 text-xs font-medium pt-1">
+              <a href="sims/tell-me-story/index.html" target="_blank" class="text-white hover:underline flex items-center gap-1">
+                <span>Play Live Demo</span>
+                <span>↗</span>
+              </a>
+              <span class="text-white/20">/</span>
+              <button onclick="openModal('tell-me-story')" class="text-muted hover:text-white transition-colors">
+                Case Study
+              </button>
+            </div>
+          </div>
+        </article>
+
       </div>
     </section>
 
@@ -405,6 +441,27 @@
             <div>
               <div class="text-xs font-mono uppercase text-white mb-1">Tech Stack</div>
               <p class="font-mono text-xs text-white/80">Three.js · OrbitControls · GSAP 3 · WebGL Stratum Shaders · Bilingual (EN/TR) Storyline Bridge</p>
+            </div>
+          </div>
+        `
+      },
+      'tell-me-story': {
+        title: 'Tell Me! — A Storytelling Card Lab',
+        tag: 'NARRATIVE LAB · GAME DESIGN & E-LEARNING',
+        url: 'sims/tell-me-story/index.html',
+        body: `
+          <div class="space-y-5 text-sm text-muted leading-relaxed pt-4">
+            <div>
+              <div class="text-xs font-mono uppercase text-white mb-1">The Problem</div>
+              <p>Storytelling e-learning exercises frequently suffer from rigid slide-based authoring constraints, repetitive question-answer loops, and lack of player agency, causing low engagement during narrative improvisation and communication training.</p>
+            </div>
+            <div>
+              <div class="text-xs font-mono uppercase text-white mb-1">The Solution</div>
+              <p>Originally conceived as an Articulate Storyline challenge, this project was completely rewritten into a responsive, high-performance card game. Features 4 escalations of difficulty (untimed, 30s countdown, mystery envelope plot twists, and an in-app writing studio with physical keyboard support and shareable storycards), backed by 72 hand-crafted watercolor assets.</p>
+            </div>
+            <div>
+              <div class="text-xs font-mono uppercase text-white mb-1">Tech Stack</div>
+              <p class="font-mono text-xs text-white/80">Rive &amp; Luau Architecture · HTML5 60FPS Canvas · Web Audio API · 72 Watercolor Sprites · Hardware Keyboard Dispatch</p>
             </div>
           </div>
         `

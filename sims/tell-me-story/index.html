@@ -1,0 +1,1054 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Tell Me! — A Storytelling Card Game</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Patrick+Hand&family=Outfit:wght@400;600;700&display=swap" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+    html, body {
+      width: 100vw;
+      height: 100vh;
+      overflow: hidden;
+      background: #0f3d4d;
+      font-family: 'Patrick Hand', cursive, sans-serif;
+      user-select: none;
+    }
+    #game-canvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      display: block;
+      touch-action: none;
+    }
+    #loading-screen {
+      position: fixed;
+      inset: 0;
+      background: radial-gradient(circle at 50% 40%, #1a576e 0%, #0d2834 100%);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 100;
+      color: #fff;
+      transition: opacity 0.4s ease;
+    }
+    #loading-screen.hidden {
+      opacity: 0;
+      pointer-events: none;
+    }
+    .spinner {
+      width: 48px;
+      height: 48px;
+      border: 4px solid rgba(255, 255, 255, 0.2);
+      border-top-color: #f6bc44;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      margin-bottom: 20px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .load-text {
+      font-size: 1.5rem;
+      letter-spacing: 1px;
+      color: #fceecb;
+      margin-bottom: 8px;
+    }
+    .load-sub {
+      font-family: 'Outfit', sans-serif;
+      font-size: 0.85rem;
+      color: #8bb7cc;
+    }
+  </style>
+</head>
+<body>
+
+  <div id="loading-screen">
+    <div class="spinner"></div>
+    <div class="load-text">Shuffling Story Cards...</div>
+    <div class="load-sub" id="load-count">Loading 0 / 76 assets</div>
+  </div>
+
+  <canvas id="game-canvas"></canvas>
+
+  <script>
+    // --- AUDIO SYNTHESIZER (0 external audio files needed) ---
+    const AudioCtx = window.AudioContext || window.webkitAudioContext;
+    let actx = null;
+    function playBeep(freq = 440, type = 'sine', duration = 0.12, vol = 0.2) {
+      try {
+        if (!actx) actx = new AudioCtx();
+        if (actx.state === 'suspended') actx.resume();
+        const osc = actx.createOscillator();
+        const g = actx.createGain();
+        osc.type = type;
+        osc.frequency.setValueAtTime(freq, actx.currentTime);
+        g.gain.setValueAtTime(vol, actx.currentTime);
+        g.gain.exponentialRampToValueAtTime(0.001, actx.currentTime + duration);
+        osc.connect(g);
+        g.connect(actx.destination);
+        osc.start();
+        osc.stop(actx.currentTime + duration);
+      } catch (e) {}
+    }
+    function sndFlip() { playBeep(320, 'triangle', 0.08, 0.15); }
+    function sndClick() { playBeep(520, 'sine', 0.06, 0.12); }
+    function sndCheck() { playBeep(660, 'sine', 0.15, 0.2); setTimeout(() => playBeep(880, 'sine', 0.2, 0.2), 60); }
+    function sndTwist() { playBeep(400, 'sawtooth', 0.25, 0.15); setTimeout(() => playBeep(600, 'triangle', 0.3, 0.2), 120); }
+    function sndFanfare() {
+      [523, 659, 783, 1046].forEach((f, i) => setTimeout(() => playBeep(f, 'triangle', 0.25, 0.18), i * 90));
+    }
+
+    // --- CARDS METADATA REGISTRY ---
+    const CARDS_DATA = [
+      {
+        label: "Character",
+        items: [
+          { id: "c1_alien", name: "space cat" },
+          { id: "c1_astronaut", name: "astronaut" },
+          { id: "c1_basketball_player", name: "basketball player" },
+          { id: "c1_biography", name: "director" },
+          { id: "c1_boss", name: "boss" },
+          { id: "c1_dress", name: "princess" },
+          { id: "c1_family", name: "family" },
+          { id: "c1_festival", name: "clown" },
+          { id: "c1_investigate", name: "detective" },
+          { id: "c1_kick", name: "martial artist" },
+          { id: "c1_kung_fu", name: "kung fu master" },
+          { id: "c1_mother", name: "mother" },
+          { id: "c1_pharmacist", name: "pharmacist" },
+          { id: "c1_professions_and_jobs", name: "doctor" },
+          { id: "c1_rasta", name: "musician" },
+          { id: "c1_receptionist", name: "receptionist" },
+          { id: "c1_scientist", name: "scientist" },
+          { id: "c1_singer", name: "singer" },
+          { id: "c1_student", name: "graduate" },
+          { id: "c1_suspect", name: "suspect" },
+          { id: "c1_teacher", name: "teacher" },
+          { id: "c1_thief", name: "thief" },
+          { id: "c1_wizards", name: "wizard" },
+          { id: "c1_work", name: "architect" }
+        ]
+      },
+      {
+        label: "Place",
+        items: [
+          { id: "c2_01", name: "carousel" },
+          { id: "c2_02", name: "theater" },
+          { id: "c2_03", name: "circus" },
+          { id: "c2_04", name: "haunted house" },
+          { id: "c2_05", name: "tropical island" },
+          { id: "c2_06", name: "castle" },
+          { id: "c2_07", name: "space station" },
+          { id: "c2_government", name: "courthouse" },
+          { id: "c2_mortgage_loan", name: "bank vault" },
+          { id: "c2_stadium", name: "stadium" }
+        ]
+      },
+      {
+        label: "Weather",
+        items: [
+          { id: "c3_01", name: "sunny" },
+          { id: "c3_02", name: "rainbow" },
+          { id: "c3_03", name: "snowy night" },
+          { id: "c3_04", name: "meteor shower" },
+          { id: "c3_beach", name: "beach" },
+          { id: "c3_dust", name: "sandstorm" },
+          { id: "c3_earthquake", name: "earthquake" },
+          { id: "c3_flood", name: "flood" },
+          { id: "c3_park", name: "park" },
+          { id: "c3_rain", name: "rain" },
+          { id: "c3_storm", name: "thunderstorm" },
+          { id: "c3_sun", name: "cool sun" },
+          { id: "c3_tsunami", name: "tsunami" },
+          { id: "c3_war", name: "battle" }
+        ]
+      },
+      {
+        label: "Twist",
+        items: [
+          { id: "c4_bipolar", name: "drama masks" },
+          { id: "c4_crocodile", name: "crocodile" },
+          { id: "c4_death", name: "grim reaper" },
+          { id: "c4_fortune_telling", name: "crystal ball" },
+          { id: "c4_scorpion", name: "scorpion" },
+          { id: "c4_tent", name: "campfire" },
+          { id: "c4_thyroid", name: "lightning" },
+          { id: "c4_unicorn", name: "unicorn" },
+          { id: "c4_voodoo", name: "voodoo doll" },
+          { id: "c4_whale", name: "blue whale" }
+        ]
+      },
+      {
+        label: "Object",
+        items: [
+          { id: "c5_construction_and_tools", name: "tools" },
+          { id: "c5_evidences", name: "magnifier" },
+          { id: "c5_handcuff", name: "handcuffs" },
+          { id: "c5_lighter", name: "lighter" },
+          { id: "c5_mat", name: "treasure map" },
+          { id: "c5_mutation", name: "dna" },
+          { id: "c5_scissors", name: "scissors" },
+          { id: "c5_sewing_machine", name: "sewing machine" },
+          { id: "c5_sundae", name: "ice cream" },
+          { id: "c5_vaccine", name: "potion" }
+        ]
+      }
+    ];
+
+    const SENTENCES = [
+      "I am from a different planet.",
+      "Are you serious?",
+      "Would you like a bigger one?",
+      "You are the weakest link! Goodbye!",
+      "Hold on, I need at least a few minutes!"
+    ];
+
+    const STORY_STARTERS = [
+      "Once upon a time, ",
+      "Suddenly, out of nowhere, ",
+      "Nobody believed it when ",
+      "In the middle of the storm, ",
+      "To everyone's surprise, ",
+      "Finally, the secret was out: "
+    ];
+
+    const CAT_COLORS = [
+      { r: 238, g: 108, b: 104 }, // Character (coral rose)
+      { r: 96,  g: 148, b: 234 }, // Place (slate blue)
+      { r: 104, g: 184, b: 122 }, // Weather (moss green)
+      { r: 174, g: 124, b: 226 }, // Twist (orchid violet)
+      { r: 246, g: 164, b: 76  }, // Object (warm ochre)
+    ];
+
+    const LEVELS = [
+      { id: "lvl_rookie", title: "LEVEL 1 - ROOKIE", sub: "No timer. Take your time." },
+      { id: "lvl_expert", title: "LEVEL 2 - EXPERT", sub: "30-second timer challenge!" },
+      { id: "lvl_master", title: "LEVEL 3 - MASTER", sub: "Mystery Twist sentence included!" },
+      { id: "lvl_guru",   title: "LEVEL 4 - GURU",   sub: "Write & Showcase your story." }
+    ];
+
+    const KB_ROWS = [
+      ["Q","W","E","R","T","Y","U","I","O","P"],
+      ["A","S","D","F","G","H","J","K","L","!"],
+      ["Z","X","C","V","B","N","M",",",".","?"]
+    ];
+
+    // --- GAME ENGINE STATE ---
+    const VW = 1280, VH = 720;
+    const canvas = document.getElementById('game-canvas');
+    const ctx = canvas.getContext('2d');
+
+    const state = {
+      images: {},
+      screen: "hello", // hello, play
+      levelIdx: 1,     // 1, 2, 3, 4
+      phase: "cards",  // cards, write, showcase
+      cards: [],
+      hitZones: [],
+      sparkles: [],
+      hoverId: "",
+      scale: 1,
+      ox: 0,
+      oy: 0,
+      winW: window.innerWidth,
+      winH: window.innerHeight,
+      toast: "",
+      toastT: 0,
+      timerMax: 30,
+      timerLeft: 30,
+      timerRunning: false,
+      sentenceIdx: 0,
+      sentenceOpen: false,
+      sentenceAnim: 0,
+      storyBody: "",
+      shiftOn: true,
+      showHelp: false,
+      lastTime: performance.now()
+    };
+
+    // --- ASSET LOADER ---
+    const imageIds = [
+      "ui_bg", "ui_title", "ui_home", "ui_repeat", "ui_question",
+      "lvl_rookie", "lvl_expert", "lvl_master", "lvl_guru"
+    ];
+    CARDS_DATA.forEach(cat => cat.items.forEach(it => imageIds.push(it.id)));
+
+    let loadedCount = 0;
+    const loadCountEl = document.getElementById('load-count');
+    const loadingScreen = document.getElementById('loading-screen');
+
+    imageIds.forEach(id => {
+      const img = new Image();
+      img.src = `img/${id}.png`;
+      img.onload = () => {
+        state.images[id] = img;
+        loadedCount++;
+        loadCountEl.innerText = `Loading ${loadedCount} / ${imageIds.length} assets`;
+        if (loadedCount === imageIds.length) {
+          setTimeout(() => {
+            loadingScreen.classList.add('hidden');
+            dealCards();
+          }, 300);
+        }
+      };
+      img.onerror = () => {
+        loadedCount++;
+        if (loadedCount === imageIds.length) {
+          loadingScreen.classList.add('hidden');
+          dealCards();
+        }
+      };
+    });
+
+    function dealCards() {
+      state.cards = [];
+      for (let ci = 0; ci < 5; ci++) {
+        const cat = CARDS_DATA[ci];
+        const itemIdx = Math.floor(Math.random() * cat.items.length);
+        state.cards.push({
+          cat: ci,
+          item: itemIdx,
+          flip: 0,
+          target: 0,
+          used: false,
+          pop: 0
+        });
+      }
+      state.sentenceIdx = Math.floor(Math.random() * SENTENCES.length);
+      state.sentenceOpen = false;
+      state.sentenceAnim = 0;
+    }
+
+    function startLevel(lvl) {
+      state.levelIdx = lvl;
+      state.screen = "play";
+      state.phase = "cards";
+      state.timerRunning = false;
+      state.timerMax = 30;
+      state.timerLeft = 30;
+      dealCards();
+      sndClick();
+
+      if (lvl === 2) {
+        state.timerRunning = true;
+      } else if (lvl === 3) {
+        state.sentenceOpen = true;
+      }
+    }
+
+    // --- SKETCH DRAWING UTILS ---
+    function drawSketchBox(x, y, w, h, radius, fillStyle, strokeStyle, shadow = true) {
+      ctx.save();
+      if (shadow) {
+        ctx.fillStyle = "rgba(10, 24, 32, 0.4)";
+        ctx.beginPath();
+        ctx.roundRect(x + 5, y + 6, w, h, radius);
+        ctx.fill();
+      }
+      ctx.fillStyle = fillStyle;
+      ctx.beginPath();
+      ctx.roundRect(x, y, w, h, radius);
+      ctx.fill();
+
+      if (strokeStyle) {
+        ctx.strokeStyle = strokeStyle;
+        ctx.lineWidth = 2.4;
+        ctx.lineJoin = 'round';
+        ctx.stroke();
+      }
+      ctx.restore();
+    }
+
+    function addZone(id, x, y, w, h) {
+      state.hitZones.push({ id, x, y, w, h });
+    }
+
+    function pill(id, text, cx, cy, w, h, bgColor, textColor = "#1b2d39", fontSize = 16) {
+      const isHover = state.hoverId === id;
+      const x = cx - w / 2;
+      const y = cy - h / 2 + (isHover ? -2 : 0);
+      drawSketchBox(x, y, w, h, h / 2, bgColor, "rgba(27, 45, 57, 0.85)", true);
+      ctx.fillStyle = textColor;
+      ctx.font = `bold ${fontSize}px 'Patrick Hand', cursive`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(text, cx, cy + (isHover ? -2 : 0) + 1);
+      addZone(id, x, y, w, h);
+    }
+
+    function spawnBurst(cx, cy, count = 24) {
+      const colors = ['#f6bc44', '#ef5350', '#42a5f5', '#66bb6a', '#ab47bc'];
+      for (let i = 0; i < count; i++) {
+        const ang = Math.random() * Math.PI * 2;
+        const spd = 120 + Math.random() * 260;
+        state.sparkles.push({
+          x: cx,
+          y: cy,
+          vx: Math.cos(ang) * spd,
+          vy: Math.sin(ang) * spd - 60,
+          rad: 3 + Math.random() * 5,
+          color: colors[Math.floor(Math.random() * colors.length)],
+          life: 0,
+          maxLife: 0.6 + Math.random() * 0.4
+        });
+      }
+    }
+
+    // --- RENDER SCREENS ---
+    function renderHello() {
+      // Title
+      const titleImg = state.images['ui_title'];
+      if (titleImg) {
+        const tw = 480, th = (titleImg.height / titleImg.width) * tw;
+        ctx.drawImage(titleImg, (VW - tw) / 2, 70, tw, th);
+      }
+      
+      ctx.fillStyle = "rgba(255, 255, 255, 0.9)";
+      ctx.font = "24px 'Patrick Hand'";
+      ctx.textAlign = "center";
+      ctx.fillText("An interactive storytelling card game powered by Rive & Luau", VW / 2, 235);
+
+      // 4 Level Cards
+      const cardW = 240, cardH = 320, gap = 24;
+      const startX = (VW - (4 * cardW + 3 * gap)) / 2;
+      const cardY = 270;
+
+      LEVELS.forEach((lvl, i) => {
+        const cx = startX + i * (cardW + gap);
+        const isHover = state.hoverId === `lvl_${i+1}`;
+        const drawY = cardY + (isHover ? -8 : 0);
+
+        drawSketchBox(cx, drawY, cardW, cardH, 20, "#fdfcf7", "#213642", true);
+
+        // Header band
+        const cCol = CAT_COLORS[i % CAT_COLORS.length];
+        ctx.fillStyle = `rgb(${cCol.r}, ${cCol.g}, ${cCol.b})`;
+        ctx.beginPath();
+        ctx.roundRect(cx + 3, drawY + 3, cardW - 6, 44, [17, 17, 0, 0]);
+        ctx.fill();
+
+        ctx.fillStyle = "#ffffff";
+        ctx.font = "bold 20px 'Patrick Hand'";
+        ctx.textAlign = "center";
+        ctx.fillText(lvl.title, cx + cardW / 2, drawY + 28);
+
+        // Hat sprite
+        const hatImg = state.images[lvl.id];
+        if (hatImg) {
+          const hw = 120, hh = 120;
+          ctx.drawImage(hatImg, cx + (cardW - hw) / 2, drawY + 68, hw, hh);
+        }
+
+        ctx.fillStyle = "#4a5d6a";
+        ctx.font = "19px 'Patrick Hand'";
+        ctx.fillText(lvl.sub, cx + cardW / 2, drawY + 220);
+
+        pill(`btn_play_${i+1}`, "Play Level", cx + cardW / 2, drawY + 274, 150, 42, isHover ? "#ffd066" : "#f6bc44");
+        addZone(`lvl_${i+1}`, cx, drawY, cardW, cardH);
+      });
+
+      // Bottom Bar
+      pill("btn_help", "How to Play", VW / 2, 650, 160, 40, "#ffffff");
+    }
+
+    function renderPlay() {
+      const lvl = LEVELS[state.levelIdx - 1];
+
+      // Top Bar
+      pill("home", "⌂", 48, 48, 54, 46, "#ffffff");
+      
+      const hat = state.images[lvl.id];
+      if (hat) ctx.drawImage(hat, 90, 24, 48, 48);
+
+      ctx.fillStyle = "#ffffff";
+      ctx.font = "bold 28px 'Patrick Hand'";
+      ctx.textAlign = "left";
+      ctx.fillText(lvl.title, 148, 46);
+
+      ctx.fillStyle = "#a8cddb";
+      ctx.font = "18px 'Patrick Hand'";
+      ctx.fillText(lvl.sub, 148, 68);
+
+      pill("shuffle", "New Cards", VW - 240, 48, 120, 38, "#ffffff");
+      pill("other", "Try Another Level", VW - 90, 48, 150, 38, "#f6bc44");
+
+      // Draw 5 Cards
+      const cw = 200, ch = 310, cgap = 20;
+      const sx = (VW - (5 * cw + 4 * cgap)) / 2;
+      const cy = 180;
+
+      state.cards.forEach((c, i) => {
+        const x = sx + i * (cw + cgap);
+        const y = cy;
+        const cat = CARDS_DATA[c.cat];
+        const item = cat.items[c.item];
+        const isHover = state.hoverId === `card_${i}`;
+        const cCol = CAT_COLORS[c.cat];
+
+        ctx.save();
+        ctx.translate(x + cw / 2, y + ch / 2);
+
+        // Perspective Flip Animation
+        const flipVal = c.flip;
+        const scaleX = Math.abs(Math.cos(flipVal * Math.PI));
+        ctx.scale(scaleX, 1);
+
+        const cardLeft = -cw / 2;
+        const cardTop = -ch / 2 + (isHover ? -6 : 0);
+
+        if (flipVal < 0.5) {
+          // Closed Card Back
+          drawSketchBox(cardLeft, cardTop, cw, ch, 18, "#25485c", "#f6bc44", true);
+          ctx.strokeStyle = "rgba(246, 188, 68, 0.4)";
+          ctx.lineWidth = 2;
+          ctx.strokeRect(cardLeft + 12, cardTop + 12, cw - 24, ch - 24);
+
+          ctx.fillStyle = "#f6bc44";
+          ctx.font = "bold 26px 'Patrick Hand'";
+          ctx.textAlign = "center";
+          ctx.fillText("TELL ME!", 0, -10);
+
+          ctx.fillStyle = "#ffffff";
+          ctx.font = "17px 'Patrick Hand'";
+          ctx.fillText("Tap to Reveal", 0, 24);
+        } else {
+          // Flipped Card Front
+          drawSketchBox(cardLeft, cardTop, cw, ch, 18, "#fcfbfa", "#1a2c38", true);
+
+          // Category Header
+          ctx.fillStyle = `rgb(${cCol.r}, ${cCol.g}, ${cCol.b})`;
+          ctx.beginPath();
+          ctx.roundRect(cardLeft + 3, cardTop + 3, cw - 6, 38, [15, 15, 0, 0]);
+          ctx.fill();
+
+          ctx.fillStyle = "#ffffff";
+          ctx.font = "bold 17px 'Patrick Hand'";
+          ctx.textAlign = "center";
+          ctx.fillText(cat.label.toUpperCase(), 0, cardTop + 24);
+
+          // Card Item Illustration
+          const img = state.images[item.id];
+          if (img) {
+            const iw = 140, ih = 140;
+            ctx.drawImage(img, -iw / 2, cardTop + 54, iw, ih);
+          }
+
+          // Item Name
+          ctx.fillStyle = "#203440";
+          ctx.font = "bold 20px 'Patrick Hand'";
+          ctx.textAlign = "center";
+          ctx.fillText(item.name.toUpperCase(), 0, cardTop + 248);
+
+          // Completion Checkmark
+          if (c.used) {
+            ctx.fillStyle = "#22c55e";
+            ctx.beginPath();
+            ctx.arc(cardLeft + cw - 26, cardTop + 26, 16, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.fillStyle = "#ffffff";
+            ctx.font = "bold 16px 'Patrick Hand'";
+            ctx.fillText("✓", cardLeft + cw - 26, cardTop + 32);
+          }
+        }
+
+        ctx.restore();
+        addZone(`card_${i}`, x, y, cw, ch);
+      });
+
+      // Bottom Control Controls
+      const usedCount = state.cards.filter(c => c.used).length;
+      ctx.fillStyle = "#e2f1f8";
+      ctx.font = "20px 'Patrick Hand'";
+      ctx.textAlign = "center";
+      ctx.fillText(`When a card is used in your story, tap on it to mark it done (${usedCount}/5).`, VW / 2, 535);
+
+      pill("flip_all", "Flip All Cards", VW / 2 - 120, 580, 160, 44, "#ffffff");
+      pill("finish", "It Is Done!", VW / 2 + 120, 580, 160, 44, usedCount === 5 ? "#4ade80" : "#a7f3d0");
+
+      // Level 2 Timer Box
+      if (state.levelIdx === 2) {
+        const tx = VW / 2, ty = 120;
+        const progress = state.timerLeft / state.timerMax;
+        ctx.strokeStyle = "#385b6e";
+        ctx.lineWidth = 6;
+        ctx.beginPath();
+        ctx.arc(tx, ty, 26, 0, Math.PI * 2);
+        ctx.stroke();
+
+        ctx.strokeStyle = state.timerLeft <= 5 ? "#ef4444" : "#f6bc44";
+        ctx.lineWidth = 6;
+        ctx.beginPath();
+        ctx.arc(tx, ty, 26, -Math.PI / 2, -Math.PI / 2 + progress * Math.PI * 2);
+        ctx.stroke();
+
+        ctx.fillStyle = "#ffffff";
+        ctx.font = "bold 18px 'Patrick Hand'";
+        ctx.textAlign = "center";
+        ctx.fillText(Math.ceil(state.timerLeft) + "s", tx, ty + 6);
+      }
+
+      // Level 3 Twist Box
+      if (state.levelIdx === 3 && state.sentenceOpen) {
+        const twistY = 124;
+        drawSketchBox(VW / 2 - 300, twistY - 22, 600, 44, 22, "#fef3c7", "#d97706", true);
+        ctx.fillStyle = "#92400e";
+        ctx.font = "bold 20px 'Patrick Hand'";
+        ctx.textAlign = "center";
+        ctx.fillText(`⚡ Mystery Twist: "${SENTENCES[state.sentenceIdx]}"`, VW / 2, twistY + 5);
+      }
+
+      // Level 4 Write Studio Jump
+      if (state.levelIdx === 4) {
+        pill("btn_open_write", "✍️ Open Story Writing Studio", VW / 2, 650, 260, 44, "#f6bc44");
+      }
+    }
+
+    function renderWrite() {
+      // Top Elements
+      pill("back_cards", "← Back to Cards", 90, 48, 140, 38, "#ffffff");
+      
+      ctx.fillStyle = "#ffffff";
+      ctx.font = "bold 26px 'Patrick Hand'";
+      ctx.textAlign = "left";
+      ctx.fillText("LEVEL 4 - GURU: STORY WRITING STUDIO", 180, 54);
+
+      // Top Cards mini-bar (1-Click Word Add)
+      const miniW = 120, miniH = 50, miniGap = 12;
+      const sx = VW - (5 * miniW + 4 * miniGap) - 40;
+      state.cards.forEach((c, i) => {
+        const x = sx + i * (miniW + miniGap);
+        const item = CARDS_DATA[c.cat].items[c.item];
+        const isHover = state.hoverId === `mini_${i}`;
+        drawSketchBox(x, 26, miniW, miniH, 12, isHover ? "#fff8e6" : "#ffffff", "#213642", false);
+        
+        const img = state.images[item.id];
+        if (img) ctx.drawImage(img, x + 6, 31, 40, 40);
+
+        ctx.fillStyle = "#1e3340";
+        ctx.font = "bold 13px 'Patrick Hand'";
+        ctx.textAlign = "left";
+        ctx.fillText(item.name.toUpperCase(), x + 48, 55);
+        addZone(`mini_${i}`, x, 26, miniW, miniH);
+      });
+
+      // Text Box
+      const px = 48, py = 90, pw = 720, ph = 310;
+      drawSketchBox(px, py, pw, ph, 20, "#fdfcf7", "#213642", true);
+
+      // Header bar
+      ctx.fillStyle = "#c084fc";
+      ctx.beginPath();
+      ctx.roundRect(px + 3, py + 3, pw - 6, 38, [17, 17, 0, 0]);
+      ctx.fill();
+
+      ctx.fillStyle = "#ffffff";
+      ctx.font = "bold 17px 'Patrick Hand'";
+      ctx.textAlign = "left";
+      ctx.fillText("WRITE YOUR STORY (Type with your physical keyboard, or click chips & cards)", px + 20, py + 26);
+
+      // Text Content
+      ctx.fillStyle = "#1a2c38";
+      ctx.font = "20px 'Patrick Hand'";
+      const cursor = Math.floor(Date.now() / 400) % 2 === 0 ? "|" : "";
+      
+      if (state.storyBody.length === 0) {
+        ctx.fillStyle = "#94a3b8";
+        ctx.fillText("Type with your physical keyboard, tap any Story Starter on the right, or click cards above...", px + 24, py + 74);
+      } else {
+        wrapText(ctx, state.storyBody + cursor, px + 24, py + 74, pw - 48, 28);
+      }
+
+      ctx.fillStyle = "#64748b";
+      ctx.font = "15px 'Patrick Hand'";
+      ctx.fillText(`${state.storyBody.length} / 420 chars`, px + 24, py + ph - 16);
+      pill("txt_clear", "Clear Text", px + pw - 70, py + ph - 22, 100, 30, "#fca5a5", "#7f1d1d", 14);
+
+      // Quick Insert Starters (Right Panel)
+      const rx = 792, ry = 90, rw = 440, rh = 310;
+      drawSketchBox(rx, ry, rw, rh, 20, "#fdfcf7", "#213642", true);
+      
+      ctx.fillStyle = "#213642";
+      ctx.font = "bold 18px 'Patrick Hand'";
+      ctx.textAlign = "left";
+      ctx.fillText("QUICK INSERT CHIPS (1-Click Add)", rx + 20, ry + 28);
+
+      STORY_STARTERS.forEach((st, i) => {
+        const cy = ry + 64 + i * 36;
+        pill(`ins_${i}`, "+ " + st, rx + rw / 2, cy, rw - 36, 30, "#f8fafc", "#1e293b", 15);
+      });
+
+      pill("ins_twist", '⚡ + Insert Twist Sentence', rx + rw / 2, ry + rh - 30, rw - 36, 36, "#fef3c7", "#92400e", 16);
+
+      // Virtual Keyboard (Bottom)
+      const ky = 416;
+      KB_ROWS.forEach((row, rIdx) => {
+        const kw = 54, kh = 42, kgap = 8;
+        const rowW = row.length * kw + (row.length - 1) * kgap;
+        const kx0 = 48 + (720 - rowW) / 2;
+        const ry = ky + rIdx * (kh + kgap);
+
+        row.forEach((ch, cIdx) => {
+          const kx = kx0 + cIdx * (kw + kgap);
+          pill(`key_${ch}`, ch, kx + kw / 2, ry + kh / 2, kw, kh, "#ffffff", "#1e293b", 18);
+        });
+      });
+
+      // Space & Backspace
+      pill("key_shift", state.shiftOn ? "SHIFT (ON)" : "shift", 120, 566, 120, 42, state.shiftOn ? "#f6bc44" : "#e2e8f0");
+      pill("key_space", "SPACE", 408, 566, 340, 42, "#ffffff");
+      pill("key_back", "BACKSPACE", 696, 566, 140, 42, "#fca5a5");
+
+      // Actions Right
+      pill("btn_showcase", "Create Story Card (Share / Export)", rx + rw / 2, 540, rw, 48, "#4ade80", "#14532d", 18);
+    }
+
+    function renderShowcase() {
+      // Backdrop Box
+      const bx = VW / 2 - 380, by = 80, bw = 760, bh = 560;
+      drawSketchBox(bx, by, bw, bh, 24, "#ffffff", "#1e3340", true);
+
+      // Header Ribbon
+      ctx.fillStyle = "#f6bc44";
+      ctx.beginPath();
+      ctx.roundRect(bx + 4, by + 4, bw - 8, 70, [20, 20, 0, 0]);
+      ctx.fill();
+
+      ctx.fillStyle = "#1e3340";
+      ctx.font = "bold 32px 'Patrick Hand'";
+      ctx.textAlign = "center";
+      ctx.fillText("✨ MY STORY CARD ✨", VW / 2, by + 46);
+
+      // Card Element icons
+      const sx = bx + 50;
+      state.cards.forEach((c, i) => {
+        const item = CARDS_DATA[c.cat].items[c.item];
+        const img = state.images[item.id];
+        const ix = sx + i * 135;
+        if (img) ctx.drawImage(img, ix, by + 90, 70, 70);
+        ctx.fillStyle = "#475569";
+        ctx.font = "14px 'Patrick Hand'";
+        ctx.textAlign = "center";
+        ctx.fillText(item.name.toUpperCase(), ix + 35, by + 175);
+      });
+
+      // Story Quote Area
+      drawSketchBox(bx + 40, by + 195, bw - 80, 260, 16, "#f8fafc", "#cbd5e1", false);
+      ctx.fillStyle = "#1e293b";
+      ctx.font = "22px 'Patrick Hand'";
+      const textToDisplay = state.storyBody || 'Once upon a time, an astronaut landed at the theater during a storm! Suddenly, out of nowhere, "I am from a different planet." Everyone applauded and shared a sundae.';
+      wrapText(ctx, `“ ${textToDisplay} ”`, bx + 64, by + 235, bw - 128, 30);
+
+      // Timestamp & Watermark
+      ctx.fillStyle = "#94a3b8";
+      ctx.font = "15px 'Patrick Hand'";
+      ctx.textAlign = "center";
+      ctx.fillText("Storyteller Badge: Master Guru • Created on Tell Me! • ridvanbsaglam.github.io", VW / 2, by + bh - 40);
+
+      pill("back_from_showcase", "← Edit Story", VW / 2 - 120, by + bh + 36, 160, 42, "#ffffff");
+      pill("download_card", "📥 Save Story", VW / 2 + 120, by + bh + 36, 160, 42, "#f6bc44");
+    }
+
+    function renderModal() {
+      ctx.fillStyle = "rgba(10, 20, 28, 0.75)";
+      ctx.fillRect(0, 0, VW, VH);
+
+      const mw = 700, mh = 480;
+      const mx = (VW - mw) / 2, my = (VH - mh) / 2;
+      drawSketchBox(mx, my, mw, mh, 24, "#fdfcf7", "#213642", true);
+
+      ctx.fillStyle = "#f6bc44";
+      ctx.beginPath();
+      ctx.roundRect(mx + 4, my + 4, mw - 8, 54, [20, 20, 0, 0]);
+      ctx.fill();
+
+      ctx.fillStyle = "#1a2c38";
+      ctx.font = "bold 26px 'Patrick Hand'";
+      ctx.textAlign = "center";
+      ctx.fillText("HOW TO PLAY TELL ME!", VW / 2, my + 38);
+
+      const rules = [
+        "1. Select a difficulty level (Rookie, Expert, Master, or Guru).",
+        "2. Draw your 5 cards (Character, Place, Weather, Twist, Object).",
+        "3. Flip each card to reveal its hand-drawn illustration.",
+        "4. Invent a story weaving all 5 elements together seamlessly.",
+        "5. Tap on each card as you use it to mark it with a completion checkmark.",
+        "6. In Guru mode, compose your story using your physical keyboard or 1-click chips!"
+      ];
+
+      ctx.fillStyle = "#334155";
+      ctx.font = "20px 'Patrick Hand'";
+      ctx.textAlign = "left";
+      rules.forEach((r, i) => {
+        ctx.fillText(r, mx + 40, my + 105 + i * 44);
+      });
+
+      pill("close_help", "Got It!", VW / 2, my + mh - 44, 150, 42, "#f6bc44");
+    }
+
+    function wrapText(context, text, x, y, maxWidth, lineHeight) {
+      const words = text.split(" ");
+      let line = "";
+      for (let n = 0; n < words.length; n++) {
+        const testLine = line + words[n] + " ";
+        const metrics = context.measureText(testLine);
+        if (metrics.width > maxWidth && n > 0) {
+          context.fillText(line, x, y);
+          line = words[n] + " ";
+          y += lineHeight;
+        } else {
+          line = testLine;
+        }
+      }
+      context.fillText(line, x, y);
+    }
+
+    // --- MAIN TICK / ANIMATION LOOP ---
+    function tick(now) {
+      requestAnimationFrame(tick);
+      const dt = Math.min((now - state.lastTime) / 1000, 0.1);
+      state.lastTime = now;
+
+      // Handle Timer
+      if (state.timerRunning && state.timerLeft > 0) {
+        state.timerLeft = Math.max(0, state.timerLeft - dt);
+        if (state.timerLeft <= 0) {
+          state.timerRunning = false;
+          sndFanfare();
+          spawnBurst(VW / 2, 120, 36);
+        }
+      }
+
+      // Card Flip Tweening
+      state.cards.forEach(c => {
+        if (c.flip < c.target) c.flip = Math.min(c.target, c.flip + dt / 0.35);
+        else if (c.flip > c.target) c.flip = Math.max(c.target, c.flip - dt / 0.35);
+      });
+
+      // Update Sparkles
+      for (let i = state.sparkles.length - 1; i >= 0; i--) {
+        const sp = state.sparkles[i];
+        sp.life += dt;
+        sp.x += sp.vx * dt;
+        sp.y += sp.vy * dt;
+        sp.vy += 320 * dt;
+        if (sp.life >= sp.maxLife) state.sparkles.splice(i, 1);
+      }
+
+      // Render
+      render();
+    }
+
+    function render() {
+      // Responsive Resize
+      if (canvas.width !== window.innerWidth || canvas.height !== window.innerHeight) {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+      }
+      state.winW = canvas.width;
+      state.winH = canvas.height;
+      state.scale = Math.min(state.winW / VW, state.winH / VH);
+      state.ox = (state.winW - VW * state.scale) * 0.5;
+      state.oy = (state.winH - VH * state.scale) * 0.5;
+
+      ctx.clearRect(0, 0, state.winW, state.winH);
+      state.hitZones = [];
+
+      // 1. Full-bleed background cover
+      const bg = state.images['ui_bg'];
+      if (bg) {
+        const s = Math.max(state.winW / bg.width, state.winH / bg.height);
+        const bx = (state.winW - bg.width * s) * 0.5;
+        const by = (state.winH - bg.height * s) * 0.5;
+        ctx.drawImage(bg, bx, by, bg.width * s, bg.height * s);
+      }
+
+      // 2. Scaled 1280x720 Artboard
+      ctx.save();
+      ctx.translate(state.ox, state.oy);
+      ctx.scale(state.scale, state.scale);
+
+      if (state.screen === "hello") {
+        renderHello();
+      } else {
+        if (state.phase === "write") renderWrite();
+        else if (state.phase === "showcase") renderShowcase();
+        else renderPlay();
+      }
+
+      // Sparkles
+      state.sparkles.forEach(sp => {
+        ctx.fillStyle = sp.color;
+        ctx.beginPath();
+        ctx.arc(sp.x, sp.y, sp.rad * (1 - sp.life / sp.maxLife), 0, Math.PI * 2);
+        ctx.fill();
+      });
+
+      if (state.showHelp) renderModal();
+
+      ctx.restore();
+    }
+
+    // --- INPUT INTERACTIONS ---
+    function getPointerPos(e) {
+      const rect = canvas.getBoundingClientRect();
+      const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+      const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+      const vx = (clientX - rect.left - state.ox) / state.scale;
+      const vy = (clientY - rect.top - state.oy) / state.scale;
+      return { x: vx, y: vy };
+    }
+
+    function hitTest(pos) {
+      for (let i = state.hitZones.length - 1; i >= 0; i--) {
+        const z = state.hitZones[i];
+        if (pos.x >= z.x && pos.x <= z.x + z.w && pos.y >= z.y && pos.y <= z.y + z.h) {
+          return z.id;
+        }
+      }
+      return "";
+    }
+
+    window.addEventListener('mousemove', (e) => {
+      const pos = getPointerPos(e);
+      state.hoverId = hitTest(pos);
+      canvas.style.cursor = state.hoverId ? "pointer" : "default";
+    });
+
+    function handleClick(e) {
+      const pos = getPointerPos(e);
+      const id = hitTest(pos);
+      if (!id) return;
+
+      if (id === "btn_help") {
+        state.showHelp = true;
+        sndClick();
+      } else if (id === "close_help") {
+        state.showHelp = false;
+        sndClick();
+      } else if (id.startsWith("btn_play_")) {
+        const lvl = parseInt(id.replace("btn_play_", ""));
+        startLevel(lvl);
+      } else if (id.startsWith("lvl_")) {
+        const lvl = parseInt(id.replace("lvl_", ""));
+        startLevel(lvl);
+      } else if (id === "home" || id === "other") {
+        state.screen = "hello";
+        sndClick();
+      } else if (id === "shuffle") {
+        dealCards();
+        sndFlip();
+      } else if (id === "flip_all") {
+        const anyClosed = state.cards.some(c => c.target < 0.5);
+        state.cards.forEach(c => c.target = anyClosed ? 1 : 0);
+        sndFlip();
+      } else if (id === "finish") {
+        sndFanfare();
+        spawnBurst(VW / 2, 380, 48);
+      } else if (id.startsWith("card_")) {
+        const idx = parseInt(id.replace("card_", ""));
+        const c = state.cards[idx];
+        if (c.target < 0.5) {
+          c.target = 1;
+          sndFlip();
+        } else if (c.flip > 0.85) {
+          c.used = !c.used;
+          if (c.used) {
+            sndCheck();
+            spawnBurst(pos.x, pos.y, 16);
+          } else {
+            sndClick();
+          }
+        }
+      } else if (id === "btn_open_write") {
+        state.phase = "write";
+        sndClick();
+      } else if (id === "back_cards") {
+        state.phase = "cards";
+        sndClick();
+      } else if (id === "btn_showcase") {
+        state.phase = "showcase";
+        sndFanfare();
+      } else if (id === "back_from_showcase") {
+        state.phase = "write";
+        sndClick();
+      } else if (id === "download_card") {
+        alert("Tip: Take a screenshot or press PrintScreen to share your personalized Story Card!");
+      } else if (id === "txt_clear") {
+        state.storyBody = "";
+        sndClick();
+      } else if (id.startsWith("ins_")) {
+        const idx = parseInt(id.replace("ins_", ""));
+        appendStory(STORY_STARTERS[idx]);
+        sndClick();
+      } else if (id === "ins_twist") {
+        appendStory(`"${SENTENCES[state.sentenceIdx]}" `);
+        sndTwist();
+      } else if (id.startsWith("mini_")) {
+        const idx = parseInt(id.replace("mini_", ""));
+        const item = CARDS_DATA[state.cards[idx].cat].items[state.cards[idx].item];
+        appendStory(item.name.toLowerCase() + " ");
+        sndClick();
+      } else if (id === "key_shift") {
+        state.shiftOn = !state.shiftOn;
+        sndClick();
+      } else if (id === "key_space") {
+        appendStory(" ");
+        sndClick();
+      } else if (id === "key_back") {
+        backspaceStory();
+        sndClick();
+      } else if (id.startsWith("key_")) {
+        const ch = id.replace("key_", "");
+        appendStory(state.shiftOn ? ch.toUpperCase() : ch.toLowerCase());
+        sndClick();
+      }
+    }
+
+    window.addEventListener('click', handleClick);
+    window.addEventListener('touchstart', (e) => {
+      handleClick(e);
+    });
+
+    function appendStory(str) {
+      if (state.storyBody.length < 420) {
+        state.storyBody += str;
+      }
+    }
+
+    function backspaceStory() {
+      if (state.storyBody.length > 0) {
+        state.storyBody = state.storyBody.slice(0, -1);
+      }
+    }
+
+    // --- HARDWARE KEYBOARD LISTENER ---
+    window.addEventListener('keydown', (e) => {
+      if (state.screen === "play" && state.phase === "write") {
+        if (e.key === "Backspace") {
+          backspaceStory();
+          sndClick();
+          e.preventDefault();
+        } else if (e.key === "Enter") {
+          appendStory("\n");
+          sndClick();
+          e.preventDefault();
+        } else if (e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey) {
+          appendStory(e.key);
+          sndClick();
+          e.preventDefault();
+        }
+      } else if (e.key === "Escape") {
+        if (state.showHelp) state.showHelp = false;
+      }
+    });
+
+    // Start Animation Loop
+    requestAnimationFrame(tick);
+  </script>
+</body>
+</html>
