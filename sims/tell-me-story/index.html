@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
@@ -20,21 +20,45 @@
     }
     * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
     html, body {
-      width: 100vw;
-      height: 100vh;
+      width: 100%;
+      height: 100%;
+      position: fixed;
+      inset: 0;
+      margin: 0;
+      padding: 0;
       overflow: hidden;
       background: #0c4459;
       font-family: 'PatrickHand', 'Patrick Hand', cursive, sans-serif;
       user-select: none;
+      -webkit-user-select: none;
+      -webkit-touch-callout: none;
+      overscroll-behavior: none;
     }
     #game-canvas {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100vw;
-      height: 100vh;
+      position: fixed;
+      inset: 0;
+      width: 100%;
+      height: 100%;
       display: block;
       touch-action: none;
+    }
+    #native-story-input {
+      position: fixed;
+      display: none;
+      z-index: 25;
+      box-sizing: border-box;
+      background: transparent;
+      border: none;
+      outline: none;
+      resize: none;
+      font-family: 'PatrickHand', 'Patrick Hand', cursive, sans-serif;
+      color: transparent;
+      caret-color: #1a1614;
+      font-size: 18px;
+      line-height: 26px;
+      padding: 8px 12px;
+      margin: 0;
+      -webkit-tap-highlight-color: transparent;
     }
     #loading-screen {
       position: fixed;
@@ -72,16 +96,6 @@
       font-family: system-ui, -apple-system, sans-serif;
       font-size: 0.85rem;
       color: #93bed1;
-    }
-    #native-story-input {
-      position: fixed;
-      top: -9999px;
-      left: -9999px;
-      width: 1px;
-      height: 1px;
-      opacity: 0.01;
-      pointer-events: none;
-      font-size: 16px;
     }
   </style>
 </head>
@@ -904,7 +918,7 @@
 
       drawSketchCircle(48, 43, 25, PAPER_R, PAPER_G, PAPER_B, 255, 245);
       drawImg("ui_home", 48, 43, 25, 1, 1);
-      zone("home", 20, 15, 56, 56);
+      zone("home", 15, 12, 66, 62);
 
       drawImg(lv.id, 114, 43, 56, 1, 1);
       label(`${lv.tag} - ${lv.name}`, 156, 33, 26, 255, 255, 255, 255, "left");
@@ -922,14 +936,14 @@
 
       drawSketchCircle(46, 48, 25, PAPER_R, PAPER_G, PAPER_B, 255, 245);
       drawImg("ui_home", 46, 48, 25, 1, 1);
-      zone("home", 18, 20, 56, 56);
+      zone("home", 12, 16, 68, 64);
 
       drawImg(lv.id, 106, 48, 50, 1, 1);
       label(`${lv.tag}`, 142, 38, 19, 255, 255, 255, 255, "left");
       label(lv.name, 142, 64, 15, 235, 245, 250, 235, "left");
 
-      pill("shuffle", "New Cards", VW - 165, 48, 110, 42, PAPER_R, PAPER_G, PAPER_B, INK_R, INK_G, INK_B, 15);
-      pill("other", "Levels", VW - 55, 48, 85, 42, 246, 188, 68, INK_R, INK_G, INK_B, 15);
+      pill("shuffle", "New Cards", VW - 175, 48, 120, 44, PAPER_R, PAPER_G, PAPER_B, INK_R, INK_G, INK_B, 15);
+      pill("other", "Levels", VW - 58, 48, 92, 44, 246, 188, 68, INK_R, INK_G, INK_B, 15);
     }
 
     function drawTopBar() {
@@ -1018,6 +1032,7 @@
             label("TWIST SENTENCE", rx + 87, barY - 33, 12, INK_R, INK_G, INK_B, 255, "center");
             label(`"${SENTENCES[game.sentenceIdx]}"`, rx + rw / 2, barY + 8, 19, INK_R, INK_G, INK_B, 255, "center");
             pill("twist_next", "New Sentence", rx + rw - 88, barY - 33, 138, 28, 246, 188, 68, INK_R, INK_G, INK_B, 13);
+            zone("twist_next", rx, barY - 62, rw, 124);
           }
         }
       }
@@ -1068,26 +1083,28 @@
       const used = game.cardsUsedCount;
 
       if (game.levelIdx === 1) {
+        // Level 2 Timer
         const barY = 175;
         drawSketchBox(36, barY - 60, 648, 120, 22, PAPER_R, PAPER_G, PAPER_B, 255, 41, true);
         if (game.timerMax === 0) {
           label("Prep time challenge:", VW / 2, barY - 24, 19, INK_R, INK_G, INK_B, 255, "center");
-          pill("tm_30", "30 sec.", VW / 2 - 175, barY + 22, 140, 42, 94, 188, 134, INK_R, INK_G, INK_B, 16);
-          pill("tm_45", "45 sec.", VW / 2, barY + 22, 140, 42, 98, 152, 224, INK_R, INK_G, INK_B, 16);
-          pill("tm_60", "60 sec.", VW / 2 + 175, barY + 22, 140, 42, 246, 188, 68, INK_R, INK_G, INK_B, 16);
+          pill("tm_30", "30 sec.", VW / 2 - 175, barY + 22, 140, 44, 94, 188, 134, INK_R, INK_G, INK_B, 16);
+          pill("tm_45", "45 sec.", VW / 2, barY + 22, 140, 44, 98, 152, 224, INK_R, INK_G, INK_B, 16);
+          pill("tm_60", "60 sec.", VW / 2 + 175, barY + 22, 140, 44, 246, 188, 68, INK_R, INK_G, INK_B, 16);
         } else if (game.timerLeft > 0) {
           const secs = Math.ceil(game.timerLeft);
-          label(`PREP TIME: ${secs}s LEFT`, 200, barY - 20, 20, 215, 75, 70, 255, "center");
+          label(`PREP TIME: ${secs}s LEFT`, 190, barY - 20, 20, 215, 75, 70, 255, "center");
           const pw = 340, px = 54;
           drawSketchBox(px, barY + 12, pw, 16, 8, 232, 226, 212, 255, 12, false);
           const ratio = clamp01(game.timerLeft / game.timerMax);
           fillRect(px + 2, barY + 14, Math.max(12, (pw - 4) * ratio), 12, 6, 94, 188, 134, 255);
-          pill("tm_skip", "I'm Ready!", 550, barY + 6, 180, 46, 246, 188, 68, INK_R, INK_G, INK_B, 16);
+          pill("tm_skip", "I'm Ready!", 550, barY + 6, 180, 48, 246, 188, 68, INK_R, INK_G, INK_B, 16);
         } else {
-          label("Time is up! Let's hear your story!", 250, barY, 20, 45, 135, 85, 255, "center");
-          pill("tm_reset", "Reset Timer", 550, barY, 160, 42, 246, 188, 68, INK_R, INK_G, INK_B, 16);
+          label("Time is up! Let's hear your story!", 240, barY, 20, 45, 135, 85, 255, "center");
+          pill("tm_reset", "Reset Timer", 550, barY, 165, 46, 246, 188, 68, INK_R, INK_G, INK_B, 16);
         }
       } else if (game.levelIdx >= 2) {
+        // Level 3 & 4 Twist Sentence
         const barY = 175;
         const rw = 648, rx = 36;
         drawSketchBox(rx, barY - 60, rw, 120, 22, 252, 243, 215, 255, 67, true);
@@ -1101,7 +1118,8 @@
           drawSketchBox(rx + 18, barY - 46, 138, 26, 13, 238, 108, 104, 255, 3, false);
           label("TWIST SENTENCE", rx + 87, barY - 33, 12, INK_R, INK_G, INK_B, 255, "center");
           label(`"${SENTENCES[game.sentenceIdx]}"`, rx + rw / 2, barY + 10, 18, INK_R, INK_G, INK_B, 255, "center");
-          pill("twist_next", "New Sentence", rx + rw - 88, barY - 33, 138, 28, 246, 188, 68, INK_R, INK_G, INK_B, 13);
+          pill("twist_next", "New Sentence", rx + rw - 92, barY - 32, 146, 36, 246, 188, 68, INK_R, INK_G, INK_B, 14);
+          zone("twist_next", rx, barY - 60, rw, 120);
         }
       }
 
@@ -1118,12 +1136,12 @@
 
       if (game.levelIdx === 3) {
         pill("go_write", "Write Your Story Now  ->", VW / 2, footY + 65, 480, 56, 246, 188, 68, INK_R, INK_G, INK_B, 20);
-        pill("flip_all", "Flip All", VW / 2 - 130, footY + 135, 230, 48, PAPER_R, PAPER_G, PAPER_B, INK_R, INK_G, INK_B, 17);
-        pill("shuffle", "New Cards", VW / 2 + 130, footY + 135, 230, 48, PAPER_R, PAPER_G, PAPER_B, INK_R, INK_G, INK_B, 17);
+        pill("flip_all", "Flip All", VW / 2 - 130, footY + 135, 230, 50, PAPER_R, PAPER_G, PAPER_B, INK_R, INK_G, INK_B, 18);
+        pill("shuffle", "New Cards", VW / 2 + 130, footY + 135, 230, 50, PAPER_R, PAPER_G, PAPER_B, INK_R, INK_G, INK_B, 18);
       } else {
-        pill("flip_all", "Flip All", VW / 2 - 135, footY + 65, 240, 50, PAPER_R, PAPER_G, PAPER_B, INK_R, INK_G, INK_B, 18);
-        pill("mark_done", "It Is Done!", VW / 2 + 135, footY + 65, 240, 50, 112, 196, 132, INK_R, INK_G, INK_B, 18);
-        pill("shuffle", "Shuffle 5 New Cards", VW / 2, footY + 132, 340, 46, PAPER_R, PAPER_G, PAPER_B, INK_R, INK_G, INK_B, 17);
+        pill("flip_all", "Flip All", VW / 2 - 135, footY + 65, 240, 52, PAPER_R, PAPER_G, PAPER_B, INK_R, INK_G, INK_B, 18);
+        pill("mark_done", "It Is Done!", VW / 2 + 135, footY + 65, 240, 52, 112, 196, 132, INK_R, INK_G, INK_B, 18);
+        pill("shuffle", "Shuffle 5 New Cards", VW / 2, footY + 135, 340, 48, PAPER_R, PAPER_G, PAPER_B, INK_R, INK_G, INK_B, 17);
       }
     }
 
@@ -1230,7 +1248,7 @@
       drawSketchBox(px, py, pw, ph, 22, PAPER_R, PAPER_G, PAPER_B, 255, 31, true);
       fillRect(px + 3, py + 3, pw - 6, 40, 18, 166, 110, 218, 240);
       fillRect(px + 3, py + 43, pw - 6, 2, 0, INK_R, INK_G, INK_B, 220);
-      label("STORY NOTEPAD (Tap to type with your keyboard)", px + 20, py + 23, 15, INK_R, INK_G, INK_B, 255, "left");
+      label("STORY NOTEPAD (Tap to type your story)", px + 20, py + 23, 15, INK_R, INK_G, INK_B, 255, "left");
 
       const blink = (Math.floor(game.time * 2) % 2 === 0) ? "|" : "";
       const displayStr = game.storyBody + blink;
@@ -1243,7 +1261,7 @@
       zone("notepad_tap", px, py, pw, ph);
 
       label(`${game.storyBody.length} / 420 chars`, px + 24, py + ph - 22, 14, 110, 100, 90, 255, "left");
-      pill("txt_clear", "Clear Text", px + pw - 75, py + ph - 22, 110, 30, 238, 108, 104, INK_R, INK_G, INK_B, 14);
+      pill("txt_clear", "Clear Text", px + pw - 75, py + ph - 22, 110, 32, 238, 108, 104, INK_R, INK_G, INK_B, 14);
 
       const qy = 642;
       label("QUICK INSERT CHIPS (1-Tap Add):", sx + 10, qy + 14, 16, 255, 255, 255, 245, "left");
@@ -1254,13 +1272,13 @@
         const rowIdx = Math.floor(i / 2);
         const bx = sx + colIdx * (stColW + 12);
         const by = qy + 36 + rowIdx * 42;
-        pill("ins_start_" + (i + 1), "+ " + st, bx + stColW / 2, by + 18, stColW, 34, 252, 249, 242, INK_R, INK_G, INK_B, 13.5);
+        pill("ins_start_" + (i + 1), "+ " + st, bx + stColW / 2, by + 18, stColW, 36, 252, 249, 242, INK_R, INK_G, INK_B, 13.5);
       });
 
-      pill("ins_twist", "+ Insert Twist Sentence", VW / 2, qy + 144, sw, 38, 246, 188, 68, INK_R, INK_G, INK_B, 15);
+      pill("ins_twist", "+ Insert Twist Sentence", VW / 2, qy + 144, sw, 40, 246, 188, 68, INK_R, INK_G, INK_B, 15);
 
       pill("go_showcase", "Create Story Card (Save / Share) ->", VW / 2, 850, 560, 58, 112, 196, 132, INK_R, INK_G, INK_B, 20);
-      pill("back_cards", "<- Back to Cards", VW / 2, 922, 340, 46, PAPER_R, PAPER_G, PAPER_B, INK_R, INK_G, INK_B, 17);
+      pill("back_cards", "<- Back to Cards", VW / 2, 924, 340, 48, PAPER_R, PAPER_G, PAPER_B, INK_R, INK_G, INK_B, 17);
     }
 
     function drawWriteStudio() {
@@ -1308,9 +1326,9 @@
 
       label("Take a screenshot of this card to save & share your story with friends!", VW / 2, py + ph - 16, 14, 95, 85, 75, 255, "center");
 
-      pill("edit_story", "<- Edit Story", VW / 2 - 260, 662, 210, 46, PAPER_R, PAPER_G, PAPER_B, INK_R, INK_G, INK_B, 17);
-      pill("celebrate", "Celebrate!", VW / 2, 662, 210, 46, 246, 188, 68, INK_R, INK_G, INK_B, 17);
-      pill("other", "Try Another Level", VW / 2 + 260, 662, 230, 46, 112, 196, 132, INK_R, INK_G, INK_B, 17);
+      pill("edit_story", "<- Edit Story", VW / 2 - 260, 662, 210, 48, PAPER_R, PAPER_G, PAPER_B, INK_R, INK_G, INK_B, 17);
+      pill("celebrate", "Celebrate!", VW / 2, 662, 210, 48, 246, 188, 68, INK_R, INK_G, INK_B, 17);
+      pill("other", "Try Another Level", VW / 2 + 260, 662, 230, 48, 112, 196, 132, INK_R, INK_G, INK_B, 17);
     }
 
     function drawShowcaseCardPortrait() {
@@ -1433,6 +1451,30 @@
       game.ox = (cssW - VW * game.scale) * 0.5;
       game.oy = (cssH - VH * game.scale) * 0.5;
 
+      const nativeInput = document.getElementById("native-story-input");
+      if (nativeInput) {
+        if (game.screen === "play" && game.phase === "write") {
+          const sw = isPortrait ? (VW - 48) : 720;
+          const sx = isPortrait ? 24 : 48;
+          const sy = isPortrait ? 246 : 184;
+          const sh = isPortrait ? 380 : 310;
+          const topPad = isPortrait ? 52 : 48;
+          const botPad = isPortrait ? 122 : 98;
+          nativeInput.style.display = "block";
+          nativeInput.style.left = (game.ox + (sx + 20) * game.scale) + "px";
+          nativeInput.style.top = (game.oy + (sy + topPad) * game.scale) + "px";
+          nativeInput.style.width = ((sw - 40) * game.scale) + "px";
+          nativeInput.style.height = ((sh - topPad - botPad) * game.scale) + "px";
+          nativeInput.style.pointerEvents = "auto";
+        } else {
+          nativeInput.style.display = "none";
+          nativeInput.style.pointerEvents = "none";
+          if (document.activeElement === nativeInput) {
+            nativeInput.blur();
+          }
+        }
+      }
+
       // Full-bleed petrol-teal base + watercolor background cover scaling
       ctx.fillStyle = "#0e4d64";
       ctx.fillRect(0, 0, cssW, cssH);
@@ -1467,26 +1509,55 @@
       drawSparkles();
 
       if (game.toastT > 0) {
-        drawSketchBox(VW / 2 - 230, 662, 460, 42, 21, PAPER_R, PAPER_G, PAPER_B, 255, 99, false);
-        label(game.toast, VW / 2, 683, 17, INK_R, INK_G, INK_B, 255, "center");
+        const toastY = isPortrait ? 108 : 662;
+        const toastW = isPortrait ? 560 : 460;
+        drawSketchBox(VW / 2 - toastW / 2, toastY - 22, toastW, 46, 23, PAPER_R, PAPER_G, PAPER_B, 255, 99, false);
+        label(game.toast, VW / 2, toastY + 1, 18, INK_R, INK_G, INK_B, 255, "center");
       }
 
       ctx.restore();
     }
 
-    // --- INPUT HANDLING (1:1 WITH main.luau) ---
+    // --- INPUT HANDLING (ROBUST CROSS-DEVICE NORMALIZATION) ---
     function getVirtualPos(e) {
       const rect = canvas.getBoundingClientRect();
+      let clientX = e.clientX;
+      let clientY = e.clientY;
+      if (clientX === undefined) {
+        const t = (e.touches && e.touches[0]) || (e.changedTouches && e.changedTouches[0]);
+        if (t) {
+          clientX = t.clientX;
+          clientY = t.clientY;
+        } else {
+          clientX = 0;
+          clientY = 0;
+        }
+      }
+
+      // Self-normalizing against DOM bounds to prevent any viewport/toolbar scaling drift
+      const normX = (clientX - rect.left) / (rect.width || 1);
+      const normY = (clientY - rect.top) / (rect.height || 1);
+
+      const cssX = normX * game.winW;
+      const cssY = normY * game.winH;
+
       return {
-        x: (e.clientX - rect.left - game.ox) / game.scale,
-        y: (e.clientY - rect.top - game.oy) / game.scale,
+        x: (cssX - game.ox) / game.scale,
+        y: (cssY - game.oy) / game.scale,
       };
     }
 
     function hit(pos) {
+      // 10px generous padding in virtual coordinates for comfortable, forgiving touch on phones
+      const pad = isPortrait ? 10 : 4;
       for (let i = game.zones.length - 1; i >= 0; i--) {
         const z = game.zones[i];
-        if (pos.x >= z.x && pos.x <= z.x + z.w && pos.y >= z.y && pos.y <= z.y + z.h) {
+        if (
+          pos.x >= z.x - pad &&
+          pos.x <= z.x + z.w + pad &&
+          pos.y >= z.y - pad &&
+          pos.y <= z.y + z.h + pad
+        ) {
           return z.id;
         }
       }
@@ -1529,12 +1600,12 @@
       }
     }
 
-    canvas.addEventListener('pointerdown', (e) => {
+    function handleInputDown(e) {
       if (!game.ready) return;
       const pos = getVirtualPos(e);
       const id = hit(pos);
 
-      if (id === "notepad_tap" || (game.screen === "play" && game.phase === "write" && pos.y >= 240 && pos.y <= 600)) {
+      if (id === "notepad_tap" || (game.screen === "play" && game.phase === "write" && pos.y >= 240 && pos.y <= (isPortrait ? 550 : 430) && id !== "txt_clear")) {
         if (nativeInput) {
           syncNativeInput();
           nativeInput.focus();
@@ -1660,7 +1731,18 @@
         startLevel(idx);
         sndClick();
       }
-    });
+    }
+
+    let lastDownTs = 0;
+    function onUniversalDown(e) {
+      const now = Date.now();
+      if (now - lastDownTs < 45) return;
+      lastDownTs = now;
+      handleInputDown(e);
+    }
+
+    canvas.addEventListener('pointerdown', onUniversalDown);
+    canvas.addEventListener('touchstart', onUniversalDown, { passive: true });
 
     window.addEventListener('keydown', (e) => {
       if (!game.ready) return;
