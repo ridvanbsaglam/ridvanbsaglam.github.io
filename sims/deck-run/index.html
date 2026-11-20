@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <title>RUN ON THE DECK • MARCOLORADO</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect width='64' height='64' rx='14' fill='%230F172A'/><circle cx='32' cy='32' r='16' fill='none' stroke='%23F97316' stroke-width='5'/><circle cx='32' cy='32' r='5' fill='%23F8FAFC'/></svg>" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Bangers&family=Poppins:wght@500;600;700;800&display=swap" rel="stylesheet" />
+  <script type="module" crossorigin src="./assets/index-BYM57w9q.js"></script>
+  <link rel="stylesheet" crossorigin href="./assets/index-BVUbb6oj.css">
+</head>
+<body class="state-title theme-night">
+  <div id="app">
+    <canvas id="application-canvas"></canvas>
+
+    <!-- ================================================================
+         SCREEN 0: BOOT LOADING OVERLAY
+         ================================================================ -->
+    <div id="loading-overlay" class="loading-overlay" aria-live="polite">
+      <div class="loading-card">
+        <div class="ship-tag">MV MARCOLORADO • 34K DWT</div>
+        <div class="loading-title">GÜVERTE HAZIRLANIYOR...</div>
+        <div class="loading-bar-track"><div class="loading-bar-fill"></div></div>
+      </div>
+    </div>
+
+    <!-- ================================================================
+         SCREEN 1: TITLE OVERLAY
+         ================================================================ -->
+    <section id="screen-title" class="overlay-screen" aria-label="Başlangıç Ekranı">
+      <div class="title-card">
+        <div class="ship-tag">MV MARCOLORADO • 34K DWT • 3 TUR</div>
+        <h1 class="game-title">RUN ON THE DECK</h1>
+        <p class="subtitle">4 denizci, yaklaşık 1.080 m güverte yarışı. Dalga, yalpa ve engelleri okuyarak bitişi gör!</p>
+
+        <div class="crew-picker-wrap">
+          <div class="crew-picker-label">MÜRETTEBATINI SEÇ</div>
+          <div id="crew-picker" class="crew-picker" role="radiogroup" aria-label="Mürettebat Seçimi">
+            <button class="crew-card is-selected" data-crew-idx="0" type="button" style="--crew-accent:#f97316" aria-checked="true" role="radio">
+              <img src="./assets/portraits/crew_orange.jpg" alt="Güverteci" width="56" height="56" />
+              <div class="crew-card-text">
+                <span class="crew-name">Güverteci</span>
+                <span class="crew-meta">1.75m • Dengeli</span>
+              </div>
+            </button>
+            <button class="crew-card" data-crew-idx="1" type="button" style="--crew-accent:#2563eb" aria-checked="false" role="radio">
+              <img src="./assets/portraits/crew_blue.jpg" alt="Baş Mühendis" width="56" height="56" />
+              <div class="crew-card-text">
+                <span class="crew-name">B. Mühendis</span>
+                <span class="crew-meta">1.94m • +Turbo</span>
+              </div>
+            </button>
+            <button class="crew-card" data-crew-idx="2" type="button" style="--crew-accent:#eab308" aria-checked="false" role="radio">
+              <img src="./assets/portraits/crew_yellow.jpg" alt="Lostromo" width="56" height="56" />
+              <div class="crew-card-text">
+                <span class="crew-name">Lostromo</span>
+                <span class="crew-meta">1.64m • Çevik</span>
+              </div>
+            </button>
+            <button class="crew-card" data-crew-idx="3" type="button" style="--crew-accent:#dc2626" aria-checked="false" role="radio">
+              <img src="./assets/portraits/crew_red.jpg" alt="Güverte Reisi" width="56" height="56" />
+              <div class="crew-card-text">
+                <span class="crew-name">G. Reisi</span>
+                <span class="crew-meta">2.02m • Dayanıklı</span>
+              </div>
+            </button>
+          </div>
+          <div id="crew-perk-line" class="crew-perk-line">+Kontrollü Geçiş penceresi +%25 · Dengeli (eksi yok)</div>
+        </div>
+
+        <div class="title-controls-row">
+          <div class="seg-toggle" role="group" aria-label="Atmosfer Seçimi">
+            <button id="btn-theme-night" class="seg-btn is-selected" data-theme="night" type="button">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M21 12.79A9 9 0 1 1 11.21 3a7 7 0 0 0 9.79 9.79z"/></svg>
+              <span>Gece</span>
+            </button>
+            <button id="btn-theme-day" class="seg-btn" data-theme="day" type="button">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M4.93 4.93l1.41 1.41m11.32 11.32l1.41 1.41M2 12h2m16 0h2M4.93 19.07l1.41-1.41m11.32-11.32l1.41-1.41"/></svg>
+              <span>Gündüz</span>
+            </button>
+          </div>
+
+          <div class="seg-toggle" id="diff-picker" role="group" aria-label="Zorluk Seçimi">
+            <button class="seg-btn diff-btn" data-diff="easy" type="button">Kolay</button>
+            <button class="seg-btn diff-btn is-selected" data-diff="normal" type="button">Normal</button>
+            <button class="seg-btn diff-btn" data-diff="hard" type="button">Zor</button>
+          </div>
+
+          <div class="best-pill" id="title-best-pill">
+            <span class="pill-label">EN İYİ SÜRE</span>
+            <strong id="title-best-time">--:--.-</strong>
+          </div>
+        </div>
+
+        <div id="title-mission-pill" class="mission-pill">İSG: En az 6 Kahve Topla (+500 Puan)</div>
+
+        <button id="btn-start-race" class="cta-primary" type="button" disabled>
+          YÜKLENİYOR...
+        </button>
+
+        <div class="title-util-row">
+          <button id="btn-open-notes" class="util-btn" type="button">SAHA NOTLARI (10 TEHLİKE)</button>
+          <button id="btn-shift-code" class="util-btn" type="button" title="Aynı parkuru tekrarlamak için Vardiya Kodu gir">VARDİYA: RASTGELE</button>
+        </div>
+
+        <div class="controls-strip">
+          <span><kbd>A/D</kbd> Şerit</span>
+          <span><kbd>W/Boşluk</kbd> Zıpla</span>
+          <span><kbd>S</kbd> Kay</span>
+          <span><kbd>Shift</kbd> Turbo</span>
+          <span><kbd>C</kbd> Ön Kamera</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================================================================
+         SCREEN 1B: FIELD NOTES / SAHA NOTLARI MODAL (Kilitsiz)
+         ================================================================ -->
+    <section id="screen-notes" class="overlay-screen hidden" aria-label="Saha Notları">
+      <div class="notes-card">
+        <div class="notes-header">
+          <div>
+            <div class="ship-tag">GÜVERTE GÜVENLİK REHBERİ • KİLİTSİZ</div>
+            <h2 class="modal-title">SAHA NOTLARI</h2>
+          </div>
+          <button id="btn-close-notes" class="btn-secondary notes-close" type="button">KAPAT</button>
+        </div>
+        <div id="notes-records-row" class="notes-records-row"></div>
+        <div id="notes-grid" class="notes-grid"></div>
+      </div>
+    </section>
+
+    <!-- ================================================================
+         SCREEN 2: IN-RACE HUD (Center 100% clear, max 5 clusters)
+         ================================================================ -->
+    <div id="screen-hud" class="hud-layer hidden" aria-hidden="true">
+      <div id="speed-vignette" class="speed-vignette" aria-hidden="true"></div>
+      <div class="hud-cluster hud-tl">
+        <div class="rank-card">
+          <div id="hud-rank" class="rank-num">1.</div>
+          <div class="rank-total">/ 4</div>
+        </div>
+        <div class="lap-chip">
+          <span class="chip-label">TUR</span>
+          <strong id="hud-lap">1 / 3</strong>
+        </div>
+        <div id="hud-roll-chip" class="roll-chip hidden">
+          <span class="chip-label">YALPA</span>
+          <strong id="hud-roll-val">0°</strong>
+        </div>
+      </div>
+
+      <div class="hud-cluster hud-tr">
+        <div class="metrics-pill">
+          <div class="metric-col">
+            <span class="chip-label">SÜRE</span>
+            <strong id="hud-time">00:00.0</strong>
+          </div>
+          <div class="metric-sep"></div>
+          <div class="metric-col">
+            <span class="chip-label">PUAN</span>
+            <strong id="hud-score">0</strong>
+          </div>
+          <div id="hud-combo-wrap" class="combo-badge hidden">x1</div>
+        </div>
+        <button id="btn-mute" class="icon-btn" type="button" aria-label="Sesi Aç/Kapat" title="Ses">
+          <svg id="icon-sound-on" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></svg>
+          <svg id="icon-sound-off" class="hidden" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><line x1="23" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="23" y2="15"/></svg>
+        </button>
+        <button id="btn-pause" class="icon-btn" type="button" aria-label="Duraklat" title="Duraklat (Esc)">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/></svg>
+        </button>
+      </div>
+
+      <div id="banter-pill" class="banter-pill hidden" aria-live="polite">
+        <span id="banter-dot" class="suit-dot"></span>
+        <span id="banter-text"></span>
+      </div>
+      <div id="callout-stage" class="callout-stage" aria-live="polite"></div>
+
+      <div class="turbo-dock">
+        <div class="turbo-head">
+          <span>TURBO KALKANI</span>
+          <span id="hud-turbo-status" class="turbo-hint">0%</span>
+        </div>
+        <div class="turbo-track">
+          <div id="hud-turbo-fill" class="turbo-fill" style="width: 0%"></div>
+        </div>
+      </div>
+
+      <div class="touch-controls">
+        <div class="touch-left touch-optional">
+          <button id="touch-left" class="touch-btn" type="button" aria-label="Sola Şerit">◀</button>
+          <button id="touch-right" class="touch-btn" type="button" aria-label="Sağa Şerit">▶</button>
+        </div>
+        <div class="touch-right">
+          <button id="touch-slide" class="touch-btn touch-act touch-optional" type="button">KAY</button>
+          <button id="touch-jump" class="touch-btn touch-act touch-optional" type="button">ZIPLA</button>
+          <button id="touch-turbo" class="touch-btn touch-turbo" type="button">TURBO</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ================================================================
+         SCREEN 3: PAUSE MODAL
+         ================================================================ -->
+    <section id="screen-pause" class="overlay-screen hidden" aria-label="Duraklatıldı">
+      <div class="modal-card">
+        <h2 class="modal-title">OYUN DURAKLATILDI</h2>
+        <div class="modal-actions">
+          <button id="btn-resume" class="cta-primary" type="button">DEVAM ET</button>
+          <div class="settings-grid">
+            <button id="btn-pause-theme" class="btn-secondary" type="button">ATMOSFER: GECE</button>
+            <button id="btn-pause-mute" class="btn-secondary" type="button">SES: AÇIK</button>
+            <button id="btn-pause-music" class="btn-secondary" type="button">MÜZİK: %85</button>
+            <button id="btn-pause-sfx" class="btn-secondary" type="button">EFEKT: %100</button>
+            <button id="btn-pause-shake" class="btn-secondary" type="button">SARSINTI: TAM</button>
+            <button id="btn-pause-touchpad" class="btn-secondary" type="button">DOKUNMATİK: KAPALI</button>
+          </div>
+          <button id="btn-restart-pause" class="btn-secondary" type="button">YENİDEN BAŞLAT</button>
+          <button id="btn-home-pause" class="btn-ghost" type="button">ANA MENÜ</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================================================================
+         SCREEN 4: PODIUM / RESULTS SCREEN
+         ================================================================ -->
+    <section id="screen-results" class="overlay-screen hidden" aria-label="Yarış Sonuçları">
+      <div id="confetti-layer" class="confetti-layer" aria-hidden="true"></div>
+      <div class="results-card">
+        <div id="results-badge-wrap" class="results-badge">
+          <svg width="38" height="38" viewBox="0 0 64 64" fill="none">
+            <circle cx="32" cy="32" r="22" stroke="#FACC15" stroke-width="4.5"/>
+            <circle cx="32" cy="32" r="7" fill="#FACC15"/>
+            <path d="M32 4v56M4 32h56M12.2 12.2l39.6 39.6M51.8 12.2L12.2 51.8" stroke="#FACC15" stroke-width="4" stroke-linecap="round"/>
+          </svg>
+        </div>
+
+        <div id="results-rank-title" class="results-rank">1. SIRADA BİTİRDİN!</div>
+        <p id="results-subtitle" class="results-sub"></p>
+        <div id="results-record-tag" class="record-tag hidden">YENİ GÜVERTE REKORU!</div>
+        <div id="results-score-pill" class="results-score-pill">PUAN: 0 • KAHVE: 0 • TEMİZ KOŞU!</div>
+        <div id="results-mission-badge" class="mission-badge"></div>
+
+        <div id="results-stats-grid" class="results-stats-grid"></div>
+        <div id="results-tip-pill" class="results-tip-pill hidden"></div>
+
+        <div class="standings-table" id="results-standings"></div>
+
+        <div class="results-footer">
+          <button id="btn-play-again" class="cta-primary" type="button">TEKRAR YARIŞ</button>
+          <button id="btn-results-home" class="btn-ghost" type="button">ANA MENÜ</button>
+        </div>
+      </div>
+    </section>
+  </div>
+
+</body>
+</html>
