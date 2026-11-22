@@ -1,0 +1,1634 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<meta name="robots" content="noindex, nofollow" />
+<title>Buz Gibi Kıyamet: Son Ayrancı — Er-Öz Hotel'e Kaçış</title>
+<style>
+  @font-face {
+    font-family: 'BalooBold';
+    src: url('fonts/Baloo2-ExtraBold.ttf') format('truetype');
+    font-weight: 800;
+  }
+  @font-face {
+    font-family: 'BalooMed';
+    src: url('fonts/Baloo2-Bold.ttf') format('truetype');
+    font-weight: 700;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; -webkit-user-select: none; }
+  html, body {
+    width: 100%; height: 100%; overflow: hidden;
+    background: #100c1e;
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'BalooMed', system-ui, sans-serif;
+  }
+  #gameCanvas {
+    display: block;
+    max-width: 100vw; max-height: 100vh;
+    background: #100c1e;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.85);
+    touch-action: none;
+    cursor: pointer;
+  }
+</style>
+</head>
+<body>
+<canvas id="gameCanvas" width="1280" height="720"></canvas>
+<script>
+(() => {
+'use strict';
+
+const VW = 1280;
+const VH = 720;
+const WORLD_W = 3840;
+const GROUND_Y = 612;
+const PROP_TOP_H = 104;
+
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+
+// Responsive letterboxed HiDPI sizing
+let viewScale = 1;
+function resizeCanvas() {
+  const dpr = Math.min(2.5, window.devicePixelRatio || 1);
+  const availW = window.innerWidth;
+  const availH = window.innerHeight;
+  viewScale = Math.min(availW / VW, availH / VH);
+  const cssW = Math.floor(VW * viewScale);
+  const cssH = Math.floor(VH * viewScale);
+  canvas.style.width = cssW + 'px';
+  canvas.style.height = cssH + 'px';
+  // Render buffer matches real physical screen pixels (zero CSS upscaling blur!)
+  canvas.width = Math.floor(cssW * dpr);
+  canvas.height = Math.floor(cssH * dpr);
+  ctx.setTransform(viewScale * dpr, 0, 0, viewScale * dpr, 0, 0);
+  ctx.imageSmoothingEnabled = true;
+  ctx.imageSmoothingQuality = 'high';
+}
+window.addEventListener('resize', resizeCanvas);
+resizeCanvas();
+
+// ============================================================================
+// DATA (1:1 parity with game_data.luau)
+// ============================================================================
+const IMAGE_IDS = [
+  ['ui_title_bg', 'jpg'],
+  ['bg_l1_classic', 'jpg'], ['bg_l2_classic', 'jpg'], ['bg_l3_classic', 'jpg'],
+  ['hero_idle', 'webp'], ['hero_run', 'webp'], ['hero_jump', 'webp'], ['hero_throw', 'webp'],
+  ['hero_cologne', 'webp'], ['hero_nazar', 'webp'], ['hero_hit', 'webp'],
+  'z_1_1','z_1_2','z_1_3','z_1_4','z_1_5','z_1_6','z_1_7','z_1_8','z_1_9',
+  'z_2_1','z_2_2','z_2_3','z_2_4','z_2_5','z_2_6','z_2_7','z_2_8','z_2_9',
+  'z_3_1','z_3_2','z_3_3','z_3_4','z_3_5','z_3_6','z_3_7','z_3_8','z_3_9',
+  'p_simit_0','p_simit_1','p_simit_2','p_cay_0','p_cay_1','p_cay_2',
+  'p_cop_0','p_cop_1','p_cop_2','p_dondurma_0','p_dondurma_1','p_dondurma_2',
+  'ui_heart','ui_nazar_wing','ui_ayran_icon','ui_coin','ui_trophy',
+  'ui_btn_ayran','ui_btn_kolonya','ui_btn_nazar','ui_btn_settings',
+  'ui_logo_buzgibi','ui_board_wood','ui_card_blue','ui_card_green','ui_card_amber',
+  'ui_btn_gold','ui_badge_red','ui_topper_ayran','ui_topper_brain',
+  'hud_health_bar','hud_level_progress','hud_ayran_counter','hud_gold_counter',
+  'hud_score_panel','hud_cta_gold','hud_cta_red',
+  'ui_header_plank','ui_cap_blue','ui_cap_green','ui_cap_yellow','ui_play_icon',
+  'proj_ayran_sise','proj_curuk_domates','proj_hamsi','proj_kamp_feneri',
+  'proj_kolonya_bulutu','proj_kozan_misir','proj_mini_balon','proj_nazar_halka',
+  'proj_nota_dalgasi','proj_oklava','proj_sicak_cay','proj_simit',
+  'proj_ucan_telefon','proj_zehirli_dondurma','proj_zehirli_kokteyl',
+  'vfx_splash_ayran','vfx_puddle_tea','vfx_splat_tomato','vfx_popcorn_burst','vfx_splat_slime_green','vfx_fire_zone',
+  'intro_hero','intro_l1_mid','intro_l1_boss','intro_l2_mid','intro_l2_boss','intro_l3_mid','intro_l3_boss',
+  ['c_1_1','webp'],['c_1_2','webp'],['c_1_3','webp'],['c_1_4','webp'],['c_1_5','webp'],['c_1_6','webp'],['c_1_7','webp'],['c_1_8','webp'],['c_1_9','webp'],
+  ['c_2_1','webp'],['c_2_2','webp'],['c_2_3','webp'],['c_2_4','webp'],['c_2_5','webp'],['c_2_6','webp'],['c_2_7','webp'],['c_2_8','webp'],['c_2_9','webp'],
+  ['c_3_1','webp'],['c_3_2','webp'],['c_3_3','webp'],['c_3_4','webp'],['c_3_5','webp'],['c_3_6','webp'],['c_3_7','webp'],['c_3_8','webp'],['c_3_9','webp'],
+];
+
+const SFX_IDS = [
+  'sfx_throw','sfx_splash','sfx_kolonya','sfx_nazar','sfx_jump',
+  'sfx_hit','sfx_calm','sfx_prop','sfx_coin','sfx_win','sfx_horn','sfx_shock'
+];
+
+const ZOMBIES = [
+  [
+    { id:'z_1_1', label:'Kahvehane Dayısı', ai:'ranged', projLabel:'ÇAY', projImg:'proj_sicak_cay', hp:56, speed:72, dmg:9, reward:18, scale:0.96, quote:'Oh be, bir de çay!' },
+    { id:'z_1_2', label:'Oklavalı Teyze', ai:'heavy', projLabel:'OKLAVA', projImg:'proj_oklava', hp:88, speed:66, dmg:15, reward:24, scale:1.00, quote:'Eline sağlık oğlum!' },
+    { id:'z_1_3', label:'Gazeteli Memur', ai:'walker', projLabel:'', projImg:'', hp:58, speed:78, dmg:10, reward:16, scale:0.98, quote:'Kafam yerine geldi!' },
+    { id:'z_1_4', label:'Mahalle Genci', ai:'dasher', projLabel:'', projImg:'', hp:50, speed:106, dmg:11, reward:18, scale:0.94, quote:'Kral ayran efsane!' },
+    { id:'z_1_5', label:'Okullu Öğrenci', ai:'walker', projLabel:'', projImg:'', hp:46, speed:102, dmg:8, reward:15, scale:0.88, quote:'Sınava hazırım!' },
+    { id:'z_1_6', label:'Moto Kurye', ai:'dasher', projLabel:'', projImg:'', hp:66, speed:122, dmg:13, reward:25, scale:1.00, quote:'5 yıldız verdim!' },
+    { id:'z_1_7', label:'Tombul Bakkal', ai:'heavy', projLabel:'', projImg:'', hp:118, speed:56, dmg:16, reward:30, scale:1.08, quote:'Veresiye defteri kapandı!' },
+    { id:'z_1_8', label:'Pazar Poşetli Teyze', ai:'ranged', projLabel:'DOMATES', projImg:'proj_curuk_domates', hp:68, speed:68, dmg:10, reward:18, scale:0.96, quote:'Serinledim evladım!' },
+    { id:'z_1_9', label:'Bağlamacı Aşık', ai:'ranged', projLabel:'NOTA', projImg:'proj_nota_dalgasi', hp:62, speed:88, dmg:10, reward:22, scale:0.96, quote:'Yayık ayran türküsü!' },
+  ],
+  [
+    { id:'z_2_1', label:'Simitçi Usta', ai:'ranged', projLabel:'SİMİT', projImg:'proj_simit', hp:74, speed:78, dmg:11, reward:22, scale:1.00, quote:'Sıcak simit + ayran!' },
+    { id:'z_2_2', label:'Maraş Dondurmacısı', ai:'ranged', projLabel:'DONDURMA', projImg:'proj_zehirli_dondurma', hp:88, speed:86, dmg:13, reward:28, scale:1.04, quote:'Şaka yapmıştım abi!' },
+    { id:'z_2_3', label:'Midyeci Usta', ai:'heavy', projLabel:'', projImg:'', hp:115, speed:62, dmg:15, reward:28, scale:1.06, quote:'Limonu sıktım geldim!' },
+    { id:'z_2_4', label:'Mısırcı Abla', ai:'ranged', projLabel:'MISIR', projImg:'proj_kozan_misir', hp:80, speed:72, dmg:11, reward:24, scale:0.98, quote:'Közde mısır ikramım!' },
+    { id:'z_2_5', label:'Kağıt Toplayıcı', ai:'walker', projLabel:'', projImg:'', hp:68, speed:98, dmg:10, reward:20, scale:0.96, quote:'Eyvallah kardeşim!' },
+    { id:'z_2_6', label:'Çiçekçi Teyze', ai:'walker', projLabel:'', projImg:'', hp:76, speed:72, dmg:10, reward:22, scale:0.96, quote:'Bir gül benden sana!' },
+    { id:'z_2_7', label:'Balıkçı Usta', ai:'heavy', projLabel:'HAMSİ', projImg:'proj_hamsi', hp:128, speed:64, dmg:16, reward:32, scale:1.08, quote:'Hamsi taze, ayran buz!' },
+    { id:'z_2_8', label:'Milli Piyango Amca', ai:'ranged', projLabel:'NOTA', projImg:'proj_nota_dalgasi', hp:70, speed:86, dmg:10, reward:26, scale:0.96, quote:'Büyük ikramiye sensin!' },
+    { id:'z_2_9', label:'Sucu Çocuk', ai:'dasher', projLabel:'', projImg:'', hp:54, speed:130, dmg:11, reward:22, scale:0.86, quote:'Ayran sudan iyiymiş!' },
+  ],
+  [
+    { id:'z_3_1', label:'Sırt Çantalı Gezgin', ai:'walker', projLabel:'', projImg:'', hp:90, speed:90, dmg:12, reward:26, scale:1.02, quote:'Amazing Turkish yogurt!' },
+    { id:'z_3_2', label:'Şipşakçı Turist', ai:'ranged', projLabel:'TELEFON', projImg:'proj_ucan_telefon', hp:82, speed:94, dmg:13, reward:28, scale:0.98, quote:'Selfie time! Ayran!' },
+    { id:'z_3_3', label:'Her Şey Dahilci', ai:'heavy', projLabel:'KOKTEYL', projImg:'proj_zehirli_kokteyl', hp:142, speed:64, dmg:18, reward:36, scale:1.08, quote:'Open buffet ayran!' },
+    { id:'z_3_4', label:'Haritalı Turist', ai:'walker', projLabel:'', projImg:'', hp:82, speed:86, dmg:11, reward:24, scale:0.98, quote:'Er-Öz Hotel this way!' },
+    { id:'z_3_5', label:'Trekkingci Turist', ai:'dasher', projLabel:'', projImg:'', hp:88, speed:118, dmg:14, reward:28, scale:1.00, quote:'Best energy drink!' },
+    { id:'z_3_6', label:'Alışverişçi Turist', ai:'ranged', projLabel:'KOKTEYL', projImg:'proj_zehirli_kokteyl', hp:92, speed:82, dmg:13, reward:30, scale:1.00, quote:'I buy 10 bottles!' },
+    { id:'z_3_7', label:'Sörfçü Turist', ai:'dasher', projLabel:'', projImg:'', hp:86, speed:124, dmg:14, reward:28, scale:1.02, quote:'Chill vibes bro!' },
+    { id:'z_3_8', label:'Kapadokya Baloncu', ai:'flyer', projLabel:'BALON', projImg:'proj_mini_balon', hp:84, speed:96, dmg:12, reward:30, scale:0.98, quote:"Göreme'ye uçuyorum!" },
+    { id:'z_3_9', label:'Kampçı Turist', ai:'ranged', projLabel:'FENER', projImg:'proj_kamp_feneri', hp:126, speed:72, dmg:15, reward:34, scale:1.06, quote:'Campfire + Ayran!' },
+  ]
+];
+
+const LEVELS = [
+  {
+    id:1, bg:'bg_l1_classic', title:'BÖLÜM 1: MAHALLE SOKAĞI',
+    subtitle:'Ayranla ıslat + Kolonya ile KÖPÜK ŞOKU patlat! Tezgahların üstüne zıpla!',
+    goal:12, spawnRate:2.15, group:0,
+    boss:{ img:'z_1_7', name:'DEV MAHALLE BAKKALI (DEPREM BOSS)', special:'quake', hp:380, speed:70, dmg:16, reward:160, quote:'Tamam yeğenim, tüm mahalleye ayran benden!' },
+    comicLines:['MAHALLEDE HARARET PATLADI!','Kuryeler depara kalktı, Dayı çay fırlatıyor!','Ayranla ıslat → Kolonyayla KÖPÜK ŞOKU patlat!']
+  },
+  {
+    id:2, bg:'bg_l2_classic', title:'BÖLÜM 2: ESNAF ÇARŞISI',
+    subtitle:'Maraş şakasına dikkat! Düşman mermilerini Kolonya ile havada yok et!',
+    goal:15, spawnRate:1.85, group:1,
+    boss:{ img:'z_2_7', name:'ÖFKELİ BALIKÇI REİS (HAMSİ BOSS)', special:'hamsi', hp:500, speed:76, dmg:19, reward:240, quote:'Buz gibi ayranla yelkenler suya indi!' },
+    comicLines:['ESNAF ÇARŞISI KARIŞTI!','Dondurmacılar geri kaçıp yeşil külah savuruyor...','Tezgahlara zıpla, tepelerinden ayran yağdır!']
+  },
+  {
+    id:3, bg:'bg_l3_classic', title:'BÖLÜM 3: ER-ÖZ HOTEL GÜVENLİ BÖLGE',
+    subtitle:"Kapadokya balonluları havada! Boss'un Açık Büfe şifasını durdur!",
+    goal:18, spawnRate:1.65, group:2,
+    boss:{ img:'z_3_3', name:'MEGA HER ŞEY DAHİL KRALI (BÜFE BOSS)', special:'buffet', hp:640, speed:80, dmg:21, reward:380, quote:'5 YILDIZ! ER-ÖZ HOTEL ARTIK GÜVENDE!' },
+    comicLines:['ER-ÖZ HOTEL KAPISINDAYIZ!','Havada süzülen baloncular + açık büfe ordusu!','Kralın büfe şifasını kes, 5 yıldızlı zaferi kap!']
+  }
+];
+
+const UPGRADES = [
+  { id:'ayran_dmg', name:'Çift Namlulu Yayık Ayran', desc:"Hasar +12 • Sv.2'de ÇİFT ŞİŞE (Ön+Çapraz), Sv.4'te alan köpüğü!", baseCost:60, maxLvl:5, icon:'ui_ayran_icon' },
+  { id:'belt_cap', name:'Çift Kemer + Akrobatik Zıplama', desc:"Sv.1'de HAVADA ÇİFT ZIPLAMA açılır! Maks. ayran +4 artar.", baseCost:55, maxLvl:5, icon:'ui_btn_ayran' },
+  { id:'kolonya_pow', name:'80° Tütün & Limon Şoku', desc:'Kolonya hasarı +22, düşman mermisi siler + 1.4sn SERSEMLETİR!', baseCost:65, maxLvl:4, icon:'ui_btn_kolonya' },
+  { id:'tea_heal', name:'Nazar Kalkanı & Taze Çay', desc:'+55 Can & +15 Maks Can • Nazar %100 iken ilk darbeyi KALKAN emer!', baseCost:45, maxLvl:99, icon:'ui_heart' },
+];
+
+const KOLONYA_BASE = { cd: 2.1, dmg: 38, range: 215 };
+const PROP_TYPES = ['simit', 'cay', 'cop', 'dondurma'];
+
+// ============================================================================
+// ASSET LOADER
+// ============================================================================
+const images = {};
+const sfx = {};
+let loadedCount = 0;
+let totalAssets = IMAGE_IDS.length;
+let fontsReady = false;
+if (document.fonts && document.fonts.ready) {
+  document.fonts.ready.then(() => { fontsReady = true; }).catch(() => { fontsReady = true; });
+} else fontsReady = true;
+setTimeout(() => { fontsReady = true; }, 3500);
+
+for (const entry of IMAGE_IDS) {
+  const [id, ext] = Array.isArray(entry) ? entry : [entry, 'webp'];
+  const img = new Image();
+  img.onload = () => { loadedCount++; };
+  img.onerror = () => { loadedCount++; };
+  img.src = `img/${id}.${ext}?v=6`;
+  images[id] = img;
+}
+
+for (const sid of SFX_IDS) {
+  const a = new Audio(`sfx/${sid}.wav`);
+  a.preload = 'auto';
+  sfx[sid] = a;
+}
+
+function playSfx(name) {
+  if (G.muted) return;
+  const base = sfx[name];
+  if (!base) return;
+  try {
+    const inst = base.cloneNode(true);
+    inst.volume = 0.55;
+    inst.play().catch(() => {});
+  } catch (_) {}
+}
+
+// ============================================================================
+// GAME STATE
+// ============================================================================
+const G = {
+  screen: 'title',
+  time: 0,
+  levelIdx: 0,
+  camX: 0,
+  trauma: 0,
+  shakeClock: 0,
+  hitStop: 0,
+  heroSX: 1,
+  heroSY: 1,
+  px: 360, py: GROUND_Y, pvx: 0, pvy: 0, facing: 1,
+  onGround: true, onPlatform: false,
+  coyoteT: 0, jumpBufT: 0, jumpsLeft: 1, dropThroughT: 0,
+  hp: 120, maxHp: 120,
+  ayran: 12, maxAyran: 12, ayranRegenT: 0, ayranDmg: 34,
+  kolonyaCd: 0, kolonyaMaxCd: KOLONYA_BASE.cd, kolonyaDmg: KOLONYA_BASE.dmg, kolonyaRange: KOLONYA_BASE.range, kolonyaVfxT: 0,
+  knockTimer: 0, vfxSprites: [], snowFlakes: [],
+  nazar: 50, nazarAnimT: 0, throwAnimT: 0, hitAnimT: 0, invulnT: 0, walkT: 0,
+  gold: 80, score: 0, bestScore: 0, combo: 0, maxCombo: 0, comboT: 0,
+  totalCalmed: 0, shockCount: 0,
+  calmedInLevel: 0, spawnT: 1.0, bossSpawned: false, bossDefeated: false,
+  bossBannerT: 0, levelClearT: 0,
+  upLevels: {},
+  zombies: [], projectiles: [], enemyProjs: [], props: [], pickups: [],
+  particles: [], floats: [], waves: [],
+  zones: [], hover: '', keys: {}, holdLeft: false, holdRight: false, muted: false,
+};
+window.__GAME__ = G;
+
+function setupLevel(idx) {
+  G.levelIdx = idx;
+  G.px = 360; G.py = GROUND_Y; G.pvx = 0; G.pvy = 0; G.facing = 1;
+  G.onGround = true; G.onPlatform = false;
+  G.coyoteT = 0; G.jumpBufT = 0; G.dropThroughT = 0;
+  G.jumpsLeft = 1 + ((G.upLevels.belt_cap || 0) >= 1 ? 1 : 0);
+  G.camX = 0; G.ayran = G.maxAyran;
+  G.calmedInLevel = 0; G.spawnT = 0.8;
+  G.bossSpawned = false; G.bossDefeated = false; G.bossBannerT = 0; G.levelClearT = 0;
+  G.zombies = []; G.projectiles = []; G.enemyProjs = []; G.pickups = [];
+  G.particles = []; G.floats = []; G.waves = []; G.props = []; G.vfxSprites = [];
+  G.knockTimer = 0;
+  // Fair progression: restore at least 70% max HP on new level
+  G.hp = Math.max(G.hp, Math.floor(G.maxHp * 0.70));
+  if (!G.snowFlakes || G.snowFlakes.length === 0) {
+    G.snowFlakes = [];
+    for (let i = 0; i < 42; i++) {
+      G.snowFlakes.push({
+        x: Math.random() * (WORLD_W + 400) - 200,
+        y: Math.random() * VH,
+        vx: -(16 + Math.random() * 28),
+        vy: 20 + Math.random() * 38,
+        r: 1.2 + Math.random() * 2.5,
+        depth: 0.15 + Math.random() * 0.95,
+        alpha: 0.25 + Math.random() * 0.50
+      });
+    }
+  }
+  const spots = [560, 1020, 1480, 1940, 2400, 2860, 3260, 3580];
+  spots.forEach((sx, i) => {
+    G.props.push({ kind: PROP_TYPES[(i + idx) % PROP_TYPES.length], x: sx, state: 0, hp: 2, shake: 0 });
+  });
+}
+
+function resetFullGame() {
+  G.hp = 120; G.maxHp = 120; G.maxAyran = 12; G.ayran = 12; G.ayranDmg = 34;
+  G.kolonyaCd = 0; G.kolonyaMaxCd = KOLONYA_BASE.cd; G.kolonyaDmg = KOLONYA_BASE.dmg; G.kolonyaRange = KOLONYA_BASE.range;
+  G.nazar = 50; G.nazarAnimT = 0; G.gold = 80; G.score = 0;
+  G.combo = 0; G.maxCombo = 0; G.comboT = 0; G.totalCalmed = 0; G.shockCount = 0;
+  G.trauma = 0; G.hitStop = 0; G.heroSX = 1; G.heroSY = 1;
+  G.upLevels = { ayran_dmg: 0, belt_cap: 0, kolonya_pow: 0, tea_heal: 0 };
+  setupLevel(0);
+}
+resetFullGame();
+
+// ============================================================================
+// VFX & COMBAT HELPERS
+// ============================================================================
+function addTrauma(a) { G.trauma = Math.min(0.65, G.trauma + a * 0.45); }
+function spawnVfxSprite(imgId, x, y, w, h, duration) {
+  if (!G.vfxSprites) G.vfxSprites = [];
+  G.vfxSprites.push({ img: imgId, x, y, w, h, life: duration, maxLife: duration });
+}
+function spawnParticles(x, y, count, r, g, b, spd, grav, rMin, rMax) {
+  for (let i = 0; i < count; i++) {
+    const ang = Math.random() * Math.PI * 2;
+    const sp = spd * (0.35 + Math.random() * 0.85);
+    const life = 0.28 + Math.random() * 0.42;
+    G.particles.push({
+      x: x + (Math.random() - 0.5) * 16, y: y + (Math.random() - 0.5) * 16,
+      vx: Math.cos(ang) * sp, vy: Math.sin(ang) * sp - 95,
+      rad: rMin + Math.random() * (rMax - rMin), r, g, b, life, maxLife: life, grav
+    });
+  }
+}
+function spawnFloat(x, y, text, r, g, b, size, life = 1.05, isBubble = false) {
+  G.floats.push({ x, y, vy: isBubble ? -32 : -68, text, r, g, b, size, life, maxLife: life, isBubble });
+}
+function spawnShockwave(x, y, maxRad, r, g, b, dur, groundOnly = false) {
+  G.waves.push({ x, y, rad: 18, maxRad, r, g, b, life: dur, maxLife: dur, groundOnly });
+}
+function spawnPickup(kind, x, y, val) {
+  G.pickups.push({ kind, x, y, vy: -220 - Math.random() * 90, val, life: 7.5, maxLife: 7.5 });
+}
+
+function spawnZombie(isBoss) {
+  const lvl = LEVELS[G.levelIdx];
+  if (isBoss) {
+    const b = lvl.boss;
+    let sx = Math.min(WORLD_W - 120, G.px + 540);
+    if (sx - G.px < 260) sx = Math.max(120, G.px - 480);
+    G.zombies.push({
+      img: b.img, label: b.name, quote: b.quote, ai: 'heavy',
+      projLabel: b.special === 'hamsi' ? 'HAMSİ' : '', projImg: b.special === 'hamsi' ? 'proj_hamsi' : '',
+      bossSpecial: b.special, x: sx, y: GROUND_Y, baseY: GROUND_Y, vx: 0,
+      hp: b.hp, maxHp: b.hp, speed: b.speed, dmg: b.dmg, reward: b.reward,
+      scale: 1.48, isBoss: true, facing: -1, animT: 0, hitFlash: 0, wetT: 0, stunT: 0,
+      atkCd: 0.9, aiState: 'chase', aiTimer: 0, aiCd: 3.2, channelHits: 0,
+      calmed: false, calmT: 0, cureT: 0, curePopDone: false, squashX: 1, squashY: 1
+    });
+    G.bossSpawned = true; G.bossBannerT = 2.8;
+    addTrauma(0.62); playSfx('sfx_horn');
+    return;
+  }
+  const pool = ZOMBIES[lvl.group];
+  const def = pool[Math.floor(Math.random() * pool.length)];
+  const fromRight = Math.random() < 0.74;
+  let sx = fromRight ? (G.camX + VW + 70) : (G.camX - 70);
+  if (sx > WORLD_W - 50) sx = G.camX - 70;
+  if (sx < 50) sx = G.camX + VW + 70;
+  sx = Math.max(60, Math.min(WORLD_W - 60, sx));
+  const startY = def.ai === 'flyer' ? (GROUND_Y - 108) : GROUND_Y;
+  G.zombies.push({
+    img: def.id, label: def.label, quote: def.quote, ai: def.ai,
+    projLabel: def.projLabel, projImg: def.projImg, bossSpecial: '',
+    x: sx, y: startY, baseY: startY, vx: 0,
+    hp: def.hp, maxHp: def.hp, speed: def.speed * (0.93 + Math.random() * 0.16),
+    dmg: def.dmg, reward: def.reward, scale: def.scale, isBoss: false,
+    facing: sx > G.px ? -1 : 1, animT: Math.random() * 6, hitFlash: 0, wetT: 0, stunT: 0,
+    atkCd: 0.45, aiState: 'chase', aiTimer: 0, aiCd: 1.4 + Math.random() * 1.4,
+    channelHits: 0, calmed: false, calmT: 0, cureT: 0, curePopDone: false, squashX: 1, squashY: 1
+  });
+}
+
+function hurtPlayer(dmg, knockDir) {
+  if (G.invulnT > 0 || G.screen !== 'play') return;
+  if ((G.upLevels.tea_heal || 0) >= 1 && G.nazar >= 100) {
+    G.nazar = 65; G.invulnT = 1.1; G.hitStop = 0.07; addTrauma(0.55); playSfx('sfx_nazar');
+    spawnShockwave(G.px, G.py - 85, 290, 56, 228, 255, 0.45);
+    spawnFloat(G.px, G.py - 185, 'NAZAR KALKANI! 0 HASAR!', 95, 238, 255, 22, 1.2);
+    for (const z of G.zombies) {
+      if (!z.calmed && Math.abs(z.x - G.px) < 280) {
+        z.vx = (z.x >= G.px ? 1 : -1) * 480;
+        z.stunT = Math.max(z.stunT, 1.4);
+      }
+    }
+    return;
+  }
+  G.hp = Math.max(0, G.hp - dmg);
+  G.hitAnimT = 0.32; G.invulnT = 1.2; G.combo = 0;
+  G.pvx = knockDir * 340;
+  G.knockTimer = 0.28;
+  G.heroSX = 1.24; G.heroSY = 0.78;
+  addTrauma(0.48); playSfx('sfx_hit');
+  spawnParticles(G.px, G.py - 85, 14, 255, 85, 95, 240, 320, 4, 8);
+  spawnFloat(G.px, G.py - 165, `-${dmg} CAN!`, 255, 95, 105, 22, 0.9);
+  if (G.hp <= 0) {
+    if (G.score > G.bestScore) G.bestScore = G.score;
+    G.screen = 'gameover';
+  }
+}
+
+function calmZombie(z) {
+  if (z.calmed) return;
+  z.calmed = true;
+  z.calmT = z.isBoss ? 3.4 : 2.65;
+  z.cureT = 0; z.curePopDone = false;
+  z.hitFlash = 0; z.vx = 0;
+  z.aiState = 'chase'; z.wetT = 0; z.stunT = 0;
+  z.squashX = 1.12; z.squashY = 0.90;
+  G.combo++; if (G.combo > G.maxCombo) G.maxCombo = G.combo;
+  G.comboT = 3.8; G.totalCalmed++; G.calmedInLevel++;
+  G.nazar = Math.min(100, G.nazar + (z.isBoss ? 45 : 10));
+  const mult = 1 + Math.min(4, Math.floor(G.combo / 3));
+  const pts = z.reward * 10 * mult;
+  G.score += pts; if (G.score > G.bestScore) G.bestScore = G.score;
+  playSfx(z.isBoss ? 'sfx_win' : 'sfx_calm');
+  spawnParticles(z.x, z.y - 95, z.isBoss ? 40 : 18, 225, 248, 255, 240, 260, 4, 9);
+  spawnParticles(z.x, z.y - 95, 14, 140, 245, 255, 200, 210, 4, 8);
+  spawnFloat(z.x, z.y - 142, `+${pts}`, 120, 255, 180, 20, 0.95);
+  if (G.combo >= 3 && G.combo % 3 === 0) {
+    const cMsg = G.combo >= 9 ? `${G.combo}x SON AYRANCI EFSANESİ!` : `${G.combo}x KÖPÜKLÜ KOMBO!`;
+    spawnFloat(G.px, G.py - 215, cMsg, 95, 235, 255, 25, 1.3);
+  }
+  spawnPickup('coin', z.x - 16, z.y - 55, z.reward);
+  if (Math.random() < 0.25 || z.isBoss) spawnPickup('ayran', z.x + 18, z.y - 55, 2);
+  if (Math.random() < 0.18 || z.isBoss) spawnPickup('tea', z.x, z.y - 70, 24);
+  if (z.isBoss) {
+    G.bossDefeated = true; G.levelClearT = 3.4; G.hitStop = 0.12; addTrauma(0.85);
+    spawnShockwave(z.x, z.y - 100, 480, 255, 225, 95, 0.75);
+  }
+}
+
+function damageProp(p) {
+  if (p.state >= 2) return;
+  p.hp--; p.shake = 0.28; playSfx('sfx_prop'); addTrauma(0.18);
+  spawnParticles(p.x, GROUND_Y - 55, 14, 240, 195, 120, 220, 520, 3, 7);
+  if (p.hp <= 0) {
+    p.state = 2;
+    spawnFloat(p.x, GROUND_Y - 125, 'TEZGAH KIRILDI! +GANİMET', 255, 220, 100, 17, 1.05);
+    spawnPickup('coin', p.x - 18, GROUND_Y - 50, 28);
+    spawnPickup('ayran', p.x + 18, GROUND_Y - 50, 4);
+    if (G.hp < G.maxHp * 0.85) spawnPickup('tea', p.x, GROUND_Y - 65, 25);
+  } else p.state = 1;
+}
+
+function executeJump() {
+  if (G.onGround || G.coyoteT > 0) {
+    G.pvy = -690; G.onGround = false; G.onPlatform = false; G.coyoteT = 0; G.jumpBufT = 0;
+    G.jumpsLeft = (G.upLevels.belt_cap || 0) >= 1 ? 1 : 0;
+    G.heroSX = 0.82; G.heroSY = 1.20; playSfx('sfx_jump');
+    spawnParticles(G.px, G.py - 4, 6, 225, 215, 195, 105, 140, 4, 7);
+  } else if (G.jumpsLeft > 0) {
+    G.jumpsLeft--; G.pvy = -640; G.jumpBufT = 0;
+    G.heroSX = 0.80; G.heroSY = 1.24; playSfx('sfx_jump');
+    spawnParticles(G.px, G.py - 8, 12, 130, 232, 255, 170, 90, 4, 8);
+    spawnFloat(G.px, G.py - 140, 'ÇİFT ZIPLAMA!', 125, 235, 255, 16, 0.7);
+  }
+}
+
+function fireAyran(dirOverride) {
+  if (G.screen !== 'play') return;
+  if (G.ayran <= 0) {
+    spawnFloat(G.px, G.py - 180, 'KOLONYA İLE PATLAT -> +AYRAN!', 125, 235, 255, 16, 0.85);
+    return;
+  }
+  if (dirOverride != null) G.facing = dirOverride;
+  G.ayran--; G.throwAnimT = 0.26; G.heroSX = 1.14; G.heroSY = 0.90; playSfx('sfx_throw');
+  const upLvl = G.upLevels.ayran_dmg || 0;
+  const splashRad = upLvl >= 4 ? 95 : 0;
+  G.projectiles.push({ x: G.px + G.facing * 44, y: G.py - 92, vx: G.facing * 790, vy: -125, rot: 0, dmg: G.ayranDmg, life: 1.45, facing: G.facing, splashRad });
+  if (upLvl >= 2) {
+    G.projectiles.push({ x: G.px + G.facing * 38, y: G.py - 102, vx: G.facing * 710, vy: -310, rot: 0.4, dmg: Math.floor(G.ayranDmg * 0.85), life: 1.45, facing: G.facing, splashRad });
+  }
+  spawnParticles(G.px + G.facing * 42, G.py - 92, 7, 235, 250, 255, 130, 140, 3, 5);
+}
+
+function useKolonya() {
+  if (G.screen !== 'play' || G.kolonyaCd > 0) return;
+  G.kolonyaCd = G.kolonyaMaxCd; G.kolonyaVfxT = 0.36; G.throwAnimT = 0.25;
+  G.heroSX = 1.18; G.heroSY = 0.88; playSfx('sfx_kolonya'); addTrauma(0.26);
+  const cx = G.px + G.facing * (G.kolonyaRange * 0.55);
+  spawnParticles(cx, G.py - 88, 30, 120, 255, 140, 310, 70, 5, 12);
+  const kLvl = G.upLevels.kolonya_pow || 0;
+  const stunDur = kLvl >= 1 ? (1.15 + kLvl * 0.28) : 0.45;
+  let deflected = 0;
+  G.enemyProjs = G.enemyProjs.filter(ep => {
+    const dx = ep.x - G.px;
+    if (dx * G.facing > -40 && Math.abs(dx) <= G.kolonyaRange + 35 && Math.abs(ep.y - (G.py - 85)) < 115) {
+      deflected++; spawnParticles(ep.x, ep.y, 10, 145, 255, 175, 200, 120, 4, 7); return false;
+    }
+    return true;
+  });
+  if (deflected > 0) {
+    G.score += deflected * 60;
+    spawnFloat(cx, G.py - 185, `MERMİ SAVUŞTURULDU! +${deflected * 60}`, 145, 255, 170, 18, 1.0);
+  }
+  let shockTriggered = false;
+  for (const z of G.zombies) {
+    if (z.calmed) continue;
+    const dx = z.x - G.px;
+    const dy = Math.abs((z.y - 80) - (G.py - 80));
+    if (dx * G.facing > -45 && Math.abs(dx) <= G.kolonyaRange && dy < 135) {
+      if (z.isBoss && z.aiState === 'channel') {
+        z.aiState = 'chase'; z.aiCd = 5.5; z.stunT = 2.4;
+        spawnFloat(z.x, z.y - 220, 'BÜFE İPTAL EDİLDİ! SERSEMLEDİ!', 255, 230, 95, 22, 1.4);
+      }
+      const isWet = z.wetT > 0;
+      const dmg = isWet ? Math.floor(G.kolonyaDmg * 1.88) : G.kolonyaDmg;
+      z.hp -= dmg; z.hitFlash = 0.24; z.squashX = 1.28; z.squashY = 0.76;
+      z.stunT = Math.max(z.stunT, stunDur); z.vx = G.facing * (z.isBoss ? 260 : 540);
+      if (isWet) {
+        z.wetT = 0; shockTriggered = true; G.shockCount++;
+        G.ayran = Math.min(G.maxAyran, G.ayran + 2);
+        G.nazar = Math.min(100, G.nazar + 14);
+        spawnShockwave(z.x, z.y - 85, 195, 120, 245, 255, 0.42);
+        spawnParticles(z.x, z.y - 85, 22, 235, 252, 255, 340, 240, 5, 10);
+        spawnFloat(z.x, z.y - 165, `KÖPÜK ŞOKU!! -${dmg} (+2 AYRAN)`, 110, 245, 255, 22, 1.15);
+        for (const o of G.zombies) {
+          if (o !== z && !o.calmed && Math.abs(o.x - z.x) < 190) {
+            o.hp -= Math.floor(G.kolonyaDmg * 0.75); o.wetT = 4.0; o.hitFlash = 0.18;
+            o.vx = (o.x >= z.x ? 1 : -1) * 320;
+            if (o.hp <= 0) calmZombie(o);
+          }
+        }
+      } else {
+        spawnFloat(z.x, z.y - 135, `-${dmg}`, 130, 255, 145, 19, 0.7);
+      }
+      if (z.hp <= 0) calmZombie(z);
+    }
+  }
+  if (shockTriggered) { G.hitStop = 0.065; addTrauma(0.52); playSfx('sfx_shock'); }
+  else if (deflected === 0) spawnFloat(cx, G.py - 150, '80° FERAHLIK!', 135, 255, 150, 18, 0.85);
+  // Kolonya does not damage friendly street props
+}
+
+function useMegaNazar() {
+  if (G.screen !== 'play') return;
+  if (G.nazar < 100) {
+    spawnFloat(G.px, G.py - 185, `NAZAR %${Math.floor(G.nazar)}`, 90, 215, 255, 18, 0.75);
+    return;
+  }
+  G.nazar = 0; G.nazarAnimT = 0.58; G.hitStop = 0.11; addTrauma(0.85); playSfx('sfx_nazar');
+  spawnShockwave(G.px, G.py - 90, 720, 56, 228, 255, 0.65);
+  spawnShockwave(G.px, G.py - 90, 520, 0, 110, 255, 0.55);
+  spawnParticles(G.px, G.py - 90, 44, 70, 225, 255, 420, 120, 5, 11);
+  spawnFloat(G.px, G.py - 215, 'MEGA NAZAR PATLAMASI!!', 95, 235, 255, 30, 1.5);
+  G.enemyProjs = [];
+  for (const z of G.zombies) {
+    if (!z.calmed && Math.abs(z.x - G.px) < 780) {
+      const dmg = z.isBoss ? 210 : 999;
+      z.hp -= dmg; z.hitFlash = 0.35; z.stunT = 2.0;
+      z.vx = (z.x >= G.px ? 1 : -1) * 480;
+      if (z.hp <= 0) calmZombie(z);
+      else spawnFloat(z.x, z.y - 155, `-${dmg} NAZAR!`, 90, 230, 255, 24, 1.0);
+    }
+  }
+}
+
+function tryOpenShop() {
+  if (G.screen !== 'play') return;
+  let inCombat = (G.bossSpawned && !G.bossDefeated);
+  if (!inCombat) {
+    for (const z of G.zombies) {
+      if (!z.calmed && Math.abs(z.x - G.px) < 550) { inCombat = true; break; }
+    }
+  }
+  if (inCombat) {
+    spawnFloat(G.px, G.py - 165, 'SAVAŞTA KEPENK KAPALI!', 255, 210, 95, 17, 1.2);
+    playSfx('sfx_prop');
+  } else {
+    G.screen = 'shop';
+  }
+}
+
+function buyUpgrade(upId) {
+  const u = UPGRADES.find(x => x.id === upId);
+  if (!u) return;
+  const lvl = G.upLevels[upId] || 0;
+  if (lvl >= u.maxLvl) return;
+  const cost = u.baseCost + lvl * 38;
+  if (G.gold < cost) { playSfx('sfx_hit'); return; }
+  G.gold -= cost; G.upLevels[upId] = lvl + 1; playSfx('sfx_coin');
+  if (upId === 'ayran_dmg') G.ayranDmg += 12;
+  else if (upId === 'belt_cap') { G.maxAyran += 4; G.ayran = G.maxAyran; }
+  else if (upId === 'kolonya_pow') { G.kolonyaDmg += 22; G.kolonyaRange += 24; G.kolonyaMaxCd = Math.max(1.3, G.kolonyaMaxCd - 0.22); }
+  else if (upId === 'tea_heal') { G.maxHp += 15; G.hp = Math.min(G.maxHp, G.hp + 55); }
+}
+
+// ============================================================================
+// SIMULATION UPDATE
+// ============================================================================
+function updateZombieAI(z, dt) {
+  const dx = G.px - z.x;
+  const dist = Math.abs(dx);
+  const dir = dx >= 0 ? 1 : -1;
+  const wetMul = z.wetT > 0 ? 0.65 : 1.0;
+
+  if (z.isBoss) {
+    z.aiCd -= dt;
+    if (z.aiState === 'channel') {
+      z.aiTimer -= dt; z.facing = dir;
+      if (Math.random() < 0.35) spawnParticles(z.x, z.y - 110, 1, 110, 255, 145, 110, -80, 4, 8);
+      if (z.aiTimer <= 0) {
+        z.hp = Math.min(z.maxHp, z.hp + 115); z.aiState = 'chase'; z.aiCd = 6.2; playSfx('sfx_calm');
+        spawnFloat(z.x, z.y - 230, 'AÇIK BÜFE +115 CAN!', 120, 255, 150, 24, 1.3);
+      }
+      return;
+    } else if (z.aiState === 'telegraph') {
+      z.aiTimer -= dt; z.facing = dir;
+      if (z.aiTimer <= 0) {
+        if (z.bossSpecial === 'quake') {
+          addTrauma(0.72); playSfx('sfx_prop');
+          spawnShockwave(z.x, GROUND_Y - 12, 460, 255, 95, 75, 0.55, true);
+          spawnParticles(z.x, GROUND_Y - 10, 26, 255, 145, 75, 320, 420, 5, 10);
+          if (G.py >= GROUND_Y - 22 && dist < 440) hurtPlayer(20, dir);
+          z.aiState = 'chase'; z.aiCd = 4.5;
+        } else if (z.bossSpecial === 'hamsi') {
+          playSfx('sfx_throw');
+          for (const vyOff of [-240, -110, 20]) {
+            G.enemyProjs.push({ x: z.x + z.facing * 55, y: z.y - 120, vx: z.facing * 430, vy: vyOff, rot: 0, dmg: 15, label: 'HAMSİ', img: 'proj_hamsi', life: 2.4, r: 110, g: 215, b: 255 });
+          }
+          z.aiState = 'chase'; z.aiCd = 3.8;
+        }
+      }
+      return;
+    } else if (z.aiCd <= 0 && dist < 560) {
+      if (z.bossSpecial === 'buffet' && z.hp < z.maxHp * 0.7) {
+        z.aiState = 'channel'; z.aiTimer = 2.6; z.channelHits = 0; playSfx('sfx_horn');
+        spawnFloat(z.x, z.y - 245, 'AÇIK BÜFE ŞİFASI! DURDUR!', 125, 255, 150, 22, 1.5);
+        return;
+      } else if (z.bossSpecial === 'quake' || z.bossSpecial === 'hamsi') {
+        z.aiState = 'telegraph'; z.aiTimer = 0.75; playSfx('sfx_horn');
+        spawnFloat(z.x, z.y - 245, z.bossSpecial === 'quake' ? 'DEPREM GELİYOR! ZIPLA!' : 'HAMSİ YAĞMURU!', 255, 110, 95, 22, 1.0);
+        return;
+      }
+    }
+  }
+
+  z.aiCd -= dt;
+  if (z.ai === 'dasher') {
+    if (z.aiState === 'telegraph') {
+      z.aiTimer -= dt;
+      if (z.aiTimer <= 0) {
+        z.aiState = 'action'; z.aiTimer = 0.56; z.vx = z.facing * 490 * wetMul;
+        spawnParticles(z.x, z.y - 18, 10, 255, 220, 110, 180, 140, 4, 8);
+      }
+      return;
+    } else if (z.aiState === 'action') {
+      z.aiTimer -= dt; z.x += z.vx * dt;
+      if (Math.random() < 0.4) spawnParticles(z.x - z.facing * 26, z.y - 12, 1, 255, 215, 120, 70, 60, 4, 7);
+      if (dist < 56 && Math.abs(G.py - z.y) < 68) hurtPlayer(z.dmg, z.facing);
+      if (z.aiTimer <= 0) { z.aiState = 'chase'; z.aiCd = 2.6; }
+      return;
+    } else if (z.aiCd <= 0 && dist > 165 && dist < 430) {
+      z.facing = dir; z.aiState = 'telegraph'; z.aiTimer = 0.62; playSfx('sfx_horn');
+      spawnFloat(z.x, z.y - 175, 'BİP BİP! DEPAR!', 255, 220, 80, 17, 0.75);
+      return;
+    }
+  } else if (z.ai === 'ranged') {
+    z.facing = dir;
+    if (z.aiState === 'telegraph') {
+      z.aiTimer -= dt;
+      if (z.aiTimer <= 0) {
+        playSfx('sfx_throw');
+        G.enemyProjs.push({ x: z.x + z.facing * 32, y: z.y - 98, vx: z.facing * 395, vy: -125, rot: 0, dmg: z.dmg, label: z.projLabel, img: z.projImg, life: 2.2, r: 255, g: 190, b: 85 });
+        z.aiState = 'chase'; z.aiCd = 2.6 + Math.random() * 0.8;
+      }
+      return;
+    } else {
+      if (dist < 175 && z.aiCd < 1.2) z.x -= dir * z.speed * 1.15 * wetMul * dt;
+      else if (dist > 380) z.x += dir * z.speed * wetMul * dt;
+      else if (z.aiCd <= 0) {
+        z.aiState = 'telegraph'; z.aiTimer = 0.5;
+        spawnFloat(z.x, z.y - 170, `${z.projLabel} GELİYOR!`, 255, 195, 95, 16, 0.65);
+      }
+      z.x += z.vx * dt;
+      return;
+    }
+  } else if (z.ai === 'heavy' && !z.isBoss) {
+    if (z.aiState === 'telegraph') {
+      z.aiTimer -= dt;
+      if (z.aiTimer <= 0) {
+        playSfx('sfx_prop'); spawnParticles(z.x + z.facing * 45, z.y - 75, 10, 255, 110, 95, 190, 240, 4, 8);
+        if (dist < 118 && Math.abs(G.py - z.y) < 75) hurtPlayer(z.dmg, z.facing);
+        z.aiState = 'chase'; z.aiCd = 1.65;
+      }
+      return;
+    } else if (dist < 96 && z.aiCd <= 0) {
+      z.facing = dir; z.aiState = 'telegraph'; z.aiTimer = 0.54;
+      spawnFloat(z.x, z.y - 180, 'SAVURUYOR!', 255, 100, 100, 17, 0.6);
+      return;
+    }
+  } else if (z.ai === 'flyer') {
+    z.facing = dir; z.y = z.baseY + Math.sin(z.animT * 3.4) * 20;
+    z.x += (dist > 110 ? (dir * z.speed * wetMul + z.vx) : z.vx) * dt;
+    if (z.aiCd <= 0 && dist < 340) {
+      z.aiCd = 2.8;
+      G.enemyProjs.push({ x: z.x, y: z.y - 45, vx: dir * 220, vy: 60, rot: 0, dmg: z.dmg, label: z.projLabel, img: z.projImg, life: 2.0, r: 255, g: 125, b: 215 });
+    }
+    if (dist < 56 && Math.abs(G.py - z.y) < 88) {
+      z.atkCd -= dt; if (z.atkCd <= 0) { z.atkCd = 1.2; hurtPlayer(z.dmg, dir); }
+    }
+    return;
+  }
+
+  z.facing = dir;
+  const stopDist = z.isBoss ? 82 : 54;
+  if (dist > stopDist) {
+    z.x += (z.facing * z.speed * wetMul + z.vx) * dt;
+    z.aiState = 'chase';
+  } else {
+    z.x += z.vx * dt;
+    z.atkCd -= dt;
+    if (z.aiState !== 'windup' && z.atkCd <= 0) {
+      z.aiState = 'windup';
+      z.aiTimer = 0.36; // Telegraph warning window!
+      spawnFloat(z.x, z.y - 170, '!', 255, 80, 80, 24, 0.38);
+    }
+    if (z.aiState === 'windup') {
+      z.aiTimer -= dt;
+      if (z.aiTimer <= 0) {
+        z.aiState = 'chase';
+        z.atkCd = z.isBoss ? 1.05 : 1.35;
+        if (Math.abs(G.py - z.y) < 72 && dist < stopDist + 18) {
+          hurtPlayer(z.dmg, z.facing);
+        }
+      }
+    }
+  }
+}
+
+function updatePlay(dt) {
+  G.shakeClock += dt * 36;
+  if (G.trauma > 0) G.trauma = Math.max(0, G.trauma - dt * 1.45);
+  G.heroSX += (1 - G.heroSX) * Math.min(1, dt * 14);
+  G.heroSY += (1 - G.heroSY) * Math.min(1, dt * 14);
+  if (G.hitStop > 0) { G.hitStop -= dt; return; }
+
+  const lvl = LEVELS[G.levelIdx];
+  if (G.kolonyaCd > 0) G.kolonyaCd = Math.max(0, G.kolonyaCd - dt);
+  if (G.kolonyaVfxT > 0) G.kolonyaVfxT = Math.max(0, G.kolonyaVfxT - dt);
+  if (G.nazarAnimT > 0) G.nazarAnimT = Math.max(0, G.nazarAnimT - dt);
+  if (G.throwAnimT > 0) G.throwAnimT = Math.max(0, G.throwAnimT - dt);
+  if (G.hitAnimT > 0) G.hitAnimT = Math.max(0, G.hitAnimT - dt);
+  if (G.invulnT > 0) G.invulnT = Math.max(0, G.invulnT - dt);
+  if (G.bossBannerT > 0) G.bossBannerT = Math.max(0, G.bossBannerT - dt);
+  if (G.dropThroughT > 0) G.dropThroughT = Math.max(0, G.dropThroughT - dt);
+  if (G.coyoteT > 0) G.coyoteT = Math.max(0, G.coyoteT - dt);
+  if (G.jumpBufT > 0) G.jumpBufT = Math.max(0, G.jumpBufT - dt);
+  if (G.comboT > 0) { G.comboT -= dt; if (G.comboT <= 0) G.combo = 0; }
+
+  if (G.ayran < G.maxAyran) {
+    const regen = Math.max(0.55, 1.12 - (G.upLevels.belt_cap || 0) * 0.12);
+    G.ayranRegenT += dt;
+    if (G.ayranRegenT >= regen * 2.0) { G.ayranRegenT = 0; G.ayran++; }
+  }
+
+  if (G.bossDefeated) {
+    G.levelClearT -= dt;
+    if (G.levelClearT <= 0) {
+      if (G.levelIdx < LEVELS.length - 1) G.screen = 'shop';
+      else { G.screen = 'victory'; playSfx('sfx_win'); }
+      return;
+    }
+  }
+
+  let moveDir = 0;
+  if (G.knockTimer > 0) {
+    G.knockTimer -= dt;
+    G.pvx *= Math.max(0, 1 - dt * 5.5);
+  } else {
+    if (G.keys['KeyA'] || G.keys['ArrowLeft'] || G.holdLeft) moveDir -= 1;
+    if (G.keys['KeyD'] || G.keys['ArrowRight'] || G.holdRight) moveDir += 1;
+    const sprint = !!(G.keys['ShiftLeft'] || G.keys['ShiftRight']);
+    const maxSpd = sprint ? 420 : 295;
+    if (moveDir !== 0) {
+      G.facing = moveDir; G.pvx = moveDir * maxSpd;
+      G.walkT += dt * (sprint ? 1.45 : 1.0);
+      if (G.onGround && Math.random() < (sprint ? 0.35 : 0.14)) spawnParticles(G.px - moveDir * 24, G.py - 5, 1, 210, 195, 165, 55, 60, 4, 8);
+    } else {
+      G.pvx *= Math.max(0, 1 - dt * 14);
+    }
+  }
+  G.px = Math.max(70, Math.min(WORLD_W - 70, G.px + G.pvx * dt));
+
+  const wasGrounded = G.onGround;
+  const prevPy = G.py;
+  G.pvy += 1720 * dt; G.py += G.pvy * dt;
+  G.onGround = false; G.onPlatform = false;
+
+  if (G.pvy >= 0 && G.dropThroughT <= 0) {
+    const propTopY = GROUND_Y - PROP_TOP_H;
+    for (const p of G.props) {
+      if (p.state < 2 && Math.abs(G.px - p.x) < 62 && prevPy <= propTopY + 18 && G.py >= propTopY) {
+        G.py = propTopY; G.pvy = 0; G.onGround = true; G.onPlatform = true;
+        G.jumpsLeft = 1 + ((G.upLevels.belt_cap || 0) >= 1 ? 1 : 0);
+        if (!wasGrounded) { G.heroSX = 1.20; G.heroSY = 0.82; p.shake = 0.14; spawnParticles(G.px, propTopY, 5, 255, 230, 165, 90, 120, 3, 6); }
+        break;
+      }
+    }
+  }
+  if (!G.onGround && G.py >= GROUND_Y) {
+    G.py = GROUND_Y; G.pvy = 0; G.onGround = true;
+    G.jumpsLeft = 1 + ((G.upLevels.belt_cap || 0) >= 1 ? 1 : 0);
+    if (!wasGrounded) { G.heroSX = 1.22; G.heroSY = 0.80; spawnParticles(G.px, GROUND_Y - 4, 6, 220, 205, 180, 95, 120, 4, 7); }
+  }
+  if (wasGrounded && !G.onGround && G.pvy >= 0) G.coyoteT = 0.11;
+  if (G.jumpBufT > 0 && (G.onGround || G.coyoteT > 0)) executeJump();
+
+  const targetCam = Math.max(0, Math.min(WORLD_W - VW, G.px - VW * 0.42 + G.facing * 55));
+  G.camX += (targetCam - G.camX) * Math.min(1, dt * 6.5);
+
+  if (!G.bossDefeated) {
+    if (G.calmedInLevel >= lvl.goal && !G.bossSpawned) spawnZombie(true);
+    else if (!G.bossSpawned) {
+      G.spawnT -= dt;
+      const active = G.zombies.filter(z => !z.calmed).length;
+      const maxActive = G.levelIdx === 0 ? 4 : (G.levelIdx === 1 ? 5 : 6);
+      if (G.spawnT <= 0 && active < maxActive) {
+        spawnZombie(false); G.spawnT = lvl.spawnRate * (0.92 + Math.random() * 0.42);
+      }
+    }
+  }
+
+  // Player projectiles
+  G.projectiles = G.projectiles.filter(pr => {
+    pr.life -= dt; pr.vy += 430 * dt; pr.x += pr.vx * dt; pr.y += pr.vy * dt; pr.rot += pr.facing * 14 * dt;
+    for (const z of G.zombies) {
+      if (z.calmed) continue;
+      const hitW = z.isBoss ? 76 : 50, hitH = z.isBoss ? 190 : 150;
+      if (Math.abs(pr.x - z.x) < hitW && pr.y > z.y - hitH && pr.y < z.y + 18) {
+        z.hp -= pr.dmg; z.wetT = 3.5; z.hitFlash = 0.16; z.squashX = 1.18; z.squashY = 0.85;
+        spawnVfxSprite('vfx_splash_ayran', pr.x, pr.y - 10, 78, 68, 0.40);
+        z.vx = pr.facing * (z.isBoss ? 95 : 190);
+        if (z.isBoss && z.aiState === 'channel') {
+          z.channelHits++;
+          if (z.channelHits >= 2) { z.aiState = 'chase'; z.aiCd = 5.5; z.stunT = 2.0; spawnFloat(z.x, z.y - 220, 'AYRANLA BÜFE İPTAL!', 110, 238, 255, 22, 1.3); }
+        }
+        playSfx('sfx_splash'); addTrauma(0.12);
+        spawnParticles(pr.x, pr.y, 15, 242, 252, 255, 220, 320, 4, 9);
+        if (pr.splashRad > 0) {
+          spawnShockwave(pr.x, pr.y, pr.splashRad, 220, 248, 255, 0.28);
+          for (const oz of G.zombies) {
+            if (oz !== z && !oz.calmed && Math.abs(oz.x - pr.x) < pr.splashRad) {
+              oz.hp -= Math.floor(pr.dmg * 0.5); oz.wetT = 4.5; oz.hitFlash = 0.12;
+              if (oz.hp <= 0) calmZombie(oz);
+            }
+          }
+        }
+        if (z.hp <= 0) calmZombie(z);
+        else spawnFloat(z.x, z.y - 135, `-${pr.dmg} ISLAK!`, 145, 238, 255, 18, 0.72);
+        return false;
+      }
+    }
+    // Ayran flies past street props to hit enemies behind cover
+    if (pr.y >= GROUND_Y - 10) { playSfx('sfx_splash'); spawnParticles(pr.x, GROUND_Y - 10, 9, 240, 252, 255, 160, 260, 3, 7); return false; }
+    return pr.life > 0;
+  });
+
+  // Enemy projectiles
+  G.enemyProjs = G.enemyProjs.filter(ep => {
+    ep.life -= dt; ep.vy += 310 * dt; ep.x += ep.vx * dt; ep.y += ep.vy * dt; ep.rot += 9 * dt;
+    // TACTICAL COVER: Prop blocks enemy projectiles!
+    for (const p of G.props) {
+      if (p.state < 2 && Math.abs(ep.x - p.x) < 44 && ep.y > GROUND_Y - 110 && ep.y < GROUND_Y) {
+        damageProp(p);
+        spawnParticles(ep.x, ep.y, 8, 240, 195, 120, 160, 200, 3, 6);
+        spawnFloat(p.x, GROUND_Y - 130, 'SİPER! BLOKLANDI!', 120, 245, 255, 16, 0.75);
+        if (ep.img === 'proj_sicak_cay') spawnVfxSprite('vfx_puddle_tea', ep.x, GROUND_Y - 8, 64, 28, 2.2);
+        else if (ep.img === 'proj_curuk_domates') spawnVfxSprite('vfx_splat_tomato', ep.x, GROUND_Y - 8, 60, 26, 2.0);
+        return false;
+      }
+    }
+    if (Math.abs(ep.x - G.px) < 38 && ep.y > G.py - 145 && ep.y < G.py - 10) {
+      hurtPlayer(ep.dmg, ep.vx >= 0 ? 1 : -1); return false;
+    }
+    if (ep.y >= GROUND_Y - 6) { spawnParticles(ep.x, GROUND_Y - 8, 6, ep.r, ep.g, ep.b, 120, 220, 3, 6); return false; }
+    return ep.life > 0;
+  });
+
+  // Zombies
+  G.zombies = G.zombies.filter(z => {
+    z.animT += dt;
+    z.squashX += (1 - z.squashX) * Math.min(1, dt * 12);
+    z.squashY += (1 - z.squashY) * Math.min(1, dt * 12);
+    if (z.hitFlash > 0) z.hitFlash = Math.max(0, z.hitFlash - dt);
+    if (z.wetT > 0) {
+      z.wetT = Math.max(0, z.wetT - dt);
+      if (Math.random() < 0.16) spawnParticles(z.x, z.y - 95, 1, 220, 248, 255, 45, 260, 3, 5);
+    }
+    if (z.stunT > 0) z.stunT = Math.max(0, z.stunT - dt);
+    z.vx *= Math.max(0, 1 - dt * 8);
+    if (z.calmed) {
+      z.cureT = (z.cureT || 0) + dt;
+      z.calmT -= dt;
+      if (z.ai === 'flyer') z.y += (GROUND_Y - z.y) * Math.min(1, dt * 5.5);
+      // Peak reveal at 0.43s (slot 6 — ayran-mustache smiling human emerges from foam!)
+      if (!z.curePopDone && z.cureT >= 0.43) {
+        z.curePopDone = true;
+        z.squashX = 1.20; z.squashY = 0.84;
+        spawnParticles(z.x, z.y - 105, z.isBoss ? 34 : 16, 255, 240, 120, 250, 240, 4, 8);
+        spawnFloat(z.x, z.y - (z.isBoss ? 245 : 190), z.quote, 24, 22, 34, z.isBoss ? 18 : 14.5, 1.85, true);
+      }
+      // Phase 1 (0..0.86s): planted on sidewalk; Phase 2 (0.86..holdEnd): celebrate; Phase 3: skip away
+      const holdEnd = z.isBoss ? 2.55 : 1.90;
+      if (z.cureT > holdEnd) z.x += -z.facing * 95 * dt;
+      return z.calmT > 0;
+    }
+    if (z.stunT > 0) z.x += z.vx * dt; else updateZombieAI(z, dt);
+    z.x = Math.max(40, Math.min(WORLD_W - 40, z.x));
+    return true;
+  });
+
+  for (const p of G.props) if (p.shake > 0) p.shake = Math.max(0, p.shake - dt);
+
+  G.pickups = G.pickups.filter(pk => {
+    pk.life -= dt; pk.vy += 880 * dt; pk.y += pk.vy * dt;
+    if (pk.y > GROUND_Y - 22) { pk.y = GROUND_Y - 22; pk.vy = 0; }
+    const dx = G.px - pk.x, dy = (G.py - 75) - pk.y;
+    const d = Math.hypot(dx, dy);
+    if (d < 185) { pk.x += (dx / Math.max(1, d)) * 490 * dt; pk.y += (dy / Math.max(1, d)) * 490 * dt; }
+    if (d < 48) {
+      playSfx('sfx_coin');
+      if (pk.kind === 'coin') { G.gold += pk.val; spawnFloat(pk.x, pk.y - 30, `+${pk.val} ₺`, 255, 220, 75, 19, 0.85); }
+      else if (pk.kind === 'ayran') { G.ayran = Math.min(G.maxAyran, G.ayran + pk.val); spawnFloat(pk.x, pk.y - 30, `+${pk.val} AYRAN!`, 125, 230, 255, 19, 0.85); }
+      else { G.hp = Math.min(G.maxHp, G.hp + pk.val); spawnFloat(pk.x, pk.y - 30, `+${pk.val} ÇAY CANI!`, 120, 255, 155, 19, 0.85); }
+      return false;
+    }
+    return pk.life > 0;
+  });
+
+  G.particles = G.particles.filter(pt => { pt.life -= dt; pt.vy += pt.grav * dt; pt.x += pt.vx * dt; pt.y += pt.vy * dt; return pt.life > 0; });
+  G.floats = G.floats.filter(fl => { fl.life -= dt; fl.y += fl.vy * dt; return fl.life > 0; });
+  G.waves = G.waves.filter(sw => { sw.life -= dt; sw.rad = 24 + (sw.maxRad - 24) * (1 - sw.life / sw.maxLife); return sw.life > 0; });
+}
+
+// ============================================================================
+// DRAWING PRIMITIVES
+// ============================================================================
+function addZone(id, x, y, w, h) { G.zones.push({ id, x, y, w, h }); }
+
+function roundRect(x, y, w, h, r) {
+  const cr = Math.min(r, w / 2, h / 2);
+  ctx.beginPath();
+  ctx.moveTo(x + cr, y);
+  ctx.arcTo(x + w, y, x + w, y + h, cr);
+  ctx.arcTo(x + w, y + h, x, y + h, cr);
+  ctx.arcTo(x, y + h, x, y, cr);
+  ctx.arcTo(x, y, x + w, y, cr);
+  ctx.closePath();
+}
+function fillRectR(x, y, w, h, r, col) { roundRect(x, y, w, h, r); ctx.fillStyle = col; ctx.fill(); }
+function strokeRectR(x, y, w, h, r, col, lw) { roundRect(x, y, w, h, r); ctx.strokeStyle = col; ctx.lineWidth = lw; ctx.stroke(); }
+
+function drawLabel(str, x, y, size, col, align = 'center', bold = true) {
+  ctx.font = `${bold ? '800' : '700'} ${size}px ${bold ? 'BalooBold' : 'BalooMed'}, sans-serif`;
+  ctx.textAlign = align; ctx.textBaseline = 'middle';
+  ctx.fillStyle = col; ctx.fillText(str, x, y);
+}
+function drawOutlined(str, x, y, size, col, align = 'center', bold = true) {
+  ctx.font = `${bold ? '800' : '700'} ${size}px ${bold ? 'BalooBold' : 'BalooMed'}, sans-serif`;
+  ctx.textAlign = align; ctx.textBaseline = 'middle';
+  ctx.lineJoin = 'round';
+  ctx.strokeStyle = '#16121e'; ctx.lineWidth = Math.max(3, size * 0.19);
+  ctx.strokeText(str, x, y + 1.5);
+  ctx.fillStyle = col; ctx.fillText(str, x, y);
+}
+
+function drawImgBox(id, x, y, w, h, alpha = 1) {
+  const im = images[id];
+  if (!im || !im.complete || im.naturalWidth === 0) return;
+  ctx.save(); ctx.globalAlpha = alpha;
+  ctx.drawImage(im, x, y, w, h);
+  ctx.restore();
+}
+function drawImgCenter(id, cx, cy, targetH, rot = 0, alpha = 1) {
+  const im = images[id];
+  if (!im || !im.complete || im.naturalWidth === 0) return;
+  const k = targetH / im.naturalHeight;
+  const w = im.naturalWidth * k, h = targetH;
+  ctx.save(); ctx.globalAlpha = alpha;
+  ctx.translate(cx, cy); if (rot) ctx.rotate(rot);
+  ctx.drawImage(im, -w / 2, -h / 2, w, h);
+  ctx.restore();
+}
+function drawImgFoot(id, fx, fy, targetH, flip = 1, sx = 1, sy = 1, rot = 0, alpha = 1) {
+  const im = images[id];
+  if (!im || !im.complete || im.naturalWidth === 0) return;
+  const k = targetH / im.naturalHeight;
+  ctx.save(); ctx.globalAlpha = alpha;
+  ctx.translate(fx, fy); if (rot) ctx.rotate(rot);
+  ctx.scale(k * flip * sx, k * sy);
+  ctx.drawImage(im, -im.naturalWidth / 2, -im.naturalHeight);
+  ctx.restore();
+}
+const SHEET_META = {
+  hero_nazar:   { cols: 4, rows: 3, anchorX: 0.30, anchorY: 0.92 },
+  hero_cologne: { cols: 4, rows: 3, anchorX: 0.30, anchorY: 0.92 },
+};
+function drawSheetFrame(id, cols, slot, fx, fy, targetH, flip = 1, sx = 1, sy = 1, rot = 0, alpha = 1) {
+  const im = images[id];
+  if (!im || !im.complete || im.naturalWidth === 0) return;
+  const meta = SHEET_META[id];
+  const cCount = meta ? meta.cols : cols;
+  const cellW = im.naturalWidth / cCount;
+  const cellH = meta ? (im.naturalHeight / meta.rows) : cellW;
+  const ax = meta ? meta.anchorX : 0.5;
+  const ay = meta ? meta.anchorY : 0.92;
+  const s = Math.max(0, Math.floor(slot));
+  const col = s % cCount, row = Math.floor(s / cCount);
+  const k = targetH / cellH;
+  ctx.save(); ctx.globalAlpha = alpha;
+  ctx.translate(fx, fy); if (rot) ctx.rotate(rot);
+  ctx.scale(k * flip * sx, k * sy);
+  ctx.drawImage(im, col * cellW + 1, row * cellH + 1, cellW - 2, cellH - 2, -cellW * ax, -cellH * ay, cellW, cellH);
+  ctx.restore();
+}
+
+function drawWoodenModal(x, y, w, h) {
+  const headH = Math.max(82, Math.min(126, w * 0.118));
+  drawImgBox('ui_board_wood', x + w * 0.015, y + headH * 0.56, w * 0.97, h - headH * 0.56);
+  drawImgBox('ui_header_plank', x, y, w, headH);
+}
+function drawGoldBtn(zoneId, cx, cy, w, h, text, fontSize, showPlay = true) {
+  const hov = G.hover === zoneId;
+  const sc = hov ? 1.045 : 1.0;
+  const bw = w * sc, bh = h * sc;
+  const bx = cx - bw / 2, by = cy - bh / 2 + (hov ? -2 : 0);
+  if (showPlay) {
+    const col = hov ? '#ffe05c' : 'rgba(255,224,92,0.82)';
+    fillRectR(bx - 22, cy - 10, 14, 5, 3, col);
+    fillRectR(bx - 26, cy + 7, 16, 5, 3, col);
+    fillRectR(bx + bw + 8, cy - 10, 14, 5, 3, col);
+    fillRectR(bx + bw + 10, cy + 7, 16, 5, 3, col);
+  }
+  drawImgBox('ui_btn_gold', bx, by, bw, bh);
+  const ty = by + bh * 0.56;
+  if (showPlay) {
+    const ih = fontSize * 0.96, iw = ih * 0.75;
+    const tx = cx - (text.length * fontSize * 0.25) - 18;
+    drawImgBox('ui_play_icon', tx - iw / 2, ty - ih / 2, iw, ih);
+    drawLabel(text, cx + 14, ty + 2, fontSize, 'rgba(255,232,140,0.55)', 'center', true);
+    drawLabel(text, cx + 14, ty, fontSize, '#3e1806', 'center', true);
+  } else {
+    drawLabel(text, cx, ty, fontSize, '#3e1806', 'center', true);
+  }
+  addZone(zoneId, cx - w / 2, cy - h / 2, w, h);
+}
+function drawWoodPad(x, y, w, h) {
+  fillRectR(x, y + 4, w, h, 12, 'rgba(16,12,24,0.82)');
+  fillRectR(x, y, w, h, 12, '#7c4826');
+  fillRectR(x + 4, y + 3, w - 8, h * 0.36, 8, 'rgba(156,96,52,0.65)');
+  strokeRectR(x, y, w, h, 12, '#18121e', 3.2);
+}
+function drawSpeechBubble(str, cx, cy, size, alpha) {
+  ctx.save(); ctx.globalAlpha = alpha;
+  ctx.font = `800 ${size}px BalooBold, "Arial Black", sans-serif`;
+  const maxLineW = 360;
+  let lines = [str];
+  if (ctx.measureText(str).width > maxLineW) {
+    const words = str.split(' ');
+    lines = [''];
+    for (const w of words) {
+      const cand = lines[lines.length - 1] ? lines[lines.length - 1] + ' ' + w : w;
+      if (lines[lines.length - 1] && ctx.measureText(cand).width > maxLineW) lines.push(w);
+      else lines[lines.length - 1] = cand;
+    }
+  }
+  const textW = Math.max(...lines.map(l => ctx.measureText(l).width));
+  const bw = Math.max(124, Math.ceil(textW) + 30);
+  const lineH = size + 5;
+  const bh = lines.length * lineH + 16;
+  const bx = Math.max(14, Math.min(VW - bw - 14, cx - bw / 2));
+  const by = cy - bh / 2;
+  const tx = Math.max(bx + 18, Math.min(bx + bw - 18, cx));
+  fillRectR(bx + 2, by + 3, bw, bh, 12, 'rgba(18,14,28,0.75)');
+  fillRectR(bx, by, bw, bh, 12, '#fffdf4');
+  strokeRectR(bx, by, bw, bh, 12, '#161420', 2.5);
+  ctx.beginPath(); ctx.moveTo(tx - 8, by + bh - 1); ctx.lineTo(tx + 8, by + bh - 1); ctx.lineTo(tx, by + bh + 9); ctx.closePath();
+  ctx.fillStyle = '#fffdf4'; ctx.fill();
+  lines.forEach((l, li) => {
+    const ly = by + 8 + lineH * (li + 0.5);
+    drawLabel(l, bx + bw / 2, ly, size, '#181622', 'center', true);
+  });
+  ctx.restore();
+}
+
+// ============================================================================
+// SCREENS
+// ============================================================================
+function drawWorld() {
+  const lvl = LEVELS[G.levelIdx];
+  const sh = G.trauma * G.trauma;
+  const sx = 18 * sh * Math.sin(G.shakeClock * 1.7);
+  const sy = 12 * sh * Math.sin(G.shakeClock * 2.3);
+
+  ctx.save();
+  ctx.translate(-G.camX + sx, sy);
+
+  // Extended 3840x720 Classic Dark-Apocalypse Street
+  drawImgBox(lvl.bg, 0, 0, WORLD_W, VH);
+
+  // Ground VFX Splats
+  if (G.vfxSprites && G.vfxSprites.length > 0) {
+    G.vfxSprites = G.vfxSprites.filter(v => {
+      if (G.screen === 'play') v.life -= (G.dt || 0.016);
+      if (v.life <= 0) return false;
+      const alpha = Math.min(1.0, v.life / (v.maxLife * 0.35));
+      drawImgBox(v.img, v.x - v.w / 2, v.y - v.h / 2, v.w, v.h, alpha);
+      return true;
+    });
+  }
+
+  // Street props
+  const propTopY = GROUND_Y - PROP_TOP_H;
+  for (const p of G.props) {
+    const pid = `p_${p.kind}_${p.state}`;
+    const pH = p.state === 2 ? 82 : 138;
+    const psh = p.shake > 0 ? Math.sin(G.time * 55) * 6 : 0;
+    ctx.fillStyle = 'rgba(12,10,22,0.45)';
+    ctx.beginPath(); ctx.ellipse(p.x, GROUND_Y + 4, 54, 13, 0, 0, Math.PI * 2); ctx.fill();
+    drawImgFoot(pid, p.x + psh, GROUND_Y + 6, pH);
+    if (p.state < 2 && Math.abs(G.px - p.x) < 260) {
+      fillRectR(p.x - 42, propTopY - 2, 84, 5, 3, 'rgba(120,240,255,0.52)');
+    }
+  }
+
+  // Pickups
+  for (const pk of G.pickups) {
+    const blink = (pk.life < 2.0 && Math.floor(G.time * 16) % 2 === 0) ? 0.35 : 1.0;
+    const bob = Math.sin(G.time * 6.5 + pk.x) * 6;
+    const ic = pk.kind === 'coin' ? 'ui_coin' : (pk.kind === 'ayran' ? 'ui_ayran_icon' : 'ui_heart');
+    drawImgCenter(ic, pk.x, pk.y + bob, pk.kind === 'ayran' ? 42 : 38, 0, blink);
+  }
+
+  // Zombies
+  for (const z of G.zombies) {
+    const targetH = 166 * z.scale;
+    const t = z.cureT || 0;
+    const holdEnd = z.isBoss ? 2.55 : 1.90;
+    const op = z.calmed ? Math.min(1, z.calmT / 0.65) : 1;
+
+    ctx.fillStyle = `rgba(12,10,22,${0.52 * op})`;
+    const shS = z.ai === 'flyer' ? 0.65 : 1;
+    ctx.beginPath(); ctx.ellipse(z.x, GROUND_Y + 4, 42 * z.scale * shS, 12 * z.scale * shS, 0, 0, Math.PI * 2); ctx.fill();
+
+    if (!z.calmed) {
+      const bob = z.ai === 'flyer' ? 0 : Math.abs(Math.sin(z.animT * 6.8)) * 7;
+      let tilt = Math.sin(z.animT * 6.8) * 0.06 * z.facing;
+      if (z.aiState === 'telegraph') tilt = -0.18 * z.facing;
+      else if (z.aiState === 'action') tilt = 0.22 * z.facing;
+
+      if (z.aiState === 'telegraph') {
+        ctx.fillStyle = 'rgba(255,65,55,0.34)';
+        ctx.beginPath(); ctx.ellipse(z.x, z.y - targetH * 0.45, 68 * z.scale, 84 * z.scale, 0, 0, Math.PI * 2); ctx.fill();
+        if (z.isBoss && z.bossSpecial === 'quake') fillRectR(z.x - 420, GROUND_Y - 12, 840, 18, 6, 'rgba(255,65,55,0.44)');
+      } else if (z.aiState === 'channel') {
+        ctx.fillStyle = 'rgba(90,255,130,0.32)';
+        ctx.beginPath(); ctx.arc(z.x, z.y - targetH * 0.5, 95 + Math.sin(G.time * 12) * 12, 0, Math.PI * 2); ctx.fill();
+      } else if (z.wetT > 0) {
+        ctx.fillStyle = 'rgba(125,235,255,0.36)';
+        ctx.beginPath(); ctx.ellipse(z.x, z.y - targetH * 0.45, 52 * z.scale, 72 * z.scale, 0, 0, Math.PI * 2); ctx.fill();
+      }
+
+      const slot = z.hitFlash > 0 ? (12 + (Math.floor((0.24 - z.hitFlash) * 20) % 4)) : (Math.floor(z.animT * 10) % 12);
+      drawSheetFrame(z.img, 4, slot, z.x, z.y - bob * 0.25, 216 * z.scale, z.facing, z.squashX, z.squashY, tilt * 0.45, 1);
+
+      const topY = z.y - targetH - 18;
+      if (!z.isBoss && z.hp < z.maxHp) {
+        fillRectR(z.x - 33, topY, 66, 9, 4, 'rgba(22,18,34,0.88)');
+        fillRectR(z.x - 31, topY + 2, Math.max(0, 62 * (z.hp / z.maxHp)), 5, 2, z.wetT > 0 ? '#5fe4ff' : '#78f569');
+      }
+      if (z.wetT > 0) drawOutlined('ISLAK! [K]', z.x, topY - 14, 13, '#7df0ff');
+      if (z.stunT > 0) {
+        for (let si = 0; si < 3; si++) {
+          const a = G.time * 7 + si * 2.094;
+          ctx.fillStyle = '#ffe650'; ctx.beginPath(); ctx.arc(z.x + Math.cos(a) * 28, topY - 4 + Math.sin(a) * 7, 5, 0, Math.PI * 2); ctx.fill();
+        }
+      }
+    } else {
+      const curedId = 'c_' + z.img.slice(2);
+      const hasCured = images[curedId] && images[curedId].complete && images[curedId].naturalWidth > 0;
+      const cSlot = Math.min(11, Math.floor(t * 14));
+      let cBob = 0, cTilt = 0;
+      if (t >= 0.86 && t <= holdEnd) {
+        cBob = Math.abs(Math.sin((t - 0.86) * 7.5)) * 5;
+        cTilt = Math.sin((t - 0.86) * 7.5) * 0.04;
+      } else if (t > holdEnd) {
+        cBob = Math.abs(Math.sin((t - holdEnd) * 11)) * 10;
+        cTilt = 0.05 * (-z.facing);
+      }
+      const flip = (t <= holdEnd) ? z.facing : -z.facing;
+      const auraA = Math.min(1, Math.max(0, (t - 0.32) / 0.35)) * 0.34 * op;
+      if (auraA > 0.01) {
+        ctx.fillStyle = `rgba(255,235,110,${auraA})`;
+        ctx.beginPath(); ctx.ellipse(z.x, z.y - targetH * 0.45, 58 * z.scale, 72 * z.scale, 0, 0, Math.PI * 2); ctx.fill();
+      }
+      drawSheetFrame(hasCured ? curedId : z.img, 4, hasCured ? cSlot : (Math.floor(z.animT * 14) % 12), z.x, z.y - cBob, 216 * z.scale, flip, z.squashX, z.squashY, cTilt, op);
+    }
+  }
+
+  // Hero (7 animated sheets)
+  let hSheet = 'hero_idle', hSlot = Math.floor(G.time * 8) % 12;
+  if (G.nazarAnimT > 0) { hSheet = 'hero_nazar'; hSlot = Math.min(11, Math.floor((0.58 - G.nazarAnimT) / 0.58 * 12)); }
+  else if (G.kolonyaVfxT > 0) { hSheet = 'hero_cologne'; hSlot = Math.min(11, Math.floor((0.36 - G.kolonyaVfxT) / 0.36 * 12)); }
+  else if (G.hitAnimT > 0) { hSheet = 'hero_hit'; hSlot = Math.min(3, Math.floor((0.32 - G.hitAnimT) / 0.32 * 4)); }
+  else if (G.throwAnimT > 0) { hSheet = 'hero_throw'; hSlot = Math.min(11, Math.floor((0.26 - G.throwAnimT) / 0.26 * 12)); }
+  else if (!G.onGround) { hSheet = 'hero_jump'; hSlot = Math.min(11, Math.floor(Math.max(0, Math.min(1, (G.pvy + 690) / 1380)) * 11)); }
+  else if (Math.abs(G.pvx) > 25) { hSheet = 'hero_run'; hSlot = Math.floor(G.walkT * (Math.abs(G.pvx) > 320 ? 16 : 12)) % 12; }
+
+  const hOp = (G.invulnT > 0 && Math.floor(G.time * 22) % 2 === 0) ? 0.55 : 1;
+  const shadowY = G.onPlatform ? (GROUND_Y - PROP_TOP_H + 3) : (GROUND_Y + 4);
+  const shSc = Math.max(0.45, 1 - Math.max(0, shadowY - G.py) / 360);
+  ctx.fillStyle = 'rgba(12,10,22,0.55)';
+  ctx.beginPath(); ctx.ellipse(G.px, shadowY, 44 * shSc, 12 * shSc, 0, 0, Math.PI * 2); ctx.fill();
+  drawSheetFrame(hSheet, 4, hSlot, G.px, G.py, 222, G.facing, G.heroSX, G.heroSY, 0, hOp);
+
+  if (G.kolonyaVfxT > 0) drawImgCenter('proj_kolonya_bulutu', G.px + G.facing * G.kolonyaRange * 0.52, G.py - 92, 138, G.facing < 0 ? Math.PI : 0, Math.min(1, G.kolonyaVfxT / 0.36 * 1.25));
+  if (G.nazarAnimT > 0) drawImgCenter('proj_nazar_halka', G.px + G.facing * 95, G.py - 96, 165, G.time * 8, Math.min(1, G.nazarAnimT / 0.58 * 1.3));
+
+  for (const pr of G.projectiles) drawImgCenter('proj_ayran_sise', pr.x, pr.y, 46, pr.rot, 1);
+  for (const ep of G.enemyProjs) {
+    if (ep.img && images[ep.img]) drawImgCenter(ep.img, ep.x, ep.y, 54, ep.rot, 1);
+    drawOutlined(ep.label, ep.x, ep.y - 34, 12, '#fff08c');
+  }
+
+  for (const sw of G.waves) {
+    ctx.strokeStyle = `rgba(${sw.r},${sw.g},${sw.b},${(sw.life / sw.maxLife) * 0.9})`;
+    ctx.lineWidth = 9; ctx.beginPath();
+    if (sw.groundOnly) ctx.ellipse(sw.x, sw.y, sw.rad, 22, 0, 0, Math.PI * 2);
+    else ctx.arc(sw.x, sw.y, sw.rad, 0, Math.PI * 2);
+    ctx.stroke();
+  }
+  for (const pt of G.particles) {
+    ctx.fillStyle = `rgba(${pt.r},${pt.g},${pt.b},${pt.life / pt.maxLife})`;
+    ctx.beginPath(); ctx.arc(pt.x, pt.y, pt.rad, 0, Math.PI * 2); ctx.fill();
+  }
+  for (const fl of G.floats) {
+    const a = Math.min(1, (fl.life / fl.maxLife) * 1.6);
+    if (fl.isBubble) drawSpeechBubble(fl.text, fl.x, fl.y, fl.size, a);
+    else { ctx.save(); ctx.globalAlpha = a; drawOutlined(fl.text, fl.x, fl.y, fl.size, `rgb(${fl.r},${fl.g},${fl.b})`); ctx.restore(); }
+  }
+
+  // Atmospheric drifting cold snow flakes with parallax depth
+  if (G.snowFlakes) {
+    ctx.fillStyle = '#ffffff';
+    for (const f of G.snowFlakes) {
+      const fdt = (G.screen === 'play') ? (G.dt || 0.016) : 0;
+      f.x += f.vx * fdt;
+      f.y += f.vy * fdt;
+      if (f.y > VH) { f.y = -10; f.x = Math.random() * (WORLD_W + 400) - 200; }
+      if (f.x < -200) { f.x = WORLD_W + 100; }
+      const sx = f.x - G.camX * f.depth;
+      if (sx >= -20 && sx <= VW + 20) {
+        ctx.save();
+        ctx.globalAlpha = f.alpha;
+        ctx.beginPath();
+        ctx.arc(sx, f.y, f.r, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+      }
+    }
+  }
+
+  ctx.restore();
+}
+
+function drawHUD() {
+  const lvl = LEVELS[G.levelIdx];
+  const hx = 14, hy = 8, hw = 286, hh = 98;
+  drawImgBox('hud_health_bar', hx, hy, hw, hh);
+  const hpFrac = Math.max(0, Math.min(1, G.hp / Math.max(1, G.maxHp)));
+  const barL = hx + hw * 0.305, barW = hw * 0.648, barT = hy + hh * 0.34, barH = hh * 0.33;
+  if (hpFrac < 0.99) fillRectR(barL + barW * hpFrac, barT, barW * (1 - hpFrac), barH, 3, 'rgba(38,32,46,0.96)');
+  if (hpFrac <= 0.35 && hpFrac > 0.01) fillRectR(barL, barT, barW * hpFrac, barH, 3, 'rgba(245,62,72,0.78)');
+  drawOutlined(`SAĞLIK ${Math.ceil(G.hp)}/${G.maxHp}`, barL + barW * 0.5, hy + hh * 0.51, 14.5, '#ffffff');
+
+  drawImgBox('hud_ayran_counter', 16, 102, 166, 66);
+  drawOutlined(`${G.ayran}/${G.maxAyran}`, 107, 138, 17.5, '#91eeff');
+  addZone('btn_shop', 142, 114, 38, 44);
+
+  drawImgBox('hud_gold_counter', 186, 106, 168, 60);
+  drawOutlined(`${G.gold} ₺`, 274, 137, 17.5, '#ffe85f');
+  addZone('btn_shop', 316, 114, 38, 44);
+
+  const lx = 424, ly = 2, lw = 432, lh = 128;
+  drawImgBox('hud_level_progress', lx, ly, lw, lh);
+  drawOutlined('SEVİYE', lx + lw * 0.116, ly + lh * 0.41, 11, '#ffec82');
+  drawOutlined(String(lvl.id), lx + lw * 0.116, ly + lh * 0.63, 25, '#ffffff');
+  const prog = Math.min(1, G.calmedInLevel / Math.max(1, lvl.goal));
+  const pbL = lx + lw * 0.228, pbW = lw * 0.706, pbT = ly + lh * 0.51, pbH = lh * 0.165;
+  if (prog > 0.01) {
+    fillRectR(pbL, pbT, pbW * prog, pbH, 5, '#5ff273');
+    fillRectR(pbL + 2, pbT + 2, Math.max(4, pbW * prog - 4), 5, 2, 'rgba(255,255,255,0.5)');
+  }
+  drawOutlined(lvl.title, 668, 114, 13.5, '#ffec82');
+
+  for (const z of G.zombies) {
+    if (z.isBoss && !z.calmed) {
+      fillRectR(390, 140, 500, 38, 11, 'rgba(115,22,34,0.96)');
+      strokeRectR(390, 140, 500, 38, 11, '#ffcd50', 3);
+      fillRectR(404, 159, 472, 12, 6, '#1c0c12');
+      fillRectR(406, 161, 468 * Math.max(0, z.hp / z.maxHp), 8, 4, '#ff4c44');
+      drawOutlined(z.label, 640, 150, 13, '#ffec7d');
+    }
+  }
+
+  drawImgBox('hud_score_panel', 968, 12, 214, 82);
+  drawOutlined(String(G.score), 1102, 57, 21, '#ffee7d');
+  drawImgCenter('ui_btn_settings', 1228, 54, G.hover === 'btn_pause' ? 64 : 58);
+  addZone('btn_pause', 1196, 22, 64, 64);
+
+  if (G.combo >= 2) {
+    drawImgBox('ui_badge_red', 1070, 96, 194, 54);
+    drawOutlined(`${G.combo}x KOMBO!`, 1167, 121, 18, '#fff073');
+  }
+  if (G.bossBannerT > 0) {
+    drawImgBox('ui_badge_red', 270, 152, 740, 112);
+    drawOutlined(`DİKKAT! ${lvl.boss.name} GELİYOR!`, 640, 206, 22, '#ffee6e');
+  }
+
+  const pads = [{ id:'pad_left', lbl:'<', x:22, w:60 }, { id:'pad_right', lbl:'>', x:90, w:60 }, { id:'pad_jump', lbl:'ZIPLA', x:158, w:98 }];
+  for (const pd of pads) {
+    drawWoodPad(pd.x, 634, pd.w, 58);
+    drawOutlined(pd.lbl, pd.x + pd.w / 2, 663, pd.id === 'pad_jump' ? 18 : 26, '#fff5d2');
+    addZone(pd.id, pd.x, 634, pd.w, 58);
+  }
+  fillRectR(266, 660, 646, 32, 10, 'rgba(18,14,30,0.78)');
+  strokeRectR(266, 660, 646, 32, 10, 'rgba(95,108,155,0.65)', 1.8);
+  drawLabel('A/D: Yürü • Space: Tezgahlara Zıpla • S: İn • J: Islat • K: Köpük Şoku (1.9x) • Q: Nazar', 589, 676, 12.5, '#f0f2ff', 'center', false);
+
+  const nReady = G.nazar >= 100;
+  const nPulse = nReady ? (1 + Math.sin(G.time * 8) * 0.08) : 1;
+  drawImgCenter('ui_btn_nazar', 976, 646, 86 * nPulse, 0, nReady ? 1 : 0.55);
+  drawOutlined(nReady ? 'Q • HAZIR!' : `${Math.floor(G.nazar)}%`, 976, 700, 14.5, '#82f0ff');
+  addZone('btn_nazar', 932, 602, 88, 88);
+
+  const kReady = G.kolonyaCd <= 0;
+  drawImgCenter('ui_btn_kolonya', 1084, 646, 86, 0, kReady ? 1 : 0.52);
+  drawOutlined(kReady ? 'K • ŞOK!' : `${G.kolonyaCd.toFixed(1)}s`, 1084, 700, 14.5, '#91ffa0');
+  addZone('btn_kolonya', 1040, 602, 88, 88);
+
+  drawImgCenter('ui_btn_ayran', 1198, 644, 96, 0, 1);
+  drawOutlined('J • ISLAT', 1198, 700, 14.5, '#ffe876');
+  addZone('btn_ayran', 1148, 596, 100, 96);
+}
+
+function drawKeycapBar(cy) {
+  const barW = 664, bx = (VW - barW) / 2;
+  fillRectR(bx, cy - 19, barW, 38, 12, 'rgba(18,16,34,0.86)');
+  strokeRectR(bx, cy - 19, barW, 38, 12, 'rgba(95,112,160,0.75)', 2);
+  const items = [['A',''],['D','Yürü'],['Shift','Koş'],['Space','Zıpla'],['S','Tezgahtan İn'],['M','Esnaf Marketi']];
+  let x = bx + 18, ky = cy - 12;
+  for (const [k, d] of items) {
+    const kw = Math.max(26, k.length * 9.5 + 14);
+    fillRectR(x, ky + 2, kw, 24, 6, '#12101e');
+    fillRectR(x, ky, kw, 23, 6, '#f8f8ff');
+    strokeRectR(x, ky, kw, 23, 6, '#1c182a', 2);
+    drawLabel(k, x + kw / 2, ky + 12, 12.5, '#1a1626', 'center', true);
+    x += kw + 7;
+    if (d) { drawLabel(d, x, ky + 12, 13.5, '#f2f2ff', 'left', false); x += d.length * 7.6 + 18; }
+  }
+}
+
+function drawTitleScreen() {
+  drawImgBox('ui_title_bg', 0, 0, VW, VH);
+  const bob = Math.sin(G.time * 2.4) * 4.5;
+  drawImgBox('ui_logo_buzgibi', 342, 12 + bob, 596, 326);
+  drawOutlined("SON AYRANCI  •  ER-ÖZ HOTEL'E KAÇIŞ", 640, 286 + bob, 15.5, '#ffecaf');
+
+  const cards = [
+    { frame:'ui_card_blue', topper:'ui_topper_ayran', th:92, t:'ISLAT & PATLAT', d1:'Ayran (J) ile ıslat,', d2:'Kolonya (K) 1.9x ŞOK!', tc:'#ffffff' },
+    { frame:'ui_card_green', topper:'ui_topper_brain', th:84, t:'5 ZOMBİ BEYNİ', d1:'Kurye deparı, Dondurmacı', d2:"fake'i & Uçan Baloncu!", tc:'#ebffc3' },
+    { frame:'ui_card_amber', topper:'p_simit_0', th:104, t:'2.5D TEZGAHLAR', d1:'Simit arabasına zıpla,', d2:'Boss depremlerinden kaç!', tc:'#fff6c8' },
+  ];
+  cards.forEach((c, i) => {
+    const cw = 228, ch = 152, cx = 286 + i * 240, cy = 376;
+    drawImgBox(c.frame, cx, cy, cw, ch);
+    drawImgCenter(c.topper, cx + cw / 2, cy - 8 + Math.sin(G.time * 3.1 + i * 1.4) * 3, c.th);
+    drawOutlined(c.t, cx + cw / 2, cy + 56, 20, c.tc);
+    drawOutlined(c.d1, cx + cw / 2, cy + 88, 13.5, '#f5f8ff', 'center', false);
+    drawOutlined(c.d2, cx + cw / 2, cy + 109, 13.5, '#f5f8ff', 'center', false);
+  });
+  if (G.bestScore > 0) drawOutlined(`EN YÜKSEK SKORUN: ${G.bestScore}`, 640, 540, 16, '#ffea6e');
+  drawGoldBtn('btn_start', 640, 594, 420, 108, 'OYUNA BAŞLA', 32, true);
+  drawKeycapBar(686);
+}
+
+function drawComicIntro() {
+  const lvl = LEVELS[G.levelIdx];
+  drawImgBox('ui_title_bg', 0, 0, VW, VH);
+  fillRectR(0, 0, VW, VH, 0, 'rgba(12,16,36,0.38)');
+  drawWoodenModal(82, 34, 1116, 608);
+  drawImgBox('ui_badge_red', 118, 48, 224, 90);
+  drawOutlined(`SAYI #${lvl.id}`, 230, 91, 25, '#ffffff');
+  drawOutlined(lvl.title, 668, 108, 32, '#ffea8a');
+
+  const frames = ['ui_card_blue','ui_card_green','ui_card_amber'];
+  const caps = ['ui_cap_blue','ui_cap_green','ui_cap_yellow'];
+  const pSprites = ['hero_idle', `z_${lvl.group + 1}_2`, lvl.boss.img];
+  for (let i = 0; i < 3; i++) {
+    const px = 152 + i * 334, py = 160, pw = 308, ph = 408;
+    drawImgBox(frames[i], px, py, pw, ph);
+    const hx = px + 26, hy = py + 36, hw = pw - 52, hh = 58;
+    drawImgBox(caps[i], hx, hy, hw, hh);
+    const txt = lvl.comicLines[i] || '';
+    if (txt.length > 24) {
+      const sp = txt.indexOf(' ', Math.floor(txt.length * 0.48));
+      if (sp > 0) {
+        drawLabel(txt.slice(0, sp), px + pw / 2, hy + 19, 14.5, '#16121e', 'center', true);
+        drawLabel(txt.slice(sp + 1), px + pw / 2, hy + 39, 14.5, '#16121e', 'center', true);
+      } else drawLabel(txt, px + pw / 2, hy + 29, 14, '#16121e', 'center', true);
+    } else drawLabel(txt, px + pw / 2, hy + 29, 15.5, '#16121e', 'center', true);
+
+    ctx.fillStyle = 'rgba(16,12,24,0.5)';
+    ctx.beginPath(); ctx.ellipse(px + pw / 2, py + ph - 32, 62, 14, 0, 0, Math.PI * 2); ctx.fill();
+    // High-res crisp intro portraits for all 3 levels (eliminates blurry 192px sprite cells)
+    const introPairs = [
+      ['intro_hero', 'intro_l1_mid', 'intro_l1_boss'],
+      ['intro_hero', 'intro_l2_mid', 'intro_l2_boss'],
+      ['intro_hero', 'intro_l3_mid', 'intro_l3_boss'],
+    ];
+    const introSet = introPairs[G.levelIdx] || introPairs[0];
+    if (images[introSet[i]]) {
+      drawImgFoot(introSet[i], px + pw / 2, py + ph - 26, i === 0 ? 275 : 262, i === 0 ? 1 : -1);
+    } else {
+      drawSheetFrame(pSprites[i], 4, 0, px + pw / 2, py + ph - 28, i === 0 ? 286 : 280, i === 0 ? 1 : -1);
+    }
+  }
+  fillRectR(166, 578, 616, 40, 11, 'rgba(36,20,14,0.86)');
+  strokeRectR(166, 578, 616, 40, 11, '#120c12', 2.5);
+  drawLabel(lvl.subtitle, 474, 598, 13.5, '#fff4d2', 'center', true);
+  drawGoldBtn('btn_go_play', 996, 602, 344, 110, 'SOKAĞA ÇIK!', 28, true);
+}
+
+function drawShopModal() {
+  drawWorld();
+  fillRectR(0, 0, VW, VH, 0, 'rgba(12,10,26,0.65)');
+  drawWoodenModal(148, 28, 984, 636);
+  drawImgBox('ui_badge_red', 198, 42, 256, 86);
+  drawOutlined('ESNAF MARKETİ', 326, 84, 22, '#ffffff');
+  drawImgBox('hud_gold_counter', 856, 62, 206, 72);
+  drawOutlined(`${G.gold} ₺`, 968, 99, 20, '#ffe85f');
+
+  UPGRADES.forEach((u, i) => {
+    const ry = 160 + i * 94;
+    const ulvl = G.upLevels[u.id] || 0;
+    const cost = u.baseCost + ulvl * 38;
+    const maxed = ulvl >= u.maxLvl;
+    const afford = G.gold >= cost && !maxed;
+    fillRectR(224, ry, 832, 80, 15, 'rgba(58,34,22,0.96)');
+    strokeRectR(224, ry, 832, 80, 15, '#181016', 3);
+    drawImgCenter(u.icon, 276, ry + 40, 48);
+    const tStr = u.name + (u.maxLvl < 50 ? `  (Sv.${ulvl}/${u.maxLvl})` : '');
+    drawOutlined(tStr, 324, ry + 27, 18.5, '#ffec7d', 'left');
+    drawLabel(u.desc, 324, ry + 54, 13.5, '#f5ecdc', 'left', false);
+    const bid = 'buy_' + u.id;
+    const hov = G.hover === bid;
+    fillRectR(882, ry + 14, 154, 48, 13, afford ? (hov ? '#5ceb69' : '#3ac869') : '#4e4244');
+    strokeRectR(882, ry + 14, 154, 48, 13, '#18121c', 3);
+    drawOutlined(maxed ? 'MAKS!' : `${cost} ₺`, 959, ry + 38, 19.5, '#ffffff');
+    if (afford) addZone(bid, 882, ry + 14, 154, 52);
+  });
+  drawGoldBtn('btn_shop_next', 640, 610, 356, 108, G.bossDefeated ? `BÖLÜM ${G.levelIdx + 2}'E GEÇ!` : 'OYUNA DÖN', 25, true);
+}
+
+function drawEndModal(isWin) {
+  drawImgBox('ui_title_bg', 0, 0, VW, VH);
+  fillRectR(0, 0, VW, VH, 0, 'rgba(12,10,26,0.6)');
+  drawWoodenModal(180, 56, 920, 566);
+  drawImgBox('ui_badge_red', 420, 44, 440, 108);
+  if (isWin) {
+    drawOutlined('ER-ÖZ HOTEL GÜVENDE!', 640, 96, 27, '#ffec6e');
+    drawSheetFrame('hero_nazar', 4, Math.floor(G.time * 10) % 12, 585, 332, 212);
+    drawOutlined('Tüm mahalleyi Köpük Şoku ile serinlettin, 5 YILDIZLI ZAFER!', 640, 354, 16.5, '#d7f8ff', 'center', false);
+  } else {
+    drawOutlined('HARARET BASTI!', 640, 96, 31, '#ffec6e');
+    drawSheetFrame('hero_hit', 4, 2, 640, 324, 200);
+    drawOutlined('İpucu: Tezgahlara zıpla, Ayranla ıslatıp Kolonya ile patlat!', 640, 354, 16, '#ffeed7', 'center', false);
+  }
+  const stats = [['SKOR', G.score, '#ffe86e'], ['SAKİNLEŞEN', G.totalCalmed, '#82ffa5'], ['KÖPÜK ŞOKU', G.shockCount, '#78eeff']];
+  stats.forEach(([l, v, c], i) => {
+    const sx = 282 + i * 244;
+    fillRectR(sx, 386, 224, 88, 14, 'rgba(48,28,18,0.96)');
+    strokeRectR(sx, 386, 224, 88, 14, '#181016', 3);
+    drawLabel(l, sx + 112, 410, 14, '#ebe1cd', 'center', false);
+    drawOutlined(String(v), sx + 112, 444, 28, c);
+  });
+  drawOutlined(`En Yüksek Skor: ${G.bestScore}   •   Maks. Kombo: ${G.maxCombo}x`, 640, 500, 15, '#fff4d7', 'center', false);
+  const hov = G.hover === 'btn_restart';
+  const bw = hov ? 320 : 306, bh = hov ? 142 : 136;
+  drawImgBox(isWin ? 'hud_cta_gold' : 'hud_cta_red', 640 - bw / 2, 578 - bh / 2, bw, bh);
+  drawOutlined(isWin ? 'TEKRAR OYNA!' : 'TEKRAR DENE!', 640, 594, 26, '#ffffff');
+  addZone('btn_restart', 480, 520, 320, 118);
+}
+
+function drawPauseModal() {
+  drawWorld(); drawHUD();
+  fillRectR(0, 0, VW, VH, 0, 'rgba(12,10,26,0.65)');
+  drawWoodenModal(324, 126, 632, 456);
+  drawImgBox('ui_badge_red', 448, 114, 384, 96);
+  drawOutlined('ÇAY MOLASI', 640, 160, 28, '#ffec6e');
+  const h1 = G.hover === 'btn_resume', w1 = h1 ? 292 : 278, hh1 = h1 ? 134 : 128;
+  drawImgBox('hud_cta_gold', 640 - w1 / 2, 304 - hh1 / 2, w1, hh1);
+  drawOutlined('DEVAM ET', 640, 320, 25, '#ffffff');
+  addZone('btn_resume', 494, 248, 292, 116);
+  const h2 = G.hover === 'btn_restart', w2 = h2 ? 278 : 264, hh2 = h2 ? 126 : 120;
+  drawImgBox('hud_cta_red', 640 - w2 / 2, 442 - hh2 / 2, w2, hh2);
+  drawOutlined('BAŞTAN BAŞLA', 640, 456, 22, '#ffffff');
+  addZone('btn_restart', 500, 388, 280, 112);
+}
+
+// ============================================================================
+// INPUT & MAIN LOOP
+// ============================================================================
+function getVirtualPos(ev) {
+  const rect = canvas.getBoundingClientRect();
+  return { x: (ev.clientX - rect.left) / rect.width * VW, y: (ev.clientY - rect.top) / rect.height * VH };
+}
+function hitTest(vx, vy) {
+  for (let i = G.zones.length - 1; i >= 0; i--) {
+    const z = G.zones[i];
+    if (vx >= z.x && vx <= z.x + z.w && vy >= z.y && vy <= z.y + z.h) return z.id;
+  }
+  return '';
+}
+
+canvas.addEventListener('pointermove', ev => {
+  const p = getVirtualPos(ev);
+  G.hover = hitTest(p.x, p.y);
+});
+canvas.addEventListener('pointerup', () => { G.holdLeft = false; G.holdRight = false; });
+canvas.addEventListener('contextmenu', ev => { ev.preventDefault(); if (G.screen === 'play') useKolonya(); });
+canvas.addEventListener('pointerdown', ev => {
+  if (ev.button === 2) { if (G.screen === 'play') useKolonya(); return; }
+  const p = getVirtualPos(ev);
+  const id = hitTest(p.x, p.y);
+  if (id === 'btn_start') { resetFullGame(); G.screen = 'intro'; playSfx('sfx_coin'); return; }
+  if (id === 'btn_go_play') { G.screen = 'play'; playSfx('sfx_win'); return; }
+  if (id === 'btn_shop') { if (G.screen === 'shop') G.screen = 'play'; else tryOpenShop(); return; }
+  if (id === 'btn_shop_next') { if (G.bossDefeated) { setupLevel(G.levelIdx + 1); G.screen = 'intro'; } else G.screen = 'play'; return; }
+  if (id === 'btn_pause') { G.screen = 'pause'; return; }
+  if (id === 'btn_resume') { G.screen = 'play'; return; }
+  if (id === 'btn_restart') {
+    if (G.screen === 'gameover') {
+      G.hp = G.maxHp; G.ayran = G.maxAyran;
+      setupLevel(G.levelIdx); G.screen = 'play'; return;
+    }
+    resetFullGame(); G.screen = 'title'; return;
+  }
+  if (id.startsWith('buy_')) { buyUpgrade(id.slice(4)); return; }
+  if (id === 'pad_left') { G.holdLeft = true; return; }
+  if (id === 'pad_right') { G.holdRight = true; return; }
+  if (id === 'pad_jump') { G.jumpBufT = 0.12; executeJump(); return; }
+  if (id === 'btn_ayran') { fireAyran(null); return; }
+  if (id === 'btn_kolonya') { useKolonya(); return; }
+  if (id === 'btn_nazar') { useMegaNazar(); return; }
+  if (G.screen === 'play') fireAyran((p.x + G.camX) >= G.px ? 1 : -1);
+});
+
+window.addEventListener('keydown', ev => {
+  const first = !G.keys[ev.code];
+  G.keys[ev.code] = true;
+  if (['Space','ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(ev.code)) ev.preventDefault();
+  if (!first) return;
+  if (loadedCount < totalAssets && G.time <= 10) return;
+  if (G.screen === 'title' && (ev.code === 'Space' || ev.code === 'Enter')) { resetFullGame(); G.screen = 'intro'; playSfx('sfx_coin'); return; }
+  if (G.screen === 'intro' && (ev.code === 'Space' || ev.code === 'Enter')) { G.screen = 'play'; playSfx('sfx_win'); return; }
+  if (G.screen === 'gameover') {
+    if (ev.code === 'Space' || ev.code === 'Enter' || ev.code === 'KeyR') {
+      // Retry level keeps upgrades & coins!
+      G.hp = G.maxHp; G.ayran = G.maxAyran;
+      setupLevel(G.levelIdx); G.screen = 'play'; return;
+    } else if (ev.code === 'Escape') {
+      resetFullGame(); G.screen = 'title'; return;
+    }
+  }
+  if (G.screen === 'victory' && (ev.code === 'Space' || ev.code === 'Enter')) {
+    resetFullGame(); G.screen = 'title'; return;
+  }
+  if (G.screen === 'pause' && (ev.code === 'Escape' || ev.code === 'KeyP')) { G.screen = 'play'; return; }
+  if (G.screen === 'shop' && (ev.code === 'Escape' || ev.code === 'KeyM')) { if (G.bossDefeated) { setupLevel(G.levelIdx + 1); G.screen = 'intro'; } else G.screen = 'play'; return; }
+  if (G.screen === 'play') {
+    if (ev.code === 'Space' || ev.code === 'KeyW' || ev.code === 'ArrowUp') { G.jumpBufT = 0.12; executeJump(); }
+    else if (ev.code === 'KeyS' || ev.code === 'ArrowDown') { if (G.onPlatform) { G.dropThroughT = 0.24; G.onGround = false; G.onPlatform = false; G.pvy = 120; } }
+    else if (ev.code === 'KeyJ') fireAyran(null);
+    else if (ev.code === 'KeyK') useKolonya();
+    else if (ev.code === 'KeyQ') useMegaNazar();
+    else if (ev.code === 'KeyM') tryOpenShop();
+    else if (ev.code === 'Escape' || ev.code === 'KeyP') G.screen = 'pause';
+  }
+});
+window.addEventListener('keyup', ev => { G.keys[ev.code] = false; });
+
+function drawLoadingScreen() {
+  const grad = ctx.createLinearGradient(0, 0, 0, VH);
+  grad.addColorStop(0, '#0e1024');
+  grad.addColorStop(1, '#1b1f42');
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, VW, VH);
+
+  const pct = Math.min(1, loadedCount / Math.max(1, totalAssets));
+  drawOutlined('BUZ GİBİ KIYAMET: SON AYRANCI', 640, 290, 38, '#ffec6e');
+  drawLabel('Mahalle hazırlanıyor...', 640, 342, 20, '#bfefff', 'center', true);
+  fillRectR(340, 380, 600, 30, 15, 'rgba(10, 14, 30, 0.85)');
+  strokeRectR(340, 380, 600, 30, 15, '#4ee6ff', 3);
+  if (pct > 0.02) {
+    fillRectR(344, 384, Math.max(18, (600 - 8) * pct), 22, 11, '#4ee6ff');
+  }
+  drawOutlined(`${Math.round(pct * 100)}%`, 640, 440, 22, '#ffffff');
+}
+
+let lastTs = performance.now();
+function loop(ts) {
+  const dt = Math.min(0.05, Math.max(0.001, (ts - lastTs) / 1000));
+  G.dt = dt;
+  lastTs = ts;
+  G.time += dt;
+  const assetsReady = (loadedCount >= totalAssets && fontsReady) || G.time > 10;
+  if (!assetsReady) {
+    G.zones = [];
+    ctx.clearRect(0, 0, VW, VH);
+    drawLoadingScreen();
+    requestAnimationFrame(loop);
+    return;
+  }
+  if (G.screen === 'play') updatePlay(dt);
+
+  G.zones = [];
+  ctx.clearRect(0, 0, VW, VH);
+  if (G.screen === 'title') drawTitleScreen();
+  else if (G.screen === 'intro') drawComicIntro();
+  else if (G.screen === 'play') { drawWorld(); drawHUD(); }
+  else if (G.screen === 'shop') drawShopModal();
+  else if (G.screen === 'pause') drawPauseModal();
+  else if (G.screen === 'gameover') drawEndModal(false);
+  else if (G.screen === 'victory') drawEndModal(true);
+
+  requestAnimationFrame(loop);
+}
+requestAnimationFrame(loop);
+})();
+</script>
+</body>
+</html>
