@@ -2027,76 +2027,102 @@ function drawHUD() {
   // ARCADE TOUCH & HUD CONTROLS
   // ==========================================================================
 
-  // --- LEFT SIDE: MOVEMENT D-PAD & DROP DOWN ---
-  fillRectR(18, 582, 268, 122, 22, 'rgba(14, 16, 28, 0.62)');
-  strokeRectR(18, 582, 268, 122, 22, 'rgba(85, 115, 165, 0.42)', 2);
+  // ============================================================================
+  // MOBILE GHOST ARCADE HUD (Zero-clutter, translucent, ergonomic thumb-arc)
+  // ============================================================================
+
+  // --- LEFT SIDE: COMPACT TRANSLUCENT D-PAD CAPSULE ---
+  const lPressed = G.holdLeft || G.hover === 'pad_left';
+  const rPressed = G.holdRight || G.hover === 'pad_right';
+
+  // Single sleek glass pill background (replaces 3 heavy opaque blocks)
+  fillRectR(32, 608, 172, 78, 39, 'rgba(10, 16, 32, 0.32)');
+  strokeRectR(32, 608, 172, 78, 39, 'rgba(110, 220, 255, 0.38)', 2);
 
   // Left Arrow Button (pad_left)
-  const lPressed = G.holdLeft || G.hover === 'pad_left';
-  fillRectR(28, 592, 78, 102, 16, lPressed ? '#2d6896' : '#1c2844');
-  strokeRectR(28, 592, 78, 102, 16, lPressed ? '#6ee0ff' : '#3f5780', lPressed ? 3 : 2);
-  drawOutlined('◀', 67, 634, 32, lPressed ? '#ffffff' : '#d2e8ff');
-  drawLabel('SOL [A]', 67, 672, 11, lPressed ? '#9feaff' : '#7ba0cc', 'center', true);
-  addZone('pad_left', 28, 592, 78, 102);
+  if (lPressed) {
+    ctx.fillStyle = 'rgba(78, 230, 255, 0.28)';
+    ctx.beginPath(); ctx.arc(74, 647, 32, 0, Math.PI * 2); ctx.fill();
+  }
+  drawOutlined('◀', 74, 656, 32, lPressed ? '#ffffff' : '#d2f4ff');
+  addZone('pad_left', 26, 600, 88, 94);
+
+  // Divider line
+  ctx.strokeStyle = 'rgba(110, 220, 255, 0.25)';
+  ctx.lineWidth = 1.5;
+  ctx.beginPath(); ctx.moveTo(118, 616); ctx.lineTo(118, 678); ctx.stroke();
 
   // Right Arrow Button (pad_right)
-  const rPressed = G.holdRight || G.hover === 'pad_right';
-  fillRectR(112, 592, 78, 102, 16, rPressed ? '#2d6896' : '#1c2844');
-  strokeRectR(112, 592, 78, 102, 16, rPressed ? '#6ee0ff' : '#3f5780', rPressed ? 3 : 2);
-  drawOutlined('▶', 151, 634, 32, rPressed ? '#ffffff' : '#d2e8ff');
-  drawLabel('SAĞ [D]', 151, 672, 11, rPressed ? '#9feaff' : '#7ba0cc', 'center', true);
-  addZone('pad_right', 112, 592, 78, 102);
+  if (rPressed) {
+    ctx.fillStyle = 'rgba(78, 230, 255, 0.28)';
+    ctx.beginPath(); ctx.arc(162, 647, 32, 0, Math.PI * 2); ctx.fill();
+  }
+  drawOutlined('▶', 162, 656, 32, rPressed ? '#ffffff' : '#d2f4ff');
+  addZone('pad_right', 118, 600, 88, 94);
 
-  // Drop Down Button (pad_down) - Active on platform
-  const dActive = G.onPlatform;
-  const dPressed = G.hover === 'pad_down' && dActive;
-  fillRectR(196, 604, 80, 80, 16, dActive ? (dPressed ? '#8c4e24' : '#683618') : 'rgba(32, 26, 32, 0.7)');
-  strokeRectR(196, 604, 80, 80, 16, dActive ? '#ffb454' : '#4d3a44', 2);
-  drawOutlined('▼', 236, 634, 24, dActive ? '#fff2b8' : '#6b5860');
-  drawLabel('İN [S]', 236, 664, 11, dActive ? '#ffe596' : '#6b5860', 'center', true);
-  addZone('pad_down', 196, 604, 80, 80);
+  // Drop Down Button (pad_down) - Only appears contextually when standing on a platform!
+  if (G.onPlatform) {
+    const dPressed = G.hover === 'pad_down';
+    ctx.save();
+    ctx.shadowColor = '#ffb454';
+    ctx.shadowBlur = dPressed ? 14 : 6;
+    ctx.fillStyle = dPressed ? '#8c4e24' : 'rgba(28, 20, 18, 0.65)';
+    ctx.beginPath(); ctx.arc(118, 560, 26, 0, Math.PI * 2); ctx.fill();
+    ctx.strokeStyle = '#ffb454'; ctx.lineWidth = 2; ctx.stroke();
+    ctx.restore();
+    drawOutlined('▼', 118, 568, 20, '#fff4cb');
+    addZone('pad_down', 92, 534, 52, 52);
+  }
 
-  // --- CENTER KEYBOARD / CONTROLS BANNER (Subtle & clean) ---
-  fillRectR(304, 668, 580, 32, 10, 'rgba(16, 14, 26, 0.72)');
-  strokeRectR(304, 668, 580, 32, 10, 'rgba(80, 95, 145, 0.50)', 1.5);
-  drawLabel('Space: Zıpla • J: Ayran • K: Köpük Şoku (1.9x) • Q: Nazar • S: Tezgahtan İn • M: Market', 594, 684, 11.5, '#e4ebff', 'center', false);
+  // --- CENTER KEYBOARD BANNER: Only shown on desktop/keyboard, hidden on mobile touch devices ---
+  const isTouchDevice = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
+  if (!isTouchDevice) {
+    fillRectR(360, 678, 460, 26, 8, 'rgba(12, 14, 26, 0.45)');
+    strokeRectR(360, 678, 460, 26, 8, 'rgba(80, 110, 160, 0.35)', 1);
+    drawLabel('Space: Zıpla • J: Ayran • K: Kolonya • Q: Nazar • S: İn', 590, 692, 11, '#dce8ff', 'center', false);
+  }
 
-  // --- RIGHT SIDE: ACTION CLUSTER (JUMP, AYRAN, KOLONYA, NAZAR) ---
-  fillRectR(908, 484, 354, 224, 24, 'rgba(14, 16, 28, 0.62)');
-  strokeRectR(908, 484, 354, 224, 24, 'rgba(85, 115, 165, 0.42)', 2);
-
-  // 1. MEGA NAZAR (Top Left in Cluster)
+  // --- RIGHT SIDE: ERGONOMIC THUMB-ARC CLUSTER (Zero solid background box) ---
+  // 1. MEGA NAZAR (Top-Right Arc, compact floating circle)
   const nReady = G.nazar >= 100;
-  const nPulse = nReady ? (1 + Math.sin(G.time * 8) * 0.09) : 1;
-  drawImgCenter('ui_btn_nazar', 968, 542, 80 * nPulse, 0, nReady ? 1 : 0.55);
-  drawOutlined(nReady ? 'NAZAR!' : `${Math.floor(G.nazar)}%`, 968, 588, 13.5, nReady ? '#6effff' : '#99d8e8');
-  drawLabel('[Q]', 968, 604, 10, '#bfefff', 'center', true);
-  addZone('btn_nazar', 924, 498, 88, 88);
+  const nPulse = nReady ? (1 + Math.sin(G.time * 8) * 0.08) : 1;
+  drawImgCenter('ui_btn_nazar', 1195, 514, 66 * nPulse, 0, nReady ? 1 : 0.52);
+  drawOutlined(nReady ? 'NAZAR!' : `${Math.floor(G.nazar)}%`, 1195, 554, 12, nReady ? '#6effff' : '#9be2f5');
+  addZone('btn_nazar', 1162, 482, 66, 66);
 
-  // 2. KOLONYA ŞOKU (Top Right in Cluster)
+  // 2. KOLONYA ŞOKU (Top-Center Arc, compact floating circle)
   const kReady = G.kolonyaCd <= 0;
-  drawImgCenter('ui_btn_kolonya', 1064, 542, 80, 0, kReady ? 1 : 0.52);
-  drawOutlined(kReady ? '80° ŞOK!' : `${G.kolonyaCd.toFixed(1)}s`, 1064, 588, 13.5, kReady ? '#8cff9a' : '#85a88c');
-  drawLabel('[K]', 1064, 604, 10, '#c8ffcf', 'center', true);
-  addZone('btn_kolonya', 1020, 498, 88, 88);
+  drawImgCenter('ui_btn_kolonya', 1092, 520, 66, 0, kReady ? 1 : 0.48);
+  drawOutlined(kReady ? 'ŞOK!' : `${G.kolonyaCd.toFixed(1)}s`, 1092, 558, 12, kReady ? '#8cff9a' : '#85a88c');
+  addZone('btn_kolonya', 1058, 488, 66, 66);
 
-  // 3. ZIPLA / JUMP (Bottom Left in Cluster - Next to Ayran!)
+  // 3. ZIPLA / JUMP (Left thumb-arc, naturally swept from Ayran)
   const jPressed = G.hover === 'pad_jump';
   const hasDbl = (G.upLevels.belt_cap || 0) >= 1;
-  const jCol = !G.onGround && hasDbl && G.jumpsLeft > 0 ? '#ff9a2e' : (jPressed ? '#2d78a8' : '#1c3654');
-  fillRectR(954, 616, 96, 82, 18, jCol);
-  strokeRectR(954, 616, 96, 82, 18, jPressed ? '#78e5ff' : '#4578ab', 2.5);
-  drawOutlined('⬆', 1002, 646, 26, '#ffffff');
-  drawOutlined(hasDbl ? 'ÇİFT ZIPLA' : 'ZIPLA', 1002, 672, 12.5, '#ffeaa2');
-  drawLabel('[Space]', 1002, 688, 9.5, '#cce6ff', 'center', true);
-  addZone('pad_jump', 954, 616, 96, 82);
+  const isDblReady = !G.onGround && hasDbl && G.jumpsLeft > 0;
+  
+  ctx.save();
+  ctx.shadowColor = isDblReady ? '#ff9a2e' : (jPressed ? '#6ee0ff' : 'rgba(0,0,0,0)');
+  ctx.shadowBlur = jPressed ? 14 : 6;
+  ctx.fillStyle = isDblReady ? 'rgba(255, 140, 40, 0.42)' : (jPressed ? 'rgba(45, 120, 180, 0.45)' : 'rgba(16, 28, 54, 0.38)');
+  ctx.beginPath(); ctx.arc(1074, 634, 38, 0, Math.PI * 2); ctx.fill();
+  ctx.strokeStyle = isDblReady ? '#ffbe52' : (jPressed ? '#6ee0ff' : 'rgba(110, 210, 255, 0.45)');
+  ctx.lineWidth = 2.2; ctx.stroke();
+  ctx.restore();
 
-  // 4. AYRAN FIRLAT (Big Primary Action Button - Bottom Right)
+  drawOutlined(isDblReady ? '▲▲' : '▲', 1074, 642, isDblReady ? 23 : 26, isDblReady ? '#ffe27d' : '#ffffff');
+  drawLabel(isDblReady ? '2X' : 'ZIPLA', 1074, 660, 10, isDblReady ? '#ffe27d' : '#cce8ff', 'center', true);
+  addZone('pad_jump', 1034, 594, 80, 80);
+
+  // 4. AYRAN AT (Primary Action - Floating corner circle)
   const aPressed = G.hover === 'btn_ayran';
-  drawImgCenter('ui_btn_ayran', 1172, 638, aPressed ? 98 : 106, 0, 1);
-  drawOutlined('AYRAN AT', 1172, 684, 14.5, '#ffea62');
-  drawLabel('[J]', 1172, 700, 10.5, '#fff4b8', 'center', true);
-  addZone('btn_ayran', 1118, 584, 108, 108);
+  ctx.save();
+  ctx.shadowColor = aPressed ? '#ffe05c' : 'rgba(255, 200, 40, 0.4)';
+  ctx.shadowBlur = aPressed ? 18 : 8;
+  drawImgCenter('ui_btn_ayran', 1184, 632, aPressed ? 92 : 100, 0, 1);
+  ctx.restore();
+  drawOutlined('AYRAN', 1184, 676, 13.5, '#ffea62');
+  addZone('btn_ayran', 1134, 582, 100, 100);
 }
 
 function drawKeycapBar(cy) {
