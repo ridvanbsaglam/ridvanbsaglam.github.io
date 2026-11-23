@@ -2,7 +2,11 @@
 <html lang="tr">
 <head>
 <meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+<meta name="mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="theme-color" content="#100c1e" />
 <title>Buz Gibi Kıyamet: Son Ayrancı — Er-Öz Hotel'e Kaçış</title>
 <style>
   @font-face {
@@ -15,24 +19,48 @@
     src: url('fonts/Baloo2-Bold.ttf') format('truetype');
     font-weight: 700;
   }
-  * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; -webkit-user-select: none; }
+  * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; -webkit-user-select: none; -webkit-tap-highlight-color: transparent; }
   html, body {
-    width: 100%; height: 100%; overflow: hidden;
+    width: 100%; height: 100%;
+    width: 100dvw; height: 100dvh;
+    overflow: hidden; overscroll-behavior: none;
     background: #100c1e;
     display: flex; align-items: center; justify-content: center;
     font-family: 'BalooMed', system-ui, sans-serif;
+    touch-action: none;
   }
   #gameCanvas {
     display: block;
-    max-width: 100vw; max-height: 100vh;
     background: #100c1e;
     box-shadow: 0 20px 60px rgba(0, 0, 0, 0.85);
     touch-action: none;
     cursor: pointer;
+    transform-origin: center center;
+  }
+  #fsBtn {
+    position: fixed;
+    top: max(10px, env(safe-area-inset-top));
+    right: max(10px, env(safe-area-inset-right));
+    z-index: 20;
+    background: rgba(20, 16, 36, 0.78);
+    color: #ffec7d;
+    border: 2px solid rgba(255, 216, 107, 0.75);
+    border-radius: 10px;
+    padding: 6px 11px;
+    font-family: 'BalooBold', sans-serif;
+    font-size: 13px;
+    letter-spacing: 0.4px;
+    cursor: pointer;
+    display: none;
+    backdrop-filter: blur(4px);
+  }
+  @media (pointer: coarse), (max-width: 960px) {
+    #fsBtn { display: block; }
   }
 </style>
 </head>
 <body>
+<button id="fsBtn" type="button" aria-label="Tam Ekran">⛶ TAM EKRAN</button>
 <canvas id="gameCanvas" width="1280" height="720"></canvas>
 <script src="story_data.js?v=5"></script>
 <script>
@@ -47,18 +75,65 @@ const PROP_TOP_H = 104;
 
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
+const fsBtn = document.getElementById('fsBtn');
 
-// Responsive letterboxed HiDPI sizing
+const IS_TOUCH = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
+let isRotated = false;
 let viewScale = 1;
+
+function requestMobileFullscreen() {
+  const el = document.documentElement;
+  const req = el.requestFullscreen || el.webkitRequestFullscreen || el.msRequestFullscreen;
+  if (req && !document.fullscreenElement && !document.webkitFullscreenElement) {
+    try {
+      const p = req.call(el);
+      if (p && p.then) {
+        p.then(() => {
+          if (screen.orientation && screen.orientation.lock) {
+            screen.orientation.lock('landscape').catch(() => {});
+          }
+          setTimeout(resizeCanvas, 120);
+        }).catch(() => {});
+      }
+    } catch (_) {}
+  }
+}
+
+function toggleFullscreen() {
+  if (document.fullscreenElement || document.webkitFullscreenElement) {
+    const ex = document.exitFullscreen || document.webkitExitFullscreen;
+    if (ex) try { ex.call(document); } catch (_) {}
+  } else {
+    requestMobileFullscreen();
+  }
+}
+if (fsBtn) {
+  fsBtn.addEventListener('click', ev => { ev.stopPropagation(); toggleFullscreen(); });
+  document.addEventListener('fullscreenchange', () => {
+    const inFs = !!(document.fullscreenElement || document.webkitFullscreenElement);
+    fsBtn.textContent = inFs ? '✕ ÇIK' : '⛶ TAM EKRAN';
+    setTimeout(resizeCanvas, 80);
+  });
+}
+
+// Responsive Fullscreen HiDPI sizing + Automatic Portrait Phone 90° Rotation!
 function resizeCanvas() {
   const dpr = Math.min(2.5, window.devicePixelRatio || 1);
-  const availW = window.innerWidth;
-  const availH = window.innerHeight;
-  viewScale = Math.min(availW / VW, availH / VH);
+  const vv = window.visualViewport;
+  const availW = Math.floor(vv ? vv.width : window.innerWidth);
+  const availH = Math.floor(vv ? vv.height : window.innerHeight);
+
+  // On portrait phones/tablets, auto-rotate 90° clockwise so the 16:9 game fills the full phone screen!
+  isRotated = (availH > availW) && (IS_TOUCH || availW <= 768);
+  const targetW = isRotated ? availH : availW;
+  const targetH = isRotated ? availW : availH;
+
+  viewScale = Math.min(targetW / VW, targetH / VH);
   const cssW = Math.floor(VW * viewScale);
   const cssH = Math.floor(VH * viewScale);
   canvas.style.width = cssW + 'px';
   canvas.style.height = cssH + 'px';
+  canvas.style.transform = isRotated ? 'rotate(90deg)' : 'none';
   // Render buffer matches real physical screen pixels (zero CSS upscaling blur!)
   canvas.width = Math.floor(cssW * dpr);
   canvas.height = Math.floor(cssH * dpr);
@@ -67,6 +142,8 @@ function resizeCanvas() {
   ctx.imageSmoothingQuality = 'high';
 }
 window.addEventListener('resize', resizeCanvas);
+window.addEventListener('orientationchange', () => setTimeout(resizeCanvas, 120));
+if (window.visualViewport) window.visualViewport.addEventListener('resize', resizeCanvas);
 resizeCanvas();
 
 // ============================================================================
@@ -2097,6 +2174,12 @@ function drawPauseModal() {
 // ============================================================================
 function getVirtualPos(ev) {
   const rect = canvas.getBoundingClientRect();
+  if (isRotated) {
+    return {
+      x: ((ev.clientY - rect.top) / rect.height) * VW,
+      y: ((rect.right - ev.clientX) / rect.width) * VH,
+    };
+  }
   return { x: (ev.clientX - rect.left) / rect.width * VW, y: (ev.clientY - rect.top) / rect.height * VH };
 }
 function hitTest(vx, vy) {
@@ -2107,17 +2190,36 @@ function hitTest(vx, vy) {
   return '';
 }
 
+const activeMovePointers = new Map();
+function syncMoveHolds() {
+  let l = false, r = false;
+  for (const dir of activeMovePointers.values()) {
+    if (dir === 'left') l = true;
+    if (dir === 'right') r = true;
+  }
+  G.holdLeft = l;
+  G.holdRight = r;
+}
+
 canvas.addEventListener('pointermove', ev => {
   const p = getVirtualPos(ev);
   G.hover = hitTest(p.x, p.y);
 });
-canvas.addEventListener('pointerup', () => { G.holdLeft = false; G.holdRight = false; });
+function releasePointer(ev) {
+  if (activeMovePointers.has(ev.pointerId)) {
+    activeMovePointers.delete(ev.pointerId);
+    syncMoveHolds();
+  }
+}
+canvas.addEventListener('pointerup', releasePointer);
+canvas.addEventListener('pointercancel', releasePointer);
 canvas.addEventListener('contextmenu', ev => { ev.preventDefault(); if (G.screen === 'play') useKolonya(); });
 canvas.addEventListener('pointerdown', ev => {
   if (ev.button === 2) { if (G.screen === 'play') useKolonya(); return; }
   const p = getVirtualPos(ev);
   const id = hitTest(p.x, p.y);
   if (id === 'btn_start') {
+    if (IS_TOUCH) requestMobileFullscreen();
     resetFullGame();
     playSfx('sfx_coin');
     startStoryScene('l1_intro', () => { G.screen = 'play'; playSfx('sfx_win'); });
@@ -2148,8 +2250,8 @@ canvas.addEventListener('pointerdown', ev => {
     resetFullGame(); G.screen = 'title'; return;
   }
   if (id.startsWith('buy_')) { buyUpgrade(id.slice(4)); return; }
-  if (id === 'pad_left') { G.holdLeft = true; return; }
-  if (id === 'pad_right') { G.holdRight = true; return; }
+  if (id === 'pad_left') { activeMovePointers.set(ev.pointerId, 'left'); syncMoveHolds(); return; }
+  if (id === 'pad_right') { activeMovePointers.set(ev.pointerId, 'right'); syncMoveHolds(); return; }
   if (id === 'pad_jump') { G.jumpBufT = 0.12; executeJump(); return; }
   if (id === 'btn_ayran') { fireAyran(null); return; }
   if (id === 'btn_kolonya') { useKolonya(); return; }
