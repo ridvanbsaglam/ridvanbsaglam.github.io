@@ -3,7 +3,6 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-<meta name="robots" content="noindex, nofollow" />
 <title>Buz Gibi Kıyamet: Son Ayrancı — Er-Öz Hotel'e Kaçış</title>
 <style>
   @font-face {
@@ -35,6 +34,7 @@
 </head>
 <body>
 <canvas id="gameCanvas" width="1280" height="720"></canvas>
+<script src="story_data.js?v=5"></script>
 <script>
 (() => {
 'use strict';
@@ -74,9 +74,13 @@ resizeCanvas();
 // ============================================================================
 const IMAGE_IDS = [
   ['ui_title_bg', 'jpg'],
+  ['bg_intro_city_heat', 'jpg'], ['bg_fethiye_chaos', 'jpg'], ['bg_hotel_siege', 'jpg'],
+  ['bg_balcony_chill', 'jpg'], ['bg_balcony_phone', 'jpg'], ['bg_suitup_comic', 'jpg'],
+  ['bg_intro_balcony', 'jpg'], ['bg_intro_cooler', 'jpg'],
   ['bg_l1_classic', 'jpg'], ['bg_l2_classic', 'jpg'], ['bg_l3_classic', 'jpg'],
-  ['hero_idle', 'webp'], ['hero_run', 'webp'], ['hero_jump', 'webp'], ['hero_throw', 'webp'],
-  ['hero_cologne', 'webp'], ['hero_nazar', 'webp'], ['hero_hit', 'webp'],
+  ['hero_idle', 'png'], ['hero_run', 'png'], ['hero_jump', 'png'], ['hero_throw', 'png'],
+  ['hero_cologne', 'png'], ['hero_nazar', 'png'], ['hero_hit', 'png'],
+  'hero_state_chill', 'hero_state_phone', 'hero_state_ready',
   'z_1_1','z_1_2','z_1_3','z_1_4','z_1_5','z_1_6','z_1_7','z_1_8','z_1_9',
   'z_2_1','z_2_2','z_2_3','z_2_4','z_2_5','z_2_6','z_2_7','z_2_8','z_2_9',
   'z_3_1','z_3_2','z_3_3','z_3_4','z_3_5','z_3_6','z_3_7','z_3_8','z_3_9',
@@ -174,6 +178,29 @@ const UPGRADES = [
 
 const KOLONYA_BASE = { cd: 2.1, dmg: 38, range: 215 };
 const PROP_TYPES = ['simit', 'cay', 'cop', 'dondurma'];
+const PROP_META = {
+  simit:    { h: 158, brokenH: 58, topH: 98, halfW: 58, shadowW: 54 },
+  cay:      { h: 88,  brokenH: 48, topH: 72, halfW: 66, shadowW: 64 },
+  cop:      { h: 98,  brokenH: 46, topH: 84, halfW: 40, shadowW: 38 },
+  dondurma: { h: 122, brokenH: 54, topH: 88, halfW: 64, shadowW: 60 },
+};
+const LEVEL_PROP_LAYOUTS = [
+  // Bölüm 1: Mahalle Sokağı (kapı/araba önleri açık, doğal kaldırım yerleşimi)
+  [
+    { kind: 'cay', x: 540 }, { kind: 'simit', x: 1080 }, { kind: 'cop', x: 1620 },
+    { kind: 'cay', x: 2120 }, { kind: 'simit', x: 2640 }, { kind: 'cop', x: 2960 },
+  ],
+  // Bölüm 2: Esnaf Çarşısı (merdiven ve otobüs durağı açık)
+  [
+    { kind: 'simit', x: 560 }, { kind: 'dondurma', x: 1120 }, { kind: 'cop', x: 1980 },
+    { kind: 'dondurma', x: 2440 }, { kind: 'simit', x: 3320 }, { kind: 'cop', x: 3620 },
+  ],
+  // Bölüm 3: Er-Öz Hotel (otel girişi, kum torbaları ve bariyer tamamen açık)
+  [
+    { kind: 'dondurma', x: 520 }, { kind: 'cay', x: 1060 }, { kind: 'simit', x: 1560 },
+    { kind: 'cop', x: 1960 }, { kind: 'dondurma', x: 2360 }, { kind: 'cay', x: 3180 },
+  ],
+];
 
 // ============================================================================
 // ASSET LOADER
@@ -189,26 +216,92 @@ if (document.fonts && document.fonts.ready) {
 setTimeout(() => { fontsReady = true; }, 3500);
 
 for (const entry of IMAGE_IDS) {
-  const [id, ext] = Array.isArray(entry) ? entry : [entry, 'webp'];
+  const [id, ext] = Array.isArray(entry) ? entry : [entry, 'png'];
   const img = new Image();
   img.onload = () => { loadedCount++; };
   img.onerror = () => { loadedCount++; };
-  img.src = `img/${id}.${ext}?v=6`;
+  img.src = `img/${id}.${ext}?v=7`;
   images[id] = img;
 }
 
+const sfxPools = {};
 for (const sid of SFX_IDS) {
-  const a = new Audio(`sfx/${sid}.wav`);
-  a.preload = 'auto';
-  sfx[sid] = a;
+  sfxPools[sid] = { idx: 0, list: [] };
+  for (let pi = 0; pi < 4; pi++) {
+    const a = new Audio(`sfx/${sid}.wav`);
+    a.preload = 'auto';
+    a.volume = 0.55;
+    sfxPools[sid].list.push(a);
+  }
+  sfx[sid] = sfxPools[sid].list[0];
+}
+
+let _audioCtx = null;
+function getAudioCtx() {
+  if (!_audioCtx) {
+    const AC = window.AudioContext || window.webkitAudioContext;
+    if (AC) _audioCtx = new AC();
+  }
+  if (_audioCtx && _audioCtx.state === 'suspended') {
+    _audioCtx.resume().catch(() => {});
+  }
+  return _audioCtx;
+}
+
+function playVoiceBlip(speakerId) {
+  if (G.muted) return;
+  const ac = getAudioCtx();
+  if (!ac) return;
+  const sp = (window.STORY_DATA && window.STORY_DATA.speakers[speakerId]) || { pitch: 220, wave: 'triangle' };
+  try {
+    const now = ac.currentTime;
+    const osc = ac.createOscillator();
+    const gain = ac.createGain();
+    osc.type = sp.wave || 'triangle';
+    const jitter = 0.93 + Math.random() * 0.14;
+    osc.frequency.setValueAtTime((sp.pitch || 220) * jitter, now);
+    gain.gain.setValueAtTime(0.001, now);
+    gain.gain.linearRampToValueAtTime(0.055, now + 0.008);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.045);
+    osc.connect(gain);
+    gain.connect(ac.destination);
+    osc.start(now);
+    osc.stop(now + 0.05);
+  } catch (_) {}
+}
+
+function playPhoneRing() {
+  if (G.muted) return;
+  const ac = getAudioCtx();
+  if (!ac) return;
+  try {
+    const now = ac.currentTime;
+    [0, 0.42].forEach(offset => {
+      const osc1 = ac.createOscillator();
+      const osc2 = ac.createOscillator();
+      const gain = ac.createGain();
+      osc1.type = 'sine'; osc2.type = 'sine';
+      osc1.frequency.setValueAtTime(440, now + offset);
+      osc2.frequency.setValueAtTime(480, now + offset);
+      gain.gain.setValueAtTime(0.001, now + offset);
+      gain.gain.linearRampToValueAtTime(0.08, now + offset + 0.02);
+      gain.gain.setValueAtTime(0.08, now + offset + 0.24);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + offset + 0.30);
+      osc1.connect(gain); osc2.connect(gain); gain.connect(ac.destination);
+      osc1.start(now + offset); osc2.start(now + offset);
+      osc1.stop(now + offset + 0.31); osc2.stop(now + offset + 0.31);
+    });
+  } catch (_) {}
 }
 
 function playSfx(name) {
   if (G.muted) return;
-  const base = sfx[name];
-  if (!base) return;
+  const pool = sfxPools[name];
+  if (!pool || !pool.list.length) return;
   try {
-    const inst = base.cloneNode(true);
+    const inst = pool.list[pool.idx % pool.list.length];
+    pool.idx = (pool.idx + 1) % pool.list.length;
+    inst.currentTime = 0;
     inst.volume = 0.55;
     inst.play().catch(() => {});
   } catch (_) {}
@@ -243,8 +336,131 @@ const G = {
   zombies: [], projectiles: [], enemyProjs: [], props: [], pickups: [],
   particles: [], floats: [], waves: [],
   zones: [], hover: '', keys: {}, holdLeft: false, holdRight: false, muted: false,
+  heroBarkCd: 0,
+  story: {
+    sceneId: '', nodeId: '', vars: {}, seen: {}, backlog: [],
+    logOpen: false, charIdx: 0, typeAcc: 0, blipAcc: 0, nodeT: 0,
+    onComplete: null,
+  },
 };
 window.__GAME__ = G;
+
+// ============================================================================
+// STORY / DIALOGUE RUNNER (dialogue-systems + visual-novel)
+// ============================================================================
+function resetStoryState() {
+  const baseVars = (window.STORY_DATA && window.STORY_DATA.vars) ? { ...window.STORY_DATA.vars } : {};
+  G.story = {
+    sceneId: '', nodeId: '', vars: baseVars, seen: {}, backlog: [],
+    logOpen: false, charIdx: 0, typeAcc: 0, blipAcc: 0, nodeT: 0,
+    onComplete: null,
+  };
+}
+
+function getStoryNode() {
+  if (!window.STORY_DATA || !G.story.sceneId) return null;
+  const sc = window.STORY_DATA.scenes[G.story.sceneId];
+  return sc ? sc.nodes[G.story.nodeId] : null;
+}
+
+function enterStoryNode(nodeId) {
+  const sc = window.STORY_DATA && window.STORY_DATA.scenes[G.story.sceneId];
+  if (!sc || !sc.nodes[nodeId]) { finishStoryScene(); return; }
+  G.story.nodeId = nodeId;
+  G.story.charIdx = 0;
+  G.story.typeAcc = 0;
+  G.story.blipAcc = 0;
+  G.story.nodeT = 0;
+  const node = sc.nodes[nodeId];
+  if (node.set) Object.assign(G.story.vars, node.set);
+  if (node.phoneRing) playPhoneRing();
+  if (node.sfx) playSfx('sfx_' + node.sfx);
+}
+
+function startStoryScene(sceneId, onComplete, forceReplay = false) {
+  const sc = window.STORY_DATA && window.STORY_DATA.scenes[sceneId];
+  if (!sc || (G.story.seen[sceneId] && !forceReplay)) {
+    if (onComplete) onComplete();
+    return;
+  }
+  G.story.sceneId = sceneId;
+  G.story.onComplete = onComplete || null;
+  G.story.logOpen = false;
+  G.screen = 'story';
+  enterStoryNode(sc.start);
+}
+
+function finishStoryScene() {
+  if (G.story.sceneId) G.story.seen[G.story.sceneId] = true;
+  const cb = G.story.onComplete;
+  G.story.sceneId = '';
+  G.story.nodeId = '';
+  G.story.logOpen = false;
+  G.story.onComplete = null;
+  if (cb) cb();
+}
+
+function skipStoryScene() {
+  playSfx('sfx_coin');
+  finishStoryScene();
+}
+
+function pushBacklog(speakerId, text) {
+  const sp = (window.STORY_DATA && window.STORY_DATA.speakers[speakerId]) || { name: '' };
+  G.story.backlog.push({ speaker: sp.name || 'ANLATICI', color: sp.color || '#ffec82', text });
+  if (G.story.backlog.length > 60) G.story.backlog.shift();
+}
+
+function advanceStory() {
+  if (G.screen !== 'story') return;
+  if (G.story.logOpen) { G.story.logOpen = false; return; }
+  const node = getStoryNode();
+  if (!node) { finishStoryScene(); return; }
+  const fullText = node.text || '';
+  if (G.story.charIdx < fullText.length) {
+    G.story.charIdx = fullText.length;
+    return;
+  }
+  if (node.choices && node.choices.length > 0) return;
+  pushBacklog(node.speaker, fullText);
+  if (node.end || !node.next) {
+    playSfx('sfx_coin');
+    finishStoryScene();
+  } else {
+    enterStoryNode(node.next);
+  }
+}
+
+function chooseStoryOption(idx) {
+  const node = getStoryNode();
+  if (!node || !node.choices || !node.choices[idx]) return;
+  const ch = node.choices[idx];
+  pushBacklog(node.speaker, node.text || '');
+  pushBacklog('hero', ch.text);
+  if (ch.set) Object.assign(G.story.vars, ch.set);
+  playSfx('sfx_coin');
+  enterStoryNode(ch.to);
+}
+
+function updateStory(dt) {
+  const node = getStoryNode();
+  if (!node) return;
+  G.story.nodeT += dt;
+  const fullText = node.text || '';
+  if (G.story.charIdx < fullText.length && !G.story.logOpen) {
+    G.story.typeAcc += dt * 48; // crisp readable typewriter speed
+    const prev = G.story.charIdx;
+    G.story.charIdx = Math.min(fullText.length, Math.floor(G.story.typeAcc));
+    if (G.story.charIdx > prev) {
+      G.story.blipAcc += (G.story.charIdx - prev);
+      const ch = fullText[G.story.charIdx - 1];
+      if (G.story.blipAcc >= 3 && ch && ch !== ' ' && ch !== '.' && ch !== ',') {
+        G.story.blipAcc = 0;
+        playVoiceBlip(node.speaker);
+      }
+    }
+  }
+}
 
 function setupLevel(idx) {
   G.levelIdx = idx;
@@ -274,9 +490,9 @@ function setupLevel(idx) {
       });
     }
   }
-  const spots = [560, 1020, 1480, 1940, 2400, 2860, 3260, 3580];
-  spots.forEach((sx, i) => {
-    G.props.push({ kind: PROP_TYPES[(i + idx) % PROP_TYPES.length], x: sx, state: 0, hp: 2, shake: 0 });
+  const layout = LEVEL_PROP_LAYOUTS[idx] || LEVEL_PROP_LAYOUTS[0];
+  layout.forEach(item => {
+    G.props.push({ kind: item.kind, x: item.x, state: 0, hp: 2, shake: 0 });
   });
 }
 
@@ -285,8 +501,9 @@ function resetFullGame() {
   G.kolonyaCd = 0; G.kolonyaMaxCd = KOLONYA_BASE.cd; G.kolonyaDmg = KOLONYA_BASE.dmg; G.kolonyaRange = KOLONYA_BASE.range;
   G.nazar = 50; G.nazarAnimT = 0; G.gold = 80; G.score = 0;
   G.combo = 0; G.maxCombo = 0; G.comboT = 0; G.totalCalmed = 0; G.shockCount = 0;
-  G.trauma = 0; G.hitStop = 0; G.heroSX = 1; G.heroSY = 1;
+  G.trauma = 0; G.hitStop = 0; G.heroSX = 1; G.heroSY = 1; G.heroBarkCd = 0;
   G.upLevels = { ayran_dmg: 0, belt_cap: 0, kolonya_pow: 0, tea_heal: 0 };
+  resetStoryState();
   setupLevel(0);
 }
 resetFullGame();
@@ -338,6 +555,8 @@ function spawnZombie(isBoss) {
     });
     G.bossSpawned = true; G.bossBannerT = 2.8;
     addTrauma(0.62); playSfx('sfx_horn');
+    const bossBark = window.STORY_DATA && window.STORY_DATA.barks && window.STORY_DATA.barks.bossSpawn[G.levelIdx];
+    if (bossBark) spawnFloat(sx, GROUND_Y - 275, bossBark, 24, 22, 34, 17, 2.6, true);
     return;
   }
   const pool = ZOMBIES[lvl.group];
@@ -517,7 +736,14 @@ function useKolonya() {
       if (z.hp <= 0) calmZombie(z);
     }
   }
-  if (shockTriggered) { G.hitStop = 0.065; addTrauma(0.52); playSfx('sfx_shock'); }
+  if (shockTriggered) {
+    G.hitStop = 0.065; addTrauma(0.52); playSfx('sfx_shock');
+    if (G.heroBarkCd <= 0 && window.STORY_DATA && window.STORY_DATA.barks) {
+      const list = window.STORY_DATA.barks.heroShock;
+      spawnFloat(G.px, G.py - 205, list[Math.floor(Math.random() * list.length)], 24, 22, 34, 15, 1.35, true);
+      G.heroBarkCd = 4.5;
+    }
+  }
   else if (deflected === 0) spawnFloat(cx, G.py - 150, '80° FERAHLIK!', 135, 255, 150, 18, 0.85);
   // Kolonya does not damage friendly street props
 }
@@ -533,6 +759,10 @@ function useMegaNazar() {
   spawnShockwave(G.px, G.py - 90, 520, 0, 110, 255, 0.55);
   spawnParticles(G.px, G.py - 90, 44, 70, 225, 255, 420, 120, 5, 11);
   spawnFloat(G.px, G.py - 215, 'MEGA NAZAR PATLAMASI!!', 95, 235, 255, 30, 1.5);
+  if (window.STORY_DATA && window.STORY_DATA.barks) {
+    const nList = window.STORY_DATA.barks.heroNazar;
+    spawnFloat(G.px, G.py - 255, nList[Math.floor(Math.random() * nList.length)], 24, 22, 34, 15.5, 1.45, true);
+  }
   G.enemyProjs = [];
   for (const z of G.zombies) {
     if (!z.calmed && Math.abs(z.x - G.px) < 780) {
@@ -733,6 +963,7 @@ function updatePlay(dt) {
   if (G.hitAnimT > 0) G.hitAnimT = Math.max(0, G.hitAnimT - dt);
   if (G.invulnT > 0) G.invulnT = Math.max(0, G.invulnT - dt);
   if (G.bossBannerT > 0) G.bossBannerT = Math.max(0, G.bossBannerT - dt);
+  if (G.heroBarkCd > 0) G.heroBarkCd = Math.max(0, G.heroBarkCd - dt);
   if (G.dropThroughT > 0) G.dropThroughT = Math.max(0, G.dropThroughT - dt);
   if (G.coyoteT > 0) G.coyoteT = Math.max(0, G.coyoteT - dt);
   if (G.jumpBufT > 0) G.jumpBufT = Math.max(0, G.jumpBufT - dt);
@@ -747,8 +978,13 @@ function updatePlay(dt) {
   if (G.bossDefeated) {
     G.levelClearT -= dt;
     if (G.levelClearT <= 0) {
-      if (G.levelIdx < LEVELS.length - 1) G.screen = 'shop';
-      else { G.screen = 'victory'; playSfx('sfx_win'); }
+      if (G.levelIdx === 0) {
+        startStoryScene('l1_outro', () => { G.screen = 'shop'; });
+      } else if (G.levelIdx === 1) {
+        startStoryScene('l2_outro', () => { G.screen = 'shop'; });
+      } else {
+        startStoryScene('epilogue', () => { G.screen = 'victory'; playSfx('sfx_win'); });
+      }
       return;
     }
   }
@@ -778,10 +1014,11 @@ function updatePlay(dt) {
   G.onGround = false; G.onPlatform = false;
 
   if (G.pvy >= 0 && G.dropThroughT <= 0) {
-    const propTopY = GROUND_Y - PROP_TOP_H;
     for (const p of G.props) {
-      if (p.state < 2 && Math.abs(G.px - p.x) < 62 && prevPy <= propTopY + 18 && G.py >= propTopY) {
-        G.py = propTopY; G.pvy = 0; G.onGround = true; G.onPlatform = true;
+      const pm = PROP_META[p.kind] || PROP_META.simit;
+      const propTopY = GROUND_Y - pm.topH;
+      if (p.state < 2 && Math.abs(G.px - p.x) < pm.halfW && prevPy <= propTopY + 18 && G.py >= propTopY) {
+        G.py = propTopY; G.pvy = 0; G.onGround = true; G.onPlatform = true; G.platY = propTopY;
         G.jumpsLeft = 1 + ((G.upLevels.belt_cap || 0) >= 1 ? 1 : 0);
         if (!wasGrounded) { G.heroSX = 1.20; G.heroSY = 0.82; p.shake = 0.14; spawnParticles(G.px, propTopY, 5, 255, 230, 165, 90, 120, 3, 6); }
         break;
@@ -1100,17 +1337,24 @@ function drawWorld() {
     });
   }
 
-  // Street props
-  const propTopY = GROUND_Y - PROP_TOP_H;
+  // Street props (calibrated real-world scale, 0px ground gap, double contact shadow!)
   for (const p of G.props) {
+    const pm = PROP_META[p.kind] || PROP_META.simit;
+    const propTopY = GROUND_Y - pm.topH;
     const pid = `p_${p.kind}_${p.state}`;
-    const pH = p.state === 2 ? 82 : 138;
-    const psh = p.shake > 0 ? Math.sin(G.time * 55) * 6 : 0;
-    ctx.fillStyle = 'rgba(12,10,22,0.45)';
-    ctx.beginPath(); ctx.ellipse(p.x, GROUND_Y + 4, 54, 13, 0, 0, Math.PI * 2); ctx.fill();
-    drawImgFoot(pid, p.x + psh, GROUND_Y + 6, pH);
-    if (p.state < 2 && Math.abs(G.px - p.x) < 260) {
-      fillRectR(p.x - 42, propTopY - 2, 84, 5, 3, 'rgba(120,240,255,0.52)');
+    const pH = p.state === 2 ? pm.brokenH : pm.h;
+    const psh = p.shake > 0 ? Math.sin(G.time * 55) * 5 : 0;
+    const sw = p.state === 2 ? pm.shadowW * 0.92 : pm.shadowW;
+    // Outer soft ambient ground shadow
+    ctx.fillStyle = 'rgba(10, 8, 22, 0.34)';
+    ctx.beginPath(); ctx.ellipse(p.x, GROUND_Y + 3, sw * 1.18, 13, 0, 0, Math.PI * 2); ctx.fill();
+    // Tight dark contact occlusion shadow right under wheels/legs
+    ctx.fillStyle = 'rgba(8, 6, 18, 0.62)';
+    ctx.beginPath(); ctx.ellipse(p.x, GROUND_Y + 1, sw * 0.84, 7.5, 0, 0, Math.PI * 2); ctx.fill();
+    drawImgFoot(pid, p.x + psh, GROUND_Y + 2, pH);
+    if (p.state < 2 && Math.abs(G.px - p.x) < 220) {
+      const barW = pm.halfW * 1.3;
+      fillRectR(p.x - barW / 2, propTopY - 2, barW, 4, 2, 'rgba(120,240,255,0.44)');
     }
   }
 
@@ -1198,7 +1442,7 @@ function drawWorld() {
   else if (Math.abs(G.pvx) > 25) { hSheet = 'hero_run'; hSlot = Math.floor(G.walkT * (Math.abs(G.pvx) > 320 ? 16 : 12)) % 12; }
 
   const hOp = (G.invulnT > 0 && Math.floor(G.time * 22) % 2 === 0) ? 0.55 : 1;
-  const shadowY = G.onPlatform ? (GROUND_Y - PROP_TOP_H + 3) : (GROUND_Y + 4);
+  const shadowY = G.onPlatform ? ((G.platY || (GROUND_Y - PROP_TOP_H)) + 3) : (GROUND_Y + 4);
   const shSc = Math.max(0.45, 1 - Math.max(0, shadowY - G.py) / 360);
   ctx.fillStyle = 'rgba(12,10,22,0.55)';
   ctx.beginPath(); ctx.ellipse(G.px, shadowY, 44 * shSc, 12 * shSc, 0, 0, Math.PI * 2); ctx.fill();
@@ -1230,21 +1474,21 @@ function drawWorld() {
     else { ctx.save(); ctx.globalAlpha = a; drawOutlined(fl.text, fl.x, fl.y, fl.size, `rgb(${fl.r},${fl.g},${fl.b})`); ctx.restore(); }
   }
 
-  // Atmospheric drifting cold snow flakes with parallax depth
+  // Atmospheric drifting warm summer heat-motes (45°C summer night!)
   if (G.snowFlakes) {
-    ctx.fillStyle = '#ffffff';
+    ctx.fillStyle = '#ffe6a3';
     for (const f of G.snowFlakes) {
       const fdt = (G.screen === 'play') ? (G.dt || 0.016) : 0;
-      f.x += f.vx * fdt;
-      f.y += f.vy * fdt;
-      if (f.y > VH) { f.y = -10; f.x = Math.random() * (WORLD_W + 400) - 200; }
+      f.x += f.vx * 0.45 * fdt;
+      f.y -= f.vy * 0.35 * fdt;
+      if (f.y < -10) { f.y = VH + 10; f.x = Math.random() * (WORLD_W + 400) - 200; }
       if (f.x < -200) { f.x = WORLD_W + 100; }
       const sx = f.x - G.camX * f.depth;
       if (sx >= -20 && sx <= VW + 20) {
         ctx.save();
-        ctx.globalAlpha = f.alpha;
+        ctx.globalAlpha = f.alpha * 0.55;
         ctx.beginPath();
-        ctx.arc(sx, f.y, f.r, 0, Math.PI * 2);
+        ctx.arc(sx, f.y, f.r * 0.9, 0, Math.PI * 2);
         ctx.fill();
         ctx.restore();
       }
@@ -1373,6 +1617,355 @@ function drawTitleScreen() {
   if (G.bestScore > 0) drawOutlined(`EN YÜKSEK SKORUN: ${G.bestScore}`, 640, 540, 16, '#ffea6e');
   drawGoldBtn('btn_start', 640, 594, 420, 108, 'OYUNA BAŞLA', 32, true);
   drawKeycapBar(686);
+}
+
+function wrapTextLines(str, maxW, fontSpec) {
+  ctx.save();
+  ctx.font = fontSpec;
+  const words = (str || '').split(' ');
+  const lines = [];
+  let cur = '';
+  for (const w of words) {
+    const cand = cur ? (cur + ' ' + w) : w;
+    if (cur && ctx.measureText(cand).width > maxW) {
+      lines.push(cur);
+      cur = w;
+    } else {
+      cur = cand;
+    }
+  }
+  if (cur) lines.push(cur);
+  ctx.restore();
+  return lines;
+}
+
+function drawStoryPortrait(speakerId, x, y, isActive, isTyping, isRinging) {
+  const sp = window.STORY_DATA && window.STORY_DATA.speakers[speakerId];
+  if (!sp || !sp.portrait) return;
+  const p = sp.portrait;
+  const pop = isActive ? (1.0 + Math.max(0, 1 - G.story.nodeT * 6) * 0.08) : 0.93;
+  const talkBob = (isActive && isTyping) ? Math.abs(Math.sin(G.time * 18)) * 5 : 0;
+  const alpha = isActive ? 1.0 : 0.56;
+
+  ctx.save();
+  if (isActive) {
+    const grad = ctx.createRadialGradient(x, y - 160, 20, x, y - 160, 185);
+    grad.addColorStop(0, 'rgba(255, 226, 128, 0.34)');
+    grad.addColorStop(1, 'rgba(255, 226, 128, 0)');
+    ctx.fillStyle = grad;
+    ctx.beginPath(); ctx.arc(x, y - 160, 185, 0, Math.PI * 2); ctx.fill();
+  }
+
+  if (p.kind === 'phone') {
+    const vibX = (isRinging && G.story.nodeT < 1.2) ? Math.sin(G.time * 58) * 5 : 0;
+    const vibR = (isRinging && G.story.nodeT < 1.2) ? Math.sin(G.time * 42) * 0.05 : 0;
+    const px = x + vibX, py = y - 224 - talkBob;
+    ctx.save();
+    ctx.globalAlpha = alpha;
+    ctx.translate(px, py);
+    ctx.rotate(vibR);
+    ctx.scale(pop, pop);
+    // Sound wave arcs when ringing
+    if (isRinging) {
+      const pulse = (G.time * 2.2) % 1;
+      ctx.strokeStyle = `rgba(126, 240, 255, ${(1 - pulse) * 0.85})`;
+      ctx.lineWidth = 4;
+      ctx.beginPath(); ctx.arc(0, 0, 106 + pulse * 44, -0.7, 0.7); ctx.stroke();
+      ctx.beginPath(); ctx.arc(0, 0, 106 + pulse * 44, Math.PI - 0.7, Math.PI + 0.7); ctx.stroke();
+    }
+    // Cartoon phone body (compact & crisp, well clear of speaker badge)
+    fillRectR(-84, -118, 168, 236, 24, '#1a1529');
+    strokeRectR(-84, -118, 168, 236, 24, '#ffd86b', 4.5);
+    fillRectR(-72, -94, 144, 184, 14, '#10283d');
+    strokeRectR(-72, -94, 144, 184, 14, '#4ee6ff', 2.5);
+    // Top speaker notch
+    fillRectR(-24, -108, 48, 6, 3, '#3b3352');
+    // Caller badge
+    fillRectR(-58, -80, 116, 26, 9, '#22a858');
+    drawLabel('GELEN ARAMA', 0, -67, 12, '#ffffff', 'center', true);
+    // Glowing hotel star circle
+    ctx.fillStyle = '#ffe066';
+    ctx.beginPath(); ctx.arc(0, -12, 30, 0, Math.PI * 2); ctx.fill();
+    ctx.strokeStyle = '#18121e'; ctx.lineWidth = 3.2; ctx.stroke();
+    drawLabel('☎', 0, -10, 28, '#18121e', 'center', true);
+    drawOutlined(p.label || 'ER-ÖZ HOTEL', 0, 38, 15, '#ffec7d');
+    drawLabel(p.sub || 'GÜVENLİ BÖLGE', 0, 62, 11.5, '#99ecff', 'center', true);
+    ctx.restore();
+  } else if (p.kind === 'sheet') {
+    drawSheetFrame(p.id, p.cols || 4, p.slot || 10, x, y + 12 - talkBob, 375 * pop, p.flip || 1, 1, 1, 0, alpha);
+  } else {
+    drawImgFoot(p.id, x, y - talkBob, 330 * pop, p.flip || 1, 1, 1, 0, alpha);
+  }
+  ctx.restore();
+}
+
+function drawCityHeatMotionOverlay(t) {
+  // 1. Subtle rising heat-haze bands & pulsing green street mist
+  const mistPulse = 0.22 + 0.12 * Math.sin(t * 2.4);
+  const mistGrad = ctx.createLinearGradient(0, 320, 0, 520);
+  mistGrad.addColorStop(0, 'rgba(95, 245, 110, 0)');
+  mistGrad.addColorStop(0.65, `rgba(95, 245, 110, ${mistPulse})`);
+  mistGrad.addColorStop(1, 'rgba(95, 245, 110, 0)');
+  ctx.fillStyle = mistGrad;
+  ctx.fillRect(0, 320, VW, 200);
+
+  // 2. Animated comic smoke puffs rising from the sparking Fethiye rooftop AC units
+  const acSpots = [{ x: 195, y: 455 }, { x: 280, y: 435 }];
+  for (let i = 0; i < 10; i++) {
+    const src = acSpots[i % 2];
+    const phase = ((t * 0.42 + i * 0.19) % 1);
+    const sx = src.x + Math.sin(phase * 5 + i) * 22 + phase * 32;
+    const sy = src.y - phase * 170;
+    const sr = 9 + phase * 24;
+    ctx.save();
+    ctx.globalAlpha = (1 - phase) * 0.34;
+    ctx.fillStyle = i % 3 === 0 ? '#ff9d42' : '#3a2b3d';
+    ctx.beginPath(); ctx.arc(sx, sy, sr, 0, Math.PI * 2); ctx.fill();
+    ctx.restore();
+  }
+
+  // 3. Animated Vidico-style Thermometer Card (left-mid, climbs 36°C -> 45°C!)
+  const enter = Math.min(1, t / 0.42);
+  const ease = 1 - Math.pow(1 - enter, 3);
+  const tx = 44 - (1 - ease) * 90;
+  const ty = 132;
+  const deg = 36 + Math.min(1, Math.max(0, (t - 0.25) / 1.45)) * 9;
+  const isHot = deg >= 44.5;
+  const shakeX = isHot ? Math.sin(t * 44) * 2.2 : 0;
+
+  ctx.save();
+  ctx.translate(tx + shakeX, ty);
+  fillRectR(0, 4, 214, 152, 16, 'rgba(10, 6, 18, 0.78)');
+  fillRectR(0, 0, 214, 152, 16, 'rgba(26, 16, 36, 0.92)');
+  strokeRectR(0, 0, 214, 152, 16, isHot ? '#ff5c4d' : '#ffd86b', 3);
+  // Glass thermometer tube
+  fillRectR(26, 22, 18, 86, 9, '#120d1d');
+  strokeRectR(26, 22, 18, 86, 9, '#8aa0c8', 2);
+  const fillFrac = (deg - 34) / 13;
+  const fh = Math.max(12, 80 * Math.min(1, fillFrac));
+  fillRectR(29, 25 + (80 - fh), 12, fh, 6, isHot ? '#ff4033' : '#ff9a3c');
+  ctx.fillStyle = isHot ? '#ff4033' : '#ff9a3c';
+  ctx.beginPath(); ctx.arc(35, 118, 15, 0, Math.PI * 2); ctx.fill();
+  ctx.strokeStyle = '#18121e'; ctx.lineWidth = 3; ctx.stroke();
+  // Live rising temperature readout
+  drawOutlined(`${Math.round(deg)}°C`, 128, 52, 40, isHot ? '#ff6454' : '#ffdf6b');
+  fillRectR(64, 88, 134, 26, 8, isHot ? 'rgba(220, 42, 42, 0.92)' : 'rgba(160, 96, 24, 0.9)');
+  drawLabel(isHot ? 'HARARET KRİTİK!' : 'KLİMALAR ÇÖKTÜ', 131, 102, 12, '#ffffff', 'center', true);
+  drawLabel('FETHİYE • GECE', 131, 132, 11.5, '#d5c7e8', 'center', false);
+  ctx.restore();
+
+  // 4. Animated Er-Öz Hotel Target Callout pointing cleanly at the Fethiye hotel sign
+  const hx = 990, hy = 278;
+  const ringP = (t * 0.9) % 1;
+  ctx.save();
+  ctx.strokeStyle = `rgba(255, 226, 110, ${(1 - ringP) * 0.85})`;
+  ctx.lineWidth = 3.5;
+  ctx.beginPath(); ctx.arc(hx, hy, 22 + ringP * 32, 0, Math.PI * 2); ctx.stroke();
+  ctx.fillStyle = '#7ef0ff';
+  ctx.beginPath(); ctx.arc(hx, hy, 6, 0, Math.PI * 2); ctx.fill();
+  ctx.strokeStyle = 'rgba(126, 240, 255, 0.88)';
+  ctx.lineWidth = 2.5;
+  ctx.beginPath(); ctx.moveTo(hx - 14, hy - 14); ctx.lineTo(hx - 78, hy - 68); ctx.stroke();
+  fillRectR(hx - 302, hy - 102, 228, 52, 12, 'rgba(16, 36, 56, 0.92)');
+  strokeRectR(hx - 302, hy - 102, 228, 52, 12, '#7ef0ff', 2.5);
+  drawOutlined('ER-ÖZ HOTEL ★★★★★', hx - 188, hy - 84, 13.5, '#ffec7d');
+  drawLabel('SON KLİMALI GÜVENLİ BÖLGE', hx - 188, hy - 64, 11, '#b8f4ff', 'center', true);
+  ctx.restore();
+}
+
+function drawStoryScreen() {
+  const sc = window.STORY_DATA && window.STORY_DATA.scenes[G.story.sceneId];
+  const node = getStoryNode();
+  if (!sc || !node) { finishStoryScene(); return; }
+
+  // 1. Scene or per-node background with optional Ken Burns / Suit-Up motion!
+  const bgId = node.bg || sc.bg;
+  const bgImg = images[bgId] || images.ui_title_bg;
+  const nt = G.story.nodeT || 0;
+  const isIllustratedScene = (bgId === 'bg_intro_city_heat' || bgId === 'bg_fethiye_chaos' || bgId === 'bg_hotel_siege' || bgId === 'bg_balcony_chill' || bgId === 'bg_balcony_phone' || bgId === 'bg_suitup_comic' || bgId === 'bg_intro_cooler');
+
+  if (bgImg && bgImg.complete && bgImg.naturalWidth > 0) {
+    if (bgImg.naturalWidth > 2000) {
+      const cropX = bgId === 'bg_l3_classic' ? 2420 : (bgId === 'bg_l2_classic' ? 1120 : 620);
+      const srcW = Math.min(bgImg.naturalWidth - cropX, Math.round(bgImg.naturalHeight * (VW / VH)));
+      ctx.drawImage(bgImg, cropX, 0, srcW, bgImg.naturalHeight, 0, 0, VW, VH);
+    } else {
+      ctx.save();
+      let scK = 1.0, ox = 0, oy = 0;
+      if (node.motion === 'city_heat') {
+        const p = Math.min(1, nt / 9.0);
+        scK = 1.02 + p * 0.06;
+        ox = -p * 26;
+        oy = -p * 8;
+      } else if (node.motion === 'balcony_breathe') {
+        scK = 1.01 + Math.sin(G.time * 0.7) * 0.008;
+      } else if (node.motion === 'suitup_flash') {
+        const pop = Math.max(0, 1 - nt * 4.5);
+        scK = 1.02 + pop * 0.12;
+      }
+      ctx.translate(VW / 2 + ox, VH / 2 + oy);
+      ctx.scale(scK, scK);
+      ctx.drawImage(bgImg, -VW / 2, -VH / 2, VW, VH);
+      ctx.restore();
+    }
+  } else {
+    fillRectR(0, 0, VW, VH, 0, '#141024');
+  }
+
+  // 1b. Motion Graphic Overlays (City Heat Intro / Suit-Up Comic Flash)
+  if (node.motion === 'city_heat') {
+    drawCityHeatMotionOverlay(nt);
+  } else if (node.motion === 'suitup_flash' && nt < 0.35) {
+    ctx.fillStyle = `rgba(180, 248, 255, ${(1 - nt / 0.35) * 0.72})`;
+    ctx.fillRect(0, 0, VW, VH);
+  }
+
+  // 2. Atmospheric scrim (lighter on custom illustrated scenes so art shines!)
+  const scrim = ctx.createLinearGradient(0, 0, 0, VH);
+  scrim.addColorStop(0, isIllustratedScene ? 'rgba(14, 10, 26, 0.24)' : 'rgba(14, 10, 26, 0.56)');
+  scrim.addColorStop(0.55, isIllustratedScene ? 'rgba(18, 12, 30, 0.14)' : 'rgba(18, 12, 30, 0.48)');
+  scrim.addColorStop(1, isIllustratedScene ? 'rgba(10, 7, 20, 0.76)' : 'rgba(10, 7, 20, 0.84)');
+  ctx.fillStyle = scrim;
+  ctx.fillRect(0, 0, VW, VH);
+
+  // 3. Top Header: Chapter Tag (left) + Fixed Log & Skip Controls (right)
+  fillRectR(26, 20, 440, 62, 14, 'rgba(58, 34, 20, 0.94)');
+  strokeRectR(26, 20, 440, 62, 14, '#ffd86b', 3);
+  drawOutlined(sc.chapterTag || '', 44, 42, 18.5, '#ffec7d', 'left');
+  drawLabel(sc.subtitle || '', 44, 65, 13.5, '#f2e6cf', 'left', false);
+
+  // Backlog button (fixed corner)
+  const logHov = G.hover === 'btn_story_log';
+  fillRectR(956, 24, 134, 48, 12, logHov ? '#3c5478' : 'rgba(26, 36, 56, 0.92)');
+  strokeRectR(956, 24, 134, 48, 12, '#8cdfff', 2.5);
+  drawOutlined('GEÇMİŞ [L]', 1023, 48, 14.5, '#e8f9ff');
+  addZone('btn_story_log', 956, 24, 134, 48);
+
+  // Skip button (fixed corner)
+  const skipHov = G.hover === 'btn_story_skip';
+  fillRectR(1104, 24, 148, 48, 12, skipHov ? '#e69f24' : '#b8721a');
+  strokeRectR(1104, 24, 148, 48, 12, '#18121e', 3);
+  drawOutlined('ATLA [ESC] ⏭', 1178, 48, 14.5, '#fff8dc');
+  addZone('btn_story_skip', 1104, 24, 148, 48);
+
+  // 4. Optional Spotlight Plaque (e.g., "45°C YAZ GECESİ", "SOĞUK, PAYLAŞINCA SOĞUK.")
+  if (node.plaque) {
+    const pScale = 1 + Math.max(0, 1 - G.story.nodeT * 5) * 0.08;
+    ctx.save();
+    ctx.translate(VW / 2, 128);
+    ctx.scale(pScale, pScale);
+    const pw = Math.max(320, node.plaque.length * 16 + 70);
+    fillRectR(-pw / 2, -26, pw, 52, 14, 'rgba(130, 26, 38, 0.95)');
+    strokeRectR(-pw / 2, -26, pw, 52, 14, '#ffd966', 3.5);
+    drawOutlined(node.plaque, 0, 1, 21, '#fff3a1');
+    ctx.restore();
+  }
+
+  // 5. Left & Right Character Portraits (tucked cleanly behind sleek lower-third dialogue bar)
+  const fullText = node.text || '';
+  const isTyping = G.story.charIdx < fullText.length;
+  if (node.left) {
+    drawStoryPortrait(node.left, 240, 584, node.side === 'left', isTyping, false);
+  }
+  if (node.right) {
+    drawStoryPortrait(node.right, 1040, 584, node.side === 'right', isTyping, !!node.phoneRing);
+  }
+
+  // 6. Choice Buttons (clean center stack between portraits, zero overlap!)
+  const hasChoices = !!(node.choices && node.choices.length > 0 && !isTyping && !G.story.logOpen);
+  if (hasChoices) {
+    const cw = 520, ch = 58, gap = 14;
+    const cx = (VW - cw) / 2;
+    const startY = 396;
+    node.choices.forEach((chObj, ci) => {
+      const cy = startY + ci * (ch + gap);
+      const zid = 'story_choice_' + ci;
+      const hov = G.hover === zid;
+      fillRectR(cx, cy + 4, cw, ch, 14, 'rgba(12, 8, 22, 0.88)');
+      fillRectR(cx, cy, cw, ch, 14, hov ? '#1c5e85' : '#143c59');
+      strokeRectR(cx, cy, cw, ch, 14, hov ? '#ffec7d' : '#6be3ff', 3);
+      // Number keycap badge
+      fillRectR(cx + 14, cy + 14, 30, 30, 8, '#ffec7d');
+      drawLabel(String(ci + 1), cx + 29, cy + 30, 16, '#18121e', 'center', true);
+      drawOutlined(chObj.text, cx + 56, cy + 30, 17.5, '#ffffff', 'left');
+      addZone(zid, cx, cy, cw, ch);
+    });
+  }
+
+  // 7. Bottom Comic Dialogue Box (sleek, compact lower-third so scene art shines!)
+  const bx = 136, by = 568, bw = 1008, bh = 128;
+  fillRectR(bx, by + 5, bw, bh, 16, 'rgba(8, 6, 16, 0.86)');
+  fillRectR(bx, by, bw, bh, 16, '#6e3e20');
+  strokeRectR(bx, by, bw, bh, 16, '#16111e', 4);
+  fillRectR(bx + 8, by + 8, bw - 16, bh - 16, 12, 'rgba(22, 16, 32, 0.94)');
+  strokeRectR(bx + 8, by + 8, bw - 16, bh - 16, 12, 'rgba(255, 216, 107, 0.72)', 2);
+
+  // Speaker Name Pill (compact, sits cleanly at top edge of dialogue bar)
+  const sp = (window.STORY_DATA && window.STORY_DATA.speakers[node.speaker]) || { name: '', color: '#ffec82', bg: '#2c203c' };
+  if (sp.name) {
+    ctx.save();
+    ctx.font = '800 16.5px BalooBold, sans-serif';
+    const nw = Math.max(170, ctx.measureText(sp.name).width + 40);
+    ctx.restore();
+    const nx = node.side === 'right' ? (bx + bw - nw - 22) : (bx + 22);
+    const ny = by - 20;
+    fillRectR(nx, ny, nw, 36, 10, sp.bg || '#243a54');
+    strokeRectR(nx, ny, nw, 36, 10, '#16111e', 3);
+    drawOutlined(sp.name, nx + nw / 2, ny + 19, 16, sp.color || '#ffffff');
+  }
+
+  // Pre-wrapped typewriter text (zero mid-typing line jumps!)
+  const fontSpec = '700 20px BalooMed, sans-serif';
+  const lines = wrapTextLines(fullText, bw - 72, fontSpec);
+  let remaining = G.story.charIdx;
+  lines.slice(0, 3).forEach((ln, li) => {
+    const shown = ln.slice(0, Math.max(0, remaining));
+    remaining -= (ln.length + 1);
+    if (shown) {
+      drawLabel(shown, bx + 34, by + 40 + li * 27, 20, '#fffaf0', 'left', false);
+    }
+  });
+
+  // Bottom-right Continue indicator
+  if (!hasChoices) {
+    const blinkY = isTyping ? 0 : Math.sin(G.time * 7) * 2.5;
+    const hint = isTyping ? 'TAMAMLA [SPACE]' : 'DEVAM [SPACE] ▼';
+    drawOutlined(hint, bx + bw - 26, by + bh - 20 + blinkY, 13.5, isTyping ? '#b8d8ff' : '#ffec7d', 'right');
+  } else {
+    drawLabel('Bir cevap seç ([1] / [2] veya tıkla)', bx + bw - 26, by + bh - 20, 13, '#9eeeff', 'right', false);
+  }
+
+  // Click anywhere on box to advance (when log closed and no choices)
+  if (!G.story.logOpen && !hasChoices) {
+    addZone('btn_story_next', bx, by, bw, bh);
+  }
+
+  // 8. Backlog Overlay (optional)
+  if (G.story.logOpen) {
+    fillRectR(0, 0, VW, VH, 0, 'rgba(10, 8, 20, 0.78)');
+    drawWoodenModal(164, 54, 952, 608);
+    drawImgBox('ui_badge_red', 432, 42, 416, 88);
+    drawOutlined('KONUŞMA GEÇMİŞİ', 640, 86, 23, '#ffec7d');
+    const recent = G.story.backlog.slice(-6);
+    if (recent.length === 0) {
+      drawLabel('Henüz konuşma yok.', 640, 320, 20, '#f0e6d2', 'center', false);
+    } else {
+      recent.forEach((entry, idx) => {
+        const ey = 152 + idx * 68;
+        fillRectR(226, ey, 828, 58, 10, 'rgba(34, 22, 38, 0.94)');
+        strokeRectR(226, ey, 828, 58, 10, 'rgba(255, 216, 107, 0.38)', 1.5);
+        drawOutlined(entry.speaker + ':', 244, ey + 29, 13.5, entry.color || '#ffec7d', 'left');
+        const wrapped = wrapTextLines(entry.text, 584, '700 14px BalooMed, sans-serif');
+        if (wrapped.length <= 1) {
+          drawLabel(wrapped[0] || '', 452, ey + 29, 14, '#fff9ee', 'left', false);
+        } else {
+          drawLabel(wrapped[0], 452, ey + 19, 13.5, '#fff9ee', 'left', false);
+          drawLabel(wrapped.slice(1).join(' '), 452, ey + 39, 13.5, '#fff9ee', 'left', false);
+        }
+      });
+    }
+    drawGoldBtn('btn_story_log_close', 640, 610, 260, 84, 'KAPAT', 22, false);
+  }
 }
 
 function drawComicIntro() {
@@ -1524,10 +2117,27 @@ canvas.addEventListener('pointerdown', ev => {
   if (ev.button === 2) { if (G.screen === 'play') useKolonya(); return; }
   const p = getVirtualPos(ev);
   const id = hitTest(p.x, p.y);
-  if (id === 'btn_start') { resetFullGame(); G.screen = 'intro'; playSfx('sfx_coin'); return; }
+  if (id === 'btn_start') {
+    resetFullGame();
+    playSfx('sfx_coin');
+    startStoryScene('l1_intro', () => { G.screen = 'play'; playSfx('sfx_win'); });
+    return;
+  }
+  if (id === 'btn_story_next') { advanceStory(); return; }
+  if (id === 'btn_story_skip') { skipStoryScene(); return; }
+  if (id === 'btn_story_log') { G.story.logOpen = !G.story.logOpen; return; }
+  if (id === 'btn_story_log_close') { G.story.logOpen = false; return; }
+  if (id.startsWith('story_choice_')) { chooseStoryOption(parseInt(id.slice(13), 10)); return; }
   if (id === 'btn_go_play') { G.screen = 'play'; playSfx('sfx_win'); return; }
   if (id === 'btn_shop') { if (G.screen === 'shop') G.screen = 'play'; else tryOpenShop(); return; }
-  if (id === 'btn_shop_next') { if (G.bossDefeated) { setupLevel(G.levelIdx + 1); G.screen = 'intro'; } else G.screen = 'play'; return; }
+  if (id === 'btn_shop_next') {
+    if (G.bossDefeated) {
+      setupLevel(G.levelIdx + 1);
+      const nextScene = G.levelIdx === 1 ? 'l2_intro' : 'l3_intro';
+      startStoryScene(nextScene, () => { G.screen = 'play'; playSfx('sfx_win'); });
+    } else G.screen = 'play';
+    return;
+  }
   if (id === 'btn_pause') { G.screen = 'pause'; return; }
   if (id === 'btn_resume') { G.screen = 'play'; return; }
   if (id === 'btn_restart') {
@@ -1553,7 +2163,19 @@ window.addEventListener('keydown', ev => {
   if (['Space','ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(ev.code)) ev.preventDefault();
   if (!first) return;
   if (loadedCount < totalAssets && G.time <= 10) return;
-  if (G.screen === 'title' && (ev.code === 'Space' || ev.code === 'Enter')) { resetFullGame(); G.screen = 'intro'; playSfx('sfx_coin'); return; }
+  if (G.screen === 'title' && (ev.code === 'Space' || ev.code === 'Enter')) {
+    resetFullGame(); playSfx('sfx_coin');
+    startStoryScene('l1_intro', () => { G.screen = 'play'; playSfx('sfx_win'); });
+    return;
+  }
+  if (G.screen === 'story') {
+    if (ev.code === 'Escape') { if (G.story.logOpen) G.story.logOpen = false; else skipStoryScene(); return; }
+    if (ev.code === 'KeyL') { G.story.logOpen = !G.story.logOpen; return; }
+    if (ev.code === 'Digit1' || ev.code === 'Numpad1') { chooseStoryOption(0); return; }
+    if (ev.code === 'Digit2' || ev.code === 'Numpad2') { chooseStoryOption(1); return; }
+    if (ev.code === 'Space' || ev.code === 'Enter') { advanceStory(); return; }
+    return;
+  }
   if (G.screen === 'intro' && (ev.code === 'Space' || ev.code === 'Enter')) { G.screen = 'play'; playSfx('sfx_win'); return; }
   if (G.screen === 'gameover') {
     if (ev.code === 'Space' || ev.code === 'Enter' || ev.code === 'KeyR') {
@@ -1568,7 +2190,14 @@ window.addEventListener('keydown', ev => {
     resetFullGame(); G.screen = 'title'; return;
   }
   if (G.screen === 'pause' && (ev.code === 'Escape' || ev.code === 'KeyP')) { G.screen = 'play'; return; }
-  if (G.screen === 'shop' && (ev.code === 'Escape' || ev.code === 'KeyM')) { if (G.bossDefeated) { setupLevel(G.levelIdx + 1); G.screen = 'intro'; } else G.screen = 'play'; return; }
+  if (G.screen === 'shop' && (ev.code === 'Escape' || ev.code === 'KeyM')) {
+    if (G.bossDefeated) {
+      setupLevel(G.levelIdx + 1);
+      const nextScene = G.levelIdx === 1 ? 'l2_intro' : 'l3_intro';
+      startStoryScene(nextScene, () => { G.screen = 'play'; playSfx('sfx_win'); });
+    } else G.screen = 'play';
+    return;
+  }
   if (G.screen === 'play') {
     if (ev.code === 'Space' || ev.code === 'KeyW' || ev.code === 'ArrowUp') { G.jumpBufT = 0.12; executeJump(); }
     else if (ev.code === 'KeyS' || ev.code === 'ArrowDown') { if (G.onPlatform) { G.dropThroughT = 0.24; G.onGround = false; G.onPlatform = false; G.pvy = 120; } }
@@ -1614,10 +2243,12 @@ function loop(ts) {
     return;
   }
   if (G.screen === 'play') updatePlay(dt);
+  else if (G.screen === 'story') updateStory(dt);
 
   G.zones = [];
   ctx.clearRect(0, 0, VW, VH);
   if (G.screen === 'title') drawTitleScreen();
+  else if (G.screen === 'story') drawStoryScreen();
   else if (G.screen === 'intro') drawComicIntro();
   else if (G.screen === 'play') { drawWorld(); drawHUD(); }
   else if (G.screen === 'shop') drawShopModal();
