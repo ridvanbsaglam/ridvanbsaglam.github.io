@@ -297,7 +297,7 @@ for (const entry of IMAGE_IDS) {
   const img = new Image();
   img.onload = () => { loadedCount++; };
   img.onerror = () => { loadedCount++; };
-  img.src = `img/${id}.${ext}?v=7`;
+  img.src = `img/${id}.${ext}?v=8`;
   images[id] = img;
 }
 
@@ -2071,7 +2071,13 @@ function drawTitleScreen() {
   drawImgBox('ui_title_bg', 0, 0, VW, VH);
   const bob = Math.sin(G.time * 2.4) * 4.5;
   drawImgBox('ui_logo_buzgibi', 342, 12 + bob, 596, 326);
-  drawOutlined("SON AYRANCI  •  ER-ÖZ HOTEL'E KAÇIŞ", 640, 286 + bob, 15.5, '#ffecaf');
+
+  // Subtitle tilted to match the wooden banner angle (-2.3 degrees)
+  ctx.save();
+  ctx.translate(640, 277 + bob);
+  ctx.rotate(-0.040);
+  drawOutlined("SON AYRANCI  •  ER-ÖZ HOTEL'E KAÇIŞ", 0, 0, 15.5, '#ffecaf', 'center', true);
+  ctx.restore();
 
   // Title Sound Toggle
   const sndHov = G.hover === 'btn_sound';
