@@ -1658,9 +1658,19 @@ function drawWoodenModal(x, y, w, h) {
 }
 function drawGoldBtn(zoneId, cx, cy, w, h, text, fontSize, showPlay = true) {
   const hov = G.hover === zoneId;
-  const sc = hov ? 1.045 : 1.0;
+  const idlePulse = zoneId === 'btn_start' ? Math.sin(G.time * 3.6) * 0.025 : 0;
+  const sc = (hov ? 1.055 : 1.0) + idlePulse;
   const bw = w * sc, bh = h * sc;
   const bx = cx - bw / 2, by = cy - bh / 2 + (hov ? -2 : 0);
+  
+  if (zoneId === 'btn_start') {
+    ctx.save();
+    ctx.shadowColor = hov ? '#4ee6ff' : '#ffb833';
+    ctx.shadowBlur = hov ? 22 : 12;
+    fillRectR(bx - 4, by - 2, bw + 8, bh + 4, 32, hov ? 'rgba(78,230,255,0.22)' : 'rgba(255,184,51,0.18)');
+    ctx.restore();
+  }
+
   if (showPlay) {
     const col = hov ? '#ffe05c' : 'rgba(255,224,92,0.82)';
     fillRectR(bx - 22, cy - 10, 14, 5, 3, col);
@@ -1672,10 +1682,10 @@ function drawGoldBtn(zoneId, cx, cy, w, h, text, fontSize, showPlay = true) {
   const ty = by + bh * 0.56;
   if (showPlay) {
     const ih = fontSize * 0.96, iw = ih * 0.75;
-    const tx = cx - (text.length * fontSize * 0.25) - 18;
+    const tx = cx - (text.length * fontSize * 0.28) - 16;
     drawImgBox('ui_play_icon', tx - iw / 2, ty - ih / 2, iw, ih);
-    drawLabel(text, cx + 14, ty + 2, fontSize, 'rgba(255,232,140,0.55)', 'center', true);
-    drawLabel(text, cx + 14, ty, fontSize, '#3e1806', 'center', true);
+    drawLabel(text, cx + 16, ty + 2, fontSize, 'rgba(255,232,140,0.55)', 'center', true);
+    drawLabel(text, cx + 16, ty, fontSize, '#3e1806', 'center', true);
   } else {
     drawLabel(text, cx, ty, fontSize, '#3e1806', 'center', true);
   }
@@ -2109,14 +2119,10 @@ function drawKeycapBar(cy) {
 function drawTitleScreen() {
   drawImgBox('ui_title_bg', 0, 0, VW, VH);
   const bob = Math.sin(G.time * 2.4) * 4.5;
-  drawImgBox('ui_logo_buzgibi', 342, 12 + bob, 596, 326);
-
-  // Subtitle tilted to match the wooden banner angle (-2.3 degrees)
-  ctx.save();
-  ctx.translate(640, 277 + bob);
-  ctx.rotate(-0.040);
-  drawOutlined("SON AYRANCI  •  ER-ÖZ HOTEL'E KAÇIŞ", 0, 0, 15.5, '#ffecaf', 'center', true);
-  ctx.restore();
+  // Unified 3D Logo ("BUZ GİBİ KIYAMET: SON AYRANCI" with winged Nazar crest)
+  const logoH = 345;
+  const logoW = Math.round(logoH * (960 / 873));
+  drawImgBox('ui_logo_buzgibi', 640 - logoW / 2, 8 + bob, logoW, logoH);
 
   // Title Sound Toggle
   const sndHov = G.hover === 'btn_sound';
@@ -2138,9 +2144,9 @@ function drawTitleScreen() {
     drawOutlined(c.d1, cx + cw / 2, cy + 88, 13.5, '#f5f8ff', 'center', false);
     drawOutlined(c.d2, cx + cw / 2, cy + 109, 13.5, '#f5f8ff', 'center', false);
   });
-  if (G.bestScore > 0) drawOutlined(`EN YÜKSEK SKORUN: ${G.bestScore}`, 640, 540, 16, '#ffea6e');
-  drawGoldBtn('btn_start', 640, 594, 420, 108, 'OYUNA BAŞLA', 32, true);
-  drawKeycapBar(686);
+  if (G.bestScore > 0) drawOutlined(`EN YÜKSEK SKORUN: ${G.bestScore}`, 640, 546, 16, '#ffea6e');
+  drawGoldBtn('btn_start', 640, 608, 330, 96, 'BAŞLA', 34, true);
+  // Controls bar removed per request for a cleaner, modern arcade interface
 }
 
 function wrapTextLines(str, maxW, fontSpec) {
