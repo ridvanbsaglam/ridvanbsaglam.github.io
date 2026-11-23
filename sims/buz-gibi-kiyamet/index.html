@@ -2132,17 +2132,16 @@ function drawTitleScreen() {
   addZone('btn_sound', 1088, 24, 160, 44);
 
   const cards = [
-    { frame:'ui_card_blue', topper:'ui_topper_ayran', th:92, t:'ISLAT & PATLAT', d1:'Ayran (J) ile ıslat,', d2:'Kolonya (K) 1.9x ŞOK!', tc:'#ffffff' },
-    { frame:'ui_card_green', topper:'ui_topper_brain', th:84, t:'5 ZOMBİ BEYNİ', d1:'Kurye deparı, Dondurmacı', d2:"fake'i & Uçan Baloncu!", tc:'#ebffc3' },
-    { frame:'ui_card_amber', topper:'p_simit_0', th:104, t:'2.5D TEZGAHLAR', d1:'Simit arabasına zıpla,', d2:'Boss depremlerinden kaç!', tc:'#fff6c8' },
+    { frame:'ui_card_blue', topper:'ui_topper_ayran', th:88, t:'BUZ GİBİ AYRAN', s:'HARARETİ SÖNDÜR!', tc:'#ffffff', sc:'#bcf2ff' },
+    { frame:'ui_card_green', topper:'ui_btn_kolonya', th:82, t:'KOLONYA ŞOKU', s:'2X KÖPÜK PATLAMASI!', tc:'#f4ffbd', sc:'#ebff85' },
+    { frame:'ui_card_amber', topper:'ui_trophy', th:80, t:'ESNAFI İYİLEŞTİR', s:'MAHALLEYİ KURTAR!', tc:'#fff2c4', sc:'#ffe280' },
   ];
   cards.forEach((c, i) => {
     const cw = 228, ch = 152, cx = 286 + i * 240, cy = 376;
     drawImgBox(c.frame, cx, cy, cw, ch);
     drawImgCenter(c.topper, cx + cw / 2, cy - 8 + Math.sin(G.time * 3.1 + i * 1.4) * 3, c.th);
-    drawOutlined(c.t, cx + cw / 2, cy + 56, 20, c.tc);
-    drawOutlined(c.d1, cx + cw / 2, cy + 88, 13.5, '#f5f8ff', 'center', false);
-    drawOutlined(c.d2, cx + cw / 2, cy + 109, 13.5, '#f5f8ff', 'center', false);
+    drawOutlined(c.t, cx + cw / 2, cy + 68, 20.5, c.tc);
+    drawOutlined(c.s, cx + cw / 2, cy + 104, 16.5, c.sc, 'center', true);
   });
   if (G.bestScore > 0) drawOutlined(`EN YÜKSEK SKORUN: ${G.bestScore}`, 640, 546, 16, '#ffea6e');
   drawGoldBtn('btn_start', 640, 608, 330, 96, 'BAŞLA', 34, true);
