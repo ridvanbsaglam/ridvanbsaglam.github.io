@@ -621,7 +621,7 @@ const G = {
   bossBannerT: 0, levelClearT: 0,
   upLevels: {},
   zombies: [], projectiles: [], enemyProjs: [], props: [], pickups: [],
-  particles: [], floats: [], waves: [],
+  particles: [], floats: [], waves: [], hazards: [],
   zones: [], hover: '', keys: {}, holdLeft: false, holdRight: false, muted: false,
   heroBarkCd: 0,
   story: {
@@ -759,7 +759,7 @@ function setupLevel(idx) {
   G.calmedInLevel = 0; G.spawnT = 0.8;
   G.bossSpawned = false; G.bossDefeated = false; G.bossBannerT = 0; G.levelClearT = 0;
   G.zombies = []; G.projectiles = []; G.enemyProjs = []; G.pickups = [];
-  G.particles = []; G.floats = []; G.waves = []; G.props = []; G.vfxSprites = [];
+  G.particles = []; G.floats = []; G.waves = []; G.props = []; G.vfxSprites = []; G.hazards = [];
   G.knockTimer = 0;
   // Fair progression: restore at least 70% max HP on new level
   G.hp = Math.max(G.hp, Math.floor(G.maxHp * 0.70));
@@ -1115,38 +1115,71 @@ function updateZombieAI(z, dt) {
     z.aiCd -= dt;
     if (z.aiState === 'channel') {
       z.aiTimer -= dt; z.facing = dir;
-      if (Math.random() < 0.35) spawnParticles(z.x, z.y - 110, 1, 110, 255, 145, 110, -80, 4, 8);
+      if (Math.random() < 0.45) spawnParticles(z.x, z.y - 110, 2, 110, 255, 145, 110, -80, 4, 8);
       if (z.aiTimer <= 0) {
-        z.hp = Math.min(z.maxHp, z.hp + 115); z.aiState = 'chase'; z.aiCd = 6.2; playSfx('sfx_calm');
-        spawnFloat(z.x, z.y - 230, 'AÇIK BÜFE +115 CAN!', 120, 255, 150, 24, 1.3);
+        z.hp = Math.min(z.maxHp, z.hp + 120); z.aiState = 'chase'; z.aiCd = 6.2; playSfx('sfx_calm');
+        spawnFloat(z.x, z.y - 230, 'AÇIK BÜFE +120 CAN!', 120, 255, 150, 24, 1.4);
       }
       return;
     } else if (z.aiState === 'telegraph') {
       z.aiTimer -= dt; z.facing = dir;
+      if (z.bossSpecial === 'quake') {
+        z.squashY = 1.28; z.squashX = 0.82;
+      }
       if (z.aiTimer <= 0) {
         if (z.bossSpecial === 'quake') {
-          addTrauma(0.72); playSfx('sfx_prop');
-          spawnShockwave(z.x, GROUND_Y - 12, 460, 255, 95, 75, 0.55, true);
-          spawnParticles(z.x, GROUND_Y - 10, 26, 255, 145, 75, 320, 420, 5, 10);
-          if (G.py >= GROUND_Y - 22 && dist < 440) hurtPlayer(20, dir);
-          z.aiState = 'chase'; z.aiCd = 4.5;
+          z.squashY = 0.58; z.squashX = 1.42;
+          addTrauma(0.85); playSfx('sfx_prop');
+          spawnShockwave(z.x, GROUND_Y - 12, 540, 255, 80, 60, 0.65, true);
+          spawnParticles(z.x, GROUND_Y - 10, 32, 255, 130, 60, 380, 440, 5, 11);
+          if (dist < 460) {
+            if (G.onGround && !G.onPlatform && G.py >= GROUND_Y - 24) {
+              hurtPlayer(24, dir);
+            } else {
+              spawnFloat(G.px, G.py - 150, 'TEZGAHTA GÜVENDESİN! +150', 110, 245, 255, 20, 1.2);
+              G.score += 150; playSfx('sfx_coin');
+            }
+          }
+          z.aiState = 'chase'; z.aiCd = 4.4;
         } else if (z.bossSpecial === 'hamsi') {
           playSfx('sfx_throw');
-          for (const vyOff of [-240, -110, 20]) {
-            G.enemyProjs.push({ x: z.x + z.facing * 55, y: z.y - 120, vx: z.facing * 430, vy: vyOff, rot: 0, dmg: 15, label: 'HAMSİ', img: 'proj_hamsi', life: 2.4, r: 110, g: 215, b: 255 });
+          for (const vyOff of [-180, -40]) {
+            G.enemyProjs.push({ x: z.x + z.facing * 55, y: z.y - 120, vx: z.facing * 410, vy: vyOff, rot: 0, dmg: 14, label: 'HAMSİ', img: 'proj_hamsi', life: 2.2, r: 110, g: 215, b: 255 });
           }
-          z.aiState = 'chase'; z.aiCd = 3.8;
+          z.aiState = 'chase'; z.aiCd = 4.2;
+        } else if (z.bossSpecial === 'buffet') {
+          playSfx('sfx_throw');
+          G.hazards.push({
+            type: 'buffet_rush', x: z.x + z.facing * 60, vx: z.facing * 500, timer: 3.5, dmg: 24
+          });
+          z.aiState = 'chase'; z.aiCd = 4.2;
         }
       }
       return;
-    } else if (z.aiCd <= 0 && dist < 560) {
-      if (z.bossSpecial === 'buffet' && z.hp < z.maxHp * 0.7) {
-        z.aiState = 'channel'; z.aiTimer = 2.6; z.channelHits = 0; playSfx('sfx_horn');
-        spawnFloat(z.x, z.y - 245, 'AÇIK BÜFE ŞİFASI! DURDUR!', 125, 255, 150, 22, 1.5);
+    } else if (z.aiCd <= 0 && dist < 620) {
+      if (z.bossSpecial === 'buffet' && z.hp < z.maxHp * 0.65) {
+        z.aiState = 'channel'; z.aiTimer = 2.8; z.channelHits = 0; playSfx('sfx_horn');
+        spawnFloat(z.x, z.y - 250, 'AÇIK BÜFE ŞİFASI! 2 AYRAN AT!', 110, 255, 140, 24, 1.6);
         return;
-      } else if (z.bossSpecial === 'quake' || z.bossSpecial === 'hamsi') {
+      } else if (z.bossSpecial === 'buffet') {
         z.aiState = 'telegraph'; z.aiTimer = 0.75; playSfx('sfx_horn');
-        spawnFloat(z.x, z.y - 245, z.bossSpecial === 'quake' ? 'DEPREM GELİYOR! ZIPLA!' : 'HAMSİ YAĞMURU!', 255, 110, 95, 22, 1.0);
+        spawnFloat(z.x, z.y - 240, 'DÖNER ARABASI GELİYOR! ZIPLA!', 255, 205, 70, 22, 1.1);
+        return;
+      } else if (z.bossSpecial === 'quake') {
+        z.aiState = 'telegraph'; z.aiTimer = 1.15; playSfx('sfx_horn');
+        G.hazards.push({ type: 'quake_crack', x: z.x, w: 860, timer: 1.15, maxTimer: 1.15 });
+        spawnFloat(z.x, z.y - 245, 'DEPREM GELİYOR! TEZGAHA ZIPLA!', 255, 80, 70, 24, 1.15);
+        return;
+      } else if (z.bossSpecial === 'hamsi') {
+        z.aiState = 'telegraph'; z.aiTimer = 1.35; playSfx('sfx_horn');
+        spawnFloat(z.x, z.y - 245, 'GÖKTEN HAMSİ YAĞMURU! KAÇ!', 255, 85, 75, 24, 1.35);
+        const targets = [G.px, G.px - 145, G.px + 155, z.x + (G.px > z.x ? 220 : -220)];
+        targets.forEach(tx => {
+          const cx = Math.max(100, Math.min(WORLD_W - 100, tx));
+          G.hazards.push({
+            type: 'hamsi_target', x: cx, timer: 1.35, maxTimer: 1.35, dmg: 22, impactDone: false
+          });
+        });
         return;
       }
     }
@@ -1352,12 +1385,21 @@ function updatePlay(dt) {
       if (z.calmed) continue;
       const hitW = z.isBoss ? 76 : 50, hitH = z.isBoss ? 190 : 150;
       if (Math.abs(pr.x - z.x) < hitW && pr.y > z.y - hitH && pr.y < z.y + 18) {
-        z.hp -= pr.dmg; z.wetT = 3.5; z.hitFlash = 0.16; z.squashX = 1.18; z.squashY = 0.85;
+        const isStunned = z.stunT > 0;
+        const dealtDmg = isStunned ? Math.floor(pr.dmg * 1.5) : pr.dmg;
+        z.hp -= dealtDmg; z.wetT = 3.5; z.hitFlash = 0.16; z.squashX = 1.18; z.squashY = 0.85;
         spawnVfxSprite('vfx_splash_ayran', pr.x, pr.y - 10, 78, 68, 0.40);
         z.vx = pr.facing * (z.isBoss ? 95 : 190);
         if (z.isBoss && z.aiState === 'channel') {
           z.channelHits++;
-          if (z.channelHits >= 2) { z.aiState = 'chase'; z.aiCd = 5.5; z.stunT = 2.0; spawnFloat(z.x, z.y - 220, 'AYRANLA BÜFE İPTAL!', 110, 238, 255, 22, 1.3); }
+          if (z.channelHits >= 2) {
+            z.aiState = 'chase'; z.aiCd = 6.0; z.stunT = 2.5;
+            spawnFloat(z.x, z.y - 220, 'AYRANLA BÜFE İPTAL! SERSEMLEDİ! +60 ₺', 110, 238, 255, 22, 1.4);
+            spawnPickup('coin', z.x - 35, z.y - 60, 20);
+            spawnPickup('coin', z.x + 35, z.y - 60, 20);
+            spawnPickup('coin', z.x, z.y - 90, 20);
+            playSfx('sfx_coin');
+          }
         }
         playSfx('sfx_splash'); addTrauma(0.12);
         spawnParticles(pr.x, pr.y, 15, 242, 252, 255, 220, 320, 4, 9);
@@ -1371,7 +1413,7 @@ function updatePlay(dt) {
           }
         }
         if (z.hp <= 0) calmZombie(z);
-        else spawnFloat(z.x, z.y - 135, `-${pr.dmg} ISLAK!`, 145, 238, 255, 18, 0.72);
+        else spawnFloat(z.x, z.y - 135, isStunned ? `-${dealtDmg} SERSEM KRİTİK!` : `-${dealtDmg} ISLAK!`, isStunned ? 255 : 145, 238, 255, 18, 0.72);
         return false;
       }
     }
@@ -1455,6 +1497,37 @@ function updatePlay(dt) {
   G.particles = G.particles.filter(pt => { pt.life -= dt; pt.vy += pt.grav * dt; pt.x += pt.vx * dt; pt.y += pt.vy * dt; return pt.life > 0; });
   G.floats = G.floats.filter(fl => { fl.life -= dt; fl.y += fl.vy * dt; return fl.life > 0; });
   G.waves = G.waves.filter(sw => { sw.life -= dt; sw.rad = 24 + (sw.maxRad - 24) * (1 - sw.life / sw.maxLife); return sw.life > 0; });
+
+  // Boss Hazards Update
+  G.hazards = G.hazards.filter(hz => {
+    hz.timer -= dt;
+    if (hz.type === 'hamsi_target') {
+      if (hz.timer <= 0 && !hz.impactDone) {
+        hz.impactDone = true;
+        playSfx('sfx_splash');
+        addTrauma(0.35);
+        spawnVfxSprite('vfx_splash_ayran', hz.x, GROUND_Y - 24, 110, 90, 0.45);
+        spawnShockwave(hz.x, GROUND_Y - 14, 140, 90, 200, 255, 0.35, true);
+        spawnParticles(hz.x, GROUND_Y - 20, 16, 120, 220, 255, 260, 220, 4, 8);
+        const pDist = Math.abs(G.px - hz.x);
+        if (pDist < 70 && (G.onGround && !G.onPlatform && G.py >= GROUND_Y - 26)) {
+          hurtPlayer(hz.dmg || 22, G.px >= hz.x ? 1 : -1);
+        } else if (pDist < 88 && G.onPlatform) {
+          spawnFloat(G.px, G.py - 140, 'TEZGAHTA ISLANMADIN! +80', 100, 240, 255, 17, 0.9);
+          G.score += 80;
+        }
+      }
+      return hz.timer > -0.3;
+    } else if (hz.type === 'buffet_rush') {
+      hz.x += hz.vx * dt;
+      if (Math.abs(G.px - hz.x) < 54 && G.py >= GROUND_Y - 48) {
+        hurtPlayer(hz.dmg || 24, hz.vx > 0 ? 1 : -1);
+        hz.timer = -1;
+      }
+      return hz.x > -200 && hz.x < WORLD_W + 200 && hz.timer > 0;
+    }
+    return hz.timer > 0;
+  });
 }
 
 // ============================================================================
@@ -1726,6 +1799,51 @@ function drawWorld() {
         ctx.beginPath(); ctx.ellipse(z.x, z.y - targetH * 0.45, 58 * z.scale, 72 * z.scale, 0, 0, Math.PI * 2); ctx.fill();
       }
       drawSheetFrame(hasCured ? curedId : z.img, 4, hasCured ? cSlot : (Math.floor(z.animT * 14) % 12), z.x, z.y - cBob, 216 * z.scale, flip, z.squashX, z.squashY, cTilt, op);
+    }
+  }
+
+  // Ground Boss Hazards (Quake fissures, Hamsi reticles, Buffet cart)
+  for (const hz of G.hazards) {
+    if (hz.type === 'quake_crack') {
+      const alpha = Math.min(1, hz.timer / 0.3) * (0.65 + 0.35 * Math.sin(G.time * 16));
+      ctx.strokeStyle = `rgba(255, 60, 45, ${alpha})`;
+      ctx.lineWidth = 7;
+      ctx.setLineDash([18, 10]);
+      ctx.beginPath();
+      ctx.moveTo(hz.x - hz.w / 2, GROUND_Y - 2);
+      ctx.lineTo(hz.x + hz.w / 2, GROUND_Y - 2);
+      ctx.stroke();
+      ctx.setLineDash([]);
+      drawOutlined('⚠️ DEPREM TEHLİKESİ! TEZGAHA ÇIK! ⚠️', hz.x, GROUND_Y - 42, 16, '#ff4838');
+    } else if (hz.type === 'hamsi_target') {
+      if (hz.timer > 0) {
+        const pulse = 0.25 + 0.18 * Math.sin(G.time * 14);
+        ctx.fillStyle = `rgba(255, 55, 45, ${pulse})`;
+        ctx.beginPath();
+        ctx.ellipse(hz.x, GROUND_Y - 2, 58, 18, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.strokeStyle = '#ff3322';
+        ctx.lineWidth = 3;
+        ctx.stroke();
+
+        const prog = Math.max(0, hz.timer / hz.maxTimer);
+        const outerR = 58 + prog * 52;
+        ctx.strokeStyle = '#ffcc00';
+        ctx.lineWidth = 2.5;
+        ctx.beginPath();
+        ctx.ellipse(hz.x, GROUND_Y - 2, outerR, outerR * 0.31, 0, 0, Math.PI * 2);
+        ctx.stroke();
+
+        drawOutlined('⚠️ HAMSİ!', hz.x, GROUND_Y - 46, 14.5, '#ffe044');
+
+        if (hz.timer < 0.45) {
+          const dropY = GROUND_Y - (hz.timer / 0.45) * 620;
+          drawImgCenter('proj_hamsi', hz.x, dropY, 68, Math.PI / 2, 1);
+        }
+      }
+    } else if (hz.type === 'buffet_rush') {
+      drawImgCenter('proj_zehirli_kokteyl', hz.x, GROUND_Y - 32, 66, G.time * (hz.vx > 0 ? 14 : -14), 1);
+      drawOutlined('DÖNER SERVİSİ!', hz.x, GROUND_Y - 70, 14, '#ffdd55');
     }
   }
 
