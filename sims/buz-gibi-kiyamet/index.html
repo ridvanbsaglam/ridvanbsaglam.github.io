@@ -73,7 +73,7 @@
 <body>
 <button id="fsBtn" type="button" aria-label="Tam Ekran" title="Tam Ekran">⛶</button>
 <canvas id="gameCanvas" width="1280" height="720"></canvas>
-<script src="story_data.js?v=5"></script>
+<script src="story_data.js?v=6"></script>
 <script>
 (() => {
 'use strict';
@@ -185,7 +185,7 @@ const CORE_IMAGE_IDS = [
   'hud_health_bar', 'hud_level_progress', 'hud_ayran_counter', 'hud_gold_counter', 'hud_score_panel', 'hud_cta_gold', 'hud_cta_red',
   'ui_heart', 'ui_nazar_wing', 'ui_ayran_icon', 'ui_coin', 'ui_trophy', 'ui_btn_ayran', 'ui_btn_kolonya', 'ui_btn_nazar', 'ui_btn_settings',
   'hero_idle', 'hero_run', 'hero_jump', 'hero_throw', 'hero_cologne', 'hero_nazar', 'hero_hit', 'hero_state_chill', 'hero_state_phone', 'hero_state_ready',
-  'bg_l1_classic', 'bg_intro_city_heat', 'bg_intro_balcony', 'bg_intro_cooler',
+  'bg_l1_classic', 'bg_intro_city_heat', 'bg_fethiye_chaos', 'bg_hotel_siege', 'bg_balcony_chill_day', 'bg_balcony_phone_day', 'bg_intro_cooler_day',
   'z_1_1','z_1_2','z_1_3','z_1_4','z_1_5','z_1_6','z_1_7','z_1_8','z_1_9',
   'c_1_1','c_1_2','c_1_3','c_1_4','c_1_5','c_1_6','c_1_7','c_1_8','c_1_9',
   'p_simit_0','p_simit_1','p_simit_2','p_cay_0','p_cay_1','p_cay_2',
@@ -199,7 +199,7 @@ const CORE_IMAGE_IDS = [
 ];
 
 const BACKGROUND_IMAGE_IDS = [
-  'bg_fethiye_chaos', 'bg_hotel_siege', 'bg_balcony_chill', 'bg_balcony_phone', 'bg_suitup_comic',
+  'bg_balcony_chill', 'bg_balcony_phone', 'bg_intro_cooler', 'bg_suitup_comic',
   'bg_l2_classic', 'bg_l3_classic',
   'z_2_1','z_2_2','z_2_3','z_2_4','z_2_5','z_2_6','z_2_7','z_2_8','z_2_9',
   'z_3_1','z_3_2','z_3_3','z_3_4','z_3_5','z_3_6','z_3_7','z_3_8','z_3_9',
@@ -253,21 +253,21 @@ const ZOMBIES = [
 
 const LEVELS = [
   {
-    id:1, bg:'bg_l1_classic', title:'BÖLÜM 1: MAHALLE SOKAĞI',
+    id:1, bg:'bg_l1_classic', title:'BÖLÜM 1: MAHALLE • ☀️ ÖĞLEN',
     subtitle:'Tezgaha çıkıp +%45 menzilden ayranla ıslat, yaklaşanlara Kolonyayla KÖPÜK ŞOKU vur!',
     goal:12, spawnRate:2.05, group:0,
     boss:{ img:'z_1_7', name:'DEV MAHALLE BAKKALI (DEPREM BOSS)', special:'quake', hp:400, speed:74, dmg:16, reward:220, quote:'Tamam yeğenim, tüm mahalleye ayran benden!' },
     comicLines:['MAHALLEDE HARARET PATLADI!','Tezgahtan yüksek atış yap, kırmızı saldırı yayından kaç!','Yönlü Nazar ışınıyla dondur → Kolonya ŞOKU patlat!']
   },
   {
-    id:2, bg:'bg_l2_classic', title:'BÖLÜM 2: ESNAF ÇARŞISI',
+    id:2, bg:'bg_l2_classic', title:'BÖLÜM 2: ÇARŞI • 🌅 İKİNDİ',
     subtitle:'Sıcak çay & dondurma birikintilerine basma! Tezgahtan yüksek menzille kontrol kur!',
     goal:15, spawnRate:1.80, group:1,
     boss:{ img:'z_2_7', name:'ÖFKELİ BALIKÇI REİS (HAMSİ BOSS)', special:'hamsi', hp:520, speed:80, dmg:19, reward:320, quote:'Buz gibi ayranla yelkenler suya indi!' },
     comicLines:['ESNAF ÇARŞISI KARIŞTI!','Dondurma zeminleri yakıyor, mermiler tezgahına uçuyor!','Yönlü Nazar ile önünü dondur, Kolonya ile erit!']
   },
   {
-    id:3, bg:'bg_l3_classic', title:'BÖLÜM 3: ER-ÖZ HOTEL GÜVENLİ BÖLGE',
+    id:3, bg:'bg_l3_classic', title:'BÖLÜM 3: ER-ÖZ HOTEL • 🌙 AKŞAM',
     subtitle:"Yerdeki alev bölgelerine dikkat! Tezgahlara çıkıp Kral'ın büfe şifasını durdur!",
     goal:18, spawnRate:1.60, group:2,
     boss:{ img:'z_3_3', name:'MEGA HER ŞEY DAHİL KRALI (BÜFE BOSS)', special:'buffet', hp:660, speed:84, dmg:21, reward:450, quote:'5 YILDIZ! ER-ÖZ HOTEL ARTIK GÜVENDE!' },
@@ -331,11 +331,20 @@ function loadSingleAsset(id, onDone) {
   img.onerror = () => {
     // If WebP fails for any reason, fallback to original PNG/JPG
     img.onerror = () => { if (onDone) onDone(); };
-    img.src = `img/${id}.png?v=9`;
+    img.src = `img/${id}.png?v=13`;
   };
-  img.src = `img/${id}.webp?v=9`;
+  img.src = `img/${id}.webp?v=13`;
   images[id] = img;
   return img;
+}
+
+// Phase 0: Priority-first hand-painted Loading UI Kit (~195 KB total WebP, non-blocking)
+const LOAD_KIT_IDS = [
+  'load_logo', 'load_badge_ayranci', 'load_bottle_sheet',
+  'load_thermo_shell', 'load_badge_ice', 'load_bar_frame', 'load_tip_frame'
+];
+for (const id of LOAD_KIT_IDS) {
+  loadSingleAsset(id);
 }
 
 // Phase 1: Fast-Start Critical Assets (~6 MB WebP)
@@ -699,6 +708,7 @@ const G = {
     onComplete: null,
   },
 };
+let loadDisplayPct = 0, loadFadeT = 0, loadDone = false, loadPreviewPct = null;
 window.__GAME__ = G;
 window.__GAME_API__ = {
   get G() { return G; },
@@ -710,6 +720,7 @@ window.__GAME_API__ = {
   setupLevel: (...a) => setupLevel(...a),
   resetFullGame: (...a) => resetFullGame(...a),
   spawnGroundHazard: (...a) => spawnGroundHazard(...a),
+  setLoadPreview: (p) => { loadPreviewPct = (p === null || p === undefined) ? null : Math.max(0, Math.min(1, Number(p))); },
   getVW: () => VW,
   LEVELS, ZOMBIES, PROP_META
 };
@@ -1887,8 +1898,50 @@ function drawWorld() {
   ctx.save();
   ctx.translate(-G.camX + sx, sy);
 
-  // Extended 3840x720 Classic Dark-Apocalypse Street
+  // Extended 3840x720 Street Panorama + Live Time-of-Day Atmospheric Lighting
   drawImgBox(lvl.bg, 0, 0, WORLD_W, VH);
+  if (G.levelIdx === 0) {
+    // Noon (13:30): 3 soft diagonal Mediterranean sunbeams at 0.15x parallax
+    for (let bi = -1; bi < 4; bi++) {
+      const bxTop = G.camX * 0.85 + 240 + bi * 390;
+      const bxBot = bxTop - 190;
+      const beamG = ctx.createLinearGradient(bxTop, 0, bxBot, GROUND_Y);
+      beamG.addColorStop(0, 'rgba(255, 248, 205, 0.085)');
+      beamG.addColorStop(0.7, 'rgba(255, 248, 205, 0.03)');
+      beamG.addColorStop(1, 'rgba(255, 248, 205, 0)');
+      ctx.fillStyle = beamG;
+      ctx.beginPath();
+      ctx.moveTo(bxTop, 0);
+      ctx.lineTo(bxTop + 145, 0);
+      ctx.lineTo(bxBot + 295, GROUND_Y);
+      ctx.lineTo(bxBot, GROUND_Y);
+      ctx.closePath();
+      ctx.fill();
+    }
+  } else if (G.levelIdx === 1) {
+    // İkindi Sunset (17:45): warm coral-amber horizon bloom + 2 low afternoon shafts
+    const sunG = ctx.createLinearGradient(0, 40, 0, GROUND_Y);
+    sunG.addColorStop(0, 'rgba(255, 138, 66, 0.02)');
+    sunG.addColorStop(0.45, 'rgba(255, 138, 66, 0.13)');
+    sunG.addColorStop(1, 'rgba(255, 138, 66, 0)');
+    ctx.fillStyle = sunG;
+    ctx.fillRect(G.camX, 0, VW, GROUND_Y);
+    for (let bi = 0; bi < 3; bi++) {
+      const bxTop = G.camX * 0.85 + 280 + bi * 520;
+      const bxBot = bxTop - 320;
+      const shaftG = ctx.createLinearGradient(bxTop, 0, bxBot, GROUND_Y);
+      shaftG.addColorStop(0, 'rgba(255, 178, 92, 0.09)');
+      shaftG.addColorStop(1, 'rgba(255, 178, 92, 0)');
+      ctx.fillStyle = shaftG;
+      ctx.beginPath();
+      ctx.moveTo(bxTop, 0);
+      ctx.lineTo(bxTop + 170, 0);
+      ctx.lineTo(bxBot + 340, GROUND_Y);
+      ctx.lineTo(bxBot, GROUND_Y);
+      ctx.closePath();
+      ctx.fill();
+    }
+  }
 
   // Ground VFX Splats
   if (G.vfxSprites && G.vfxSprites.length > 0) {
@@ -2171,24 +2224,22 @@ function drawWorld() {
     else { ctx.save(); ctx.globalAlpha = a; drawOutlined(fl.text, fl.x, fl.y, fl.size, `rgb(${fl.r},${fl.g},${fl.b})`); ctx.restore(); }
   }
 
-  // Atmospheric drifting warm summer heat-motes (45°C summer night!)
+  // Atmospheric drifting time-of-day heat-motes (Noon sunlit gold / İkindi rose-gold / Akşam embers)
   if (G.snowFlakes) {
-    ctx.fillStyle = '#ffe6a3';
+    ctx.fillStyle = G.levelIdx === 0 ? '#fff2bd' : (G.levelIdx === 1 ? '#ffc285' : '#ffe6a3');
     for (const f of G.snowFlakes) {
       const fdt = (G.screen === 'play') ? (G.dt || 0.016) : 0;
       f.x += f.vx * 0.45 * fdt;
       f.y -= f.vy * 0.35 * fdt;
       if (f.y < -10) { f.y = VH + 10; f.x = Math.random() * (WORLD_W + 400) - 200; }
       if (f.x < -200) { f.x = WORLD_W + 100; }
-      const sx = f.x - G.camX * f.depth;
-      if (sx >= -20 && sx <= VW + 20) {
-        ctx.save();
-        ctx.globalAlpha = f.alpha * 0.55;
-        ctx.beginPath();
-        ctx.arc(sx, f.y, f.r * 0.9, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.restore();
-      }
+      const viewX = ((f.x - G.camX * f.depth) % (VW + 80) + (VW + 80)) % (VW + 80) - 40;
+      ctx.save();
+      ctx.globalAlpha = f.alpha * (G.levelIdx === 0 ? 0.45 : 0.55);
+      ctx.beginPath();
+      ctx.arc(G.camX + viewX, f.y, f.r * 0.9, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
     }
   }
 
@@ -2501,14 +2552,20 @@ function drawStoryPortrait(speakerId, x, y, isActive, isTyping, isRinging) {
 }
 
 function drawCityHeatMotionOverlay(t) {
-  // 1. Subtle rising heat-haze bands & pulsing green street mist
-  const mistPulse = 0.22 + 0.12 * Math.sin(t * 2.4);
-  const mistGrad = ctx.createLinearGradient(0, 320, 0, 520);
-  mistGrad.addColorStop(0, 'rgba(95, 245, 110, 0)');
-  mistGrad.addColorStop(0.65, `rgba(95, 245, 110, ${mistPulse})`);
-  mistGrad.addColorStop(1, 'rgba(95, 245, 110, 0)');
+  // 1. Subtle midday solar glare & rising warm golden-amber heat-shimmer bands
+  const sunGlow = ctx.createRadialGradient(VW * 0.78, 65, 20, VW * 0.78, 65, 420);
+  sunGlow.addColorStop(0, 'rgba(255, 245, 190, 0.22)');
+  sunGlow.addColorStop(1, 'rgba(255, 212, 96, 0)');
+  ctx.fillStyle = sunGlow;
+  ctx.fillRect(0, 0, VW, 460);
+
+  const mistPulse = 0.16 + 0.09 * Math.sin(t * 2.4);
+  const mistGrad = ctx.createLinearGradient(0, 320, 0, 540);
+  mistGrad.addColorStop(0, 'rgba(255, 212, 96, 0)');
+  mistGrad.addColorStop(0.6, `rgba(255, 212, 96, ${mistPulse})`);
+  mistGrad.addColorStop(1, 'rgba(255, 168, 68, 0)');
   ctx.fillStyle = mistGrad;
-  ctx.fillRect(0, 320, VW, 200);
+  ctx.fillRect(0, 320, VW, 220);
 
   // 2. Animated comic smoke puffs rising from the sparking Fethiye rooftop AC units
   const acSpots = [{ x: 195, y: 455 }, { x: 280, y: 435 }];
@@ -2520,7 +2577,7 @@ function drawCityHeatMotionOverlay(t) {
     const sr = 9 + phase * 24;
     ctx.save();
     ctx.globalAlpha = (1 - phase) * 0.34;
-    ctx.fillStyle = i % 3 === 0 ? '#ff9d42' : '#3a2b3d';
+    ctx.fillStyle = i % 3 === 0 ? '#ff9d42' : '#4a3d4f';
     ctx.beginPath(); ctx.arc(sx, sy, sr, 0, Math.PI * 2); ctx.fill();
     ctx.restore();
   }
@@ -2552,7 +2609,7 @@ function drawCityHeatMotionOverlay(t) {
   drawOutlined(`${Math.round(deg)}°C`, 128, 52, 40, isHot ? '#ff6454' : '#ffdf6b');
   fillRectR(64, 88, 134, 26, 8, isHot ? 'rgba(220, 42, 42, 0.92)' : 'rgba(160, 96, 24, 0.9)');
   drawLabel(isHot ? 'HARARET KRİTİK!' : 'KLİMALAR ÇÖKTÜ', 131, 102, 12, '#ffffff', 'center', true);
-  drawLabel('FETHİYE • GECE', 131, 132, 11.5, '#d5c7e8', 'center', false);
+  drawLabel('FETHİYE • 13:30 ÖĞLEN', 131, 132, 11, '#ffe5a3', 'center', false);
   ctx.restore();
 
   // 4. Animated Er-Öz Hotel Target Callout pointing cleanly at the Fethiye hotel sign
@@ -2583,7 +2640,7 @@ function drawStoryScreen() {
   const bgId = node.bg || sc.bg;
   const bgImg = images[bgId] || images.ui_title_bg;
   const nt = G.story.nodeT || 0;
-  const isIllustratedScene = (bgId === 'bg_intro_city_heat' || bgId === 'bg_fethiye_chaos' || bgId === 'bg_hotel_siege' || bgId === 'bg_balcony_chill' || bgId === 'bg_balcony_phone' || bgId === 'bg_suitup_comic' || bgId === 'bg_intro_cooler');
+  const isIllustratedScene = (bgId === 'bg_intro_city_heat' || bgId === 'bg_fethiye_chaos' || bgId === 'bg_hotel_siege' || bgId === 'bg_balcony_chill' || bgId === 'bg_balcony_chill_day' || bgId === 'bg_balcony_phone' || bgId === 'bg_balcony_phone_day' || bgId === 'bg_suitup_comic' || bgId === 'bg_intro_cooler' || bgId === 'bg_intro_cooler_day');
 
   if (bgImg && bgImg.complete && bgImg.naturalWidth > 0) {
     if (bgImg.naturalWidth > 2000) {
@@ -3122,22 +3179,372 @@ window.addEventListener('keydown', ev => {
 });
 window.addEventListener('keyup', ev => { G.keys[ev.code] = false; });
 
-function drawLoadingScreen() {
+function lerpRgbColor(c1, c2, t) {
+  const k = Math.max(0, Math.min(1, t));
+  const r = Math.round(c1[0] + (c2[0] - c1[0]) * k);
+  const g = Math.round(c1[1] + (c2[1] - c1[1]) * k);
+  const b = Math.round(c1[2] + (c2[2] - c1[2]) * k);
+  return `rgb(${r},${g},${b})`;
+}
+
+function drawLoadingScreen(fadeAlpha = 1, overridePct = null) {
+  const pct = Math.max(0, Math.min(1, overridePct !== null ? overridePct : loadDisplayPct));
+  const cx = VW / 2;
+  const t = G.time || 0;
+  const imgReady = id => images[id] && images[id].complete && images[id].naturalWidth > 0;
+
+  ctx.save();
+  ctx.globalAlpha = fadeAlpha;
+
+  // 1. Dynamic Cooling Backdrop (45°C summer crimson/amber -> user mockup deep icy Aegean teal)
+  const bgTop = lerpRgbColor([38, 16, 36], [10, 59, 82], pct);
+  const bgMid = lerpRgbColor([99, 34, 48], [19, 91, 120], pct);
+  const bgBot = lerpRgbColor([168, 68, 36], [27, 120, 152], pct);
   const grad = ctx.createLinearGradient(0, 0, 0, VH);
-  grad.addColorStop(0, '#0e1024');
-  grad.addColorStop(1, '#1b1f42');
+  grad.addColorStop(0, bgTop);
+  grad.addColorStop(0.52, bgMid);
+  grad.addColorStop(1, bgBot);
   ctx.fillStyle = grad;
   ctx.fillRect(0, 0, VW, VH);
 
-  const pct = Math.min(1, coreLoadedCount / Math.max(1, totalCoreAssets));
-  drawOutlined('BUZ GİBİ KIYAMET: SON AYRANCI', VW / 2, 290, 38, '#ffec6e');
-  drawLabel('Mahalle hazırlanıyor...', VW / 2, 342, 20, '#bfefff', 'center', true);
-  fillRectR((VW - 600) / 2, 380, 600, 30, 15, 'rgba(10, 14, 30, 0.85)');
-  strokeRectR((VW - 600) / 2, 380, 600, 30, 15, '#4ee6ff', 3);
-  if (pct > 0.02) {
-    fillRectR((VW - 600) / 2 + 4, 384, Math.max(18, (600 - 8) * pct), 22, 11, '#4ee6ff');
+  // Slow-rotating radial comic sun/frost rays centered behind bottle
+  ctx.save();
+  ctx.translate(cx - 4, 315);
+  ctx.rotate(t * 0.12);
+  ctx.fillStyle = pct >= 0.65 ? 'rgba(138, 240, 255, 0.085)' : 'rgba(255, 220, 145, 0.065)';
+  const rayCount = 14;
+  for (let i = 0; i < rayCount; i++) {
+    const a0 = (i / rayCount) * Math.PI * 2;
+    const a1 = a0 + (Math.PI / rayCount) * 0.72;
+    ctx.beginPath();
+    ctx.moveTo(0, 0);
+    ctx.arc(0, 0, Math.max(VW, VH) * 0.78, a0, a1);
+    ctx.closePath();
+    ctx.fill();
   }
-  drawOutlined(`${Math.round(pct * 100)}%`, VW / 2, 440, 22, '#ffffff');
+  ctx.restore();
+
+  // Soft radial centerpiece halo
+  const haloGrad = ctx.createRadialGradient(cx, 315, 24, cx, 315, 310);
+  haloGrad.addColorStop(0, pct >= 0.6 ? 'rgba(95, 232, 255, 0.25)' : 'rgba(255, 162, 74, 0.19)');
+  haloGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+  ctx.fillStyle = haloGrad;
+  ctx.fillRect(cx - 340, 30, 680, 560);
+
+  // Subtle floating icy frost specks appearing smoothly as liquid chills past 35%
+  if (pct > 0.35) {
+    const frostA = Math.min(1, (pct - 0.35) / 0.55);
+    ctx.save();
+    for (let si = 0; si < 34; si++) {
+      const fx = ((si * 173 + t * (10 + (si % 4) * 5)) % (VW + 40)) - 20;
+      const fy = ((si * 97 + t * (18 + (si % 3) * 8)) % (VH + 20)) - 10;
+      const fr = 1.3 + (si % 3) * 0.9;
+      ctx.globalAlpha = fadeAlpha * frostA * (0.22 + (si % 4) * 0.11);
+      ctx.fillStyle = si % 3 === 0 ? '#bff8ff' : '#ffffff';
+      ctx.beginPath(); ctx.arc(fx, fy, fr, 0, Math.PI * 2); ctx.fill();
+    }
+    ctx.restore();
+  }
+
+  // 2. Header: Hand-painted icicle logo + SON AYRANCI badge (with crisp fallbacks)
+  if (imgReady('load_logo')) {
+    const im = images.load_logo;
+    const lh = 66;
+    const lw = Math.round(im.naturalWidth * (lh / im.naturalHeight));
+    ctx.drawImage(im, cx - lw / 2, 36, lw, lh);
+  } else {
+    drawOutlined('BUZ GİBİ KIYAMET', cx, 68, 42, '#7ef0ff');
+  }
+
+  if (imgReady('load_badge_ayranci')) {
+    const im = images.load_badge_ayranci;
+    const bh = 40;
+    const bw = Math.round(im.naturalWidth * (bh / im.naturalHeight));
+    ctx.drawImage(im, cx - bw / 2, 110, bw, bh);
+  } else {
+    fillRectR(cx - 88, 112, 176, 32, 16, 'rgba(18, 22, 42, 0.9)');
+    strokeRectR(cx - 88, 112, 176, 32, 16, '#ffe46b', 2.5);
+    drawOutlined('SON AYRANCI', cx, 128, 16, '#ffe46b');
+  }
+
+  // 3A. 8-Frame Native RGBA Hand-Painted Ayran Bottle Sprite Sheet + Glowing Dashed Halo Ring & Stars
+  const isFull = pct >= 0.995;
+  const BOTTLE_FRAMES = 8;
+  const frameIdx = pct < 0.05 ? 0
+    : pct < 0.22 ? 1
+    : pct < 0.40 ? 2
+    : pct < 0.56 ? 3
+    : pct < 0.68 ? 4
+    : pct < 0.80 ? 5
+    : pct < 0.94 ? 6 : 7;
+  const cellW = imgReady('load_bottle_sheet') ? (images.load_bottle_sheet.naturalWidth / BOTTLE_FRAMES) : 168;
+  const cellH = imgReady('load_bottle_sheet') ? images.load_bottle_sheet.naturalHeight : 344;
+  const popScale = isFull ? (1 + 0.045 * Math.sin(t * 12)) : 1;
+  const pourTilt = (!isFull && pct > 0.02) ? Math.sin(t * 4.2) * 0.018 : 0;
+  const bH = 294;
+  const bW = Math.round(bH * (cellW / cellH));
+  const bcx = cx - 10;
+  const bx = bcx - bW / 2;
+  const by = 166;
+  const bcy = by + bH * 0.52;
+
+  // Rotating dashed glow halo + twinkling 4-point comic stars behind bottle (grows with pct)
+  const haloAlpha = 0.25 + 0.75 * pct;
+  ctx.save();
+  ctx.translate(bcx, bcy + 4);
+  ctx.globalAlpha = fadeAlpha * haloAlpha;
+  const ringR = 136 + (isFull ? Math.sin(t * 7) * 4 : 0);
+  ctx.strokeStyle = pct >= 0.7 ? 'rgba(235, 252, 255, 0.85)' : 'rgba(255, 225, 165, 0.65)';
+  ctx.lineWidth = 3.2;
+  ctx.setLineDash([9, 11]);
+  ctx.beginPath(); ctx.arc(0, 0, ringR, t * 0.85, t * 0.85 + Math.PI * 2); ctx.stroke();
+  ctx.setLineDash([]);
+
+  const starCount = pct > 0.2 ? (isFull ? 10 : 6) : 3;
+  for (let si = 0; si < starCount; si++) {
+    const ang = t * 0.45 + (si * Math.PI * 2) / starCount;
+    const dist = ringR + (si % 2 === 0 ? 12 : -10);
+    const sx = Math.cos(ang) * dist;
+    const sy = Math.sin(ang) * dist;
+    const spR = (si % 3 === 0 ? 9 : 6) + Math.sin(t * 8 + si * 1.3) * 2.2;
+    ctx.fillStyle = si % 2 === 0 ? '#ffe45e' : '#8ef4ff';
+    ctx.beginPath();
+    ctx.moveTo(sx, sy - spR);
+    ctx.lineTo(sx + spR * 0.30, sy - spR * 0.30);
+    ctx.lineTo(sx + spR, sy);
+    ctx.lineTo(sx + spR * 0.30, sy + spR * 0.30);
+    ctx.lineTo(sx, sy + spR);
+    ctx.lineTo(sx - spR * 0.30, sy + spR * 0.30);
+    ctx.lineTo(sx - spR, sy);
+    ctx.lineTo(sx - spR * 0.30, sy - spR * 0.30);
+    ctx.closePath();
+    ctx.fill();
+  }
+  ctx.restore();
+
+  // Rising chill vapor wisps around neck when chilled
+  if (pct > 0.45) {
+    const chillA = Math.min(1, (pct - 0.45) / 0.55);
+    for (let vi = 0; vi < 5; vi++) {
+      const vp = ((t * 0.5 + vi * 0.21) % 1);
+      const vx = bcx + Math.sin(vp * 6 + vi * 1.5) * 32 + (vi % 2 === 0 ? -38 : 38);
+      const vy = by + bH * 0.45 - vp * 135;
+      ctx.save();
+      ctx.globalAlpha = fadeAlpha * chillA * (1 - vp) * 0.24;
+      ctx.fillStyle = '#bff8ff';
+      ctx.beginPath(); ctx.arc(vx, vy, 7 + vp * 14, 0, Math.PI * 2); ctx.fill();
+      ctx.restore();
+    }
+  }
+
+  // Soft grounded shadow below bottle (stays steady under tilt/pop)
+  ctx.save();
+  ctx.fillStyle = 'rgba(8, 12, 22, 0.38)';
+  ctx.beginPath(); ctx.ellipse(bcx, by + bH + 3, bW * 0.42, 9, 0, 0, Math.PI * 2); ctx.fill();
+  ctx.restore();
+
+  ctx.save();
+  ctx.translate(bcx, by + bH * 0.88);
+  ctx.rotate(pourTilt);
+  ctx.scale(popScale, popScale);
+  ctx.translate(-bcx, -(by + bH * 0.88));
+
+  if (imgReady('load_bottle_sheet')) {
+    ctx.drawImage(
+      images.load_bottle_sheet,
+      frameIdx * cellW, 0, cellW, cellH,
+      bx, by, bW, bH
+    );
+  } else {
+    // Minimal procedural fallback only during initial frame
+    fillRectR(bx, by, bW, bH, 24, 'rgba(215, 245, 255, 0.28)');
+    strokeRectR(bx, by, bW, bH, 24, '#141022', 4);
+  }
+  ctx.restore();
+
+  // 3B. Animated Native Hollow RGBA Thermometer Shell (T1: live mercury tucked behind opaque rim)
+  const thH = 268;
+  const thW = imgReady('load_thermo_shell')
+    ? Math.round(images.load_thermo_shell.naturalWidth * (thH / images.load_thermo_shell.naturalHeight))
+    : 75;
+  const tx = cx + 110;
+  const thX = tx - thW / 2;
+  const thY = 178;
+  const tempVal = Math.round(45 - 41 * pct);
+  const mercCol = pct < 0.5
+    ? lerpRgbColor([255, 74, 58], [255, 171, 56], pct * 2)
+    : lerpRgbColor([255, 171, 56], [78, 230, 255], (pct - 0.5) * 2);
+  const txtCol = pct < 0.5
+    ? lerpRgbColor([255, 102, 86], [255, 208, 98], pct * 2)
+    : lerpRgbColor([255, 208, 98], [136, 242, 255], (pct - 0.5) * 2);
+
+  const tubeL = thX + thW * 0.295;
+  const tubeR = thX + thW * 0.705;
+  const tubeW = tubeR - tubeL;
+  const tubeTop = thY + thH * 0.048;
+  const bulbCX = thX + thW * 0.497;
+  const bulbCY = thY + thH * 0.857;
+  const bulbRX = thW * 0.405;
+  const bulbRY = thH * 0.108;
+
+  // 1) Dark translucent empty-glass backing behind mercury cavity
+  ctx.save();
+  ctx.beginPath();
+  roundRect(tubeL, tubeTop, tubeW, bulbCY - tubeTop, tubeW * 0.5);
+  ctx.fillStyle = 'rgba(10, 22, 38, 0.56)';
+  ctx.fill();
+  ctx.beginPath();
+  ctx.ellipse(bulbCX, bulbCY, bulbRX, bulbRY, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  // 2) Live shaded mercury column & bulb ellipse (drops smoothly from 45°C top to 4°C midpoint)
+  const mercFrac = 0.88 - pct * 0.44;
+  const colSpan = bulbCY - tubeTop;
+  const mercTopY = bulbCY - colSpan * mercFrac;
+  ctx.fillStyle = mercCol;
+  ctx.beginPath();
+  roundRect(tubeL + 1, mercTopY, tubeW - 2, bulbCY - mercTopY + 3, (tubeW - 2) * 0.45);
+  ctx.fill();
+  ctx.beginPath();
+  ctx.ellipse(bulbCX, bulbCY, bulbRX - 1, bulbRY - 1, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Subtle glossy cylinder sheen on mercury column & bulb core
+  const cylSheen = ctx.createLinearGradient(tubeL, 0, tubeR, 0);
+  cylSheen.addColorStop(0, 'rgba(255, 255, 255, 0.28)');
+  cylSheen.addColorStop(0.35, 'rgba(255, 255, 255, 0.12)');
+  cylSheen.addColorStop(1, 'rgba(0, 12, 28, 0.18)');
+  ctx.fillStyle = cylSheen;
+  ctx.beginPath();
+  roundRect(tubeL + 1, mercTopY, tubeW - 2, bulbCY - mercTopY + 3, (tubeW - 2) * 0.45);
+  ctx.fill();
+  const bulbGlow = ctx.createRadialGradient(bulbCX - bulbRX * 0.22, bulbCY - bulbRY * 0.25, 1, bulbCX, bulbCY, Math.max(bulbRX, bulbRY));
+  bulbGlow.addColorStop(0, 'rgba(255, 255, 255, 0.30)');
+  bulbGlow.addColorStop(0.55, 'rgba(255, 255, 255, 0)');
+  bulbGlow.addColorStop(1, 'rgba(0, 10, 26, 0.18)');
+  ctx.fillStyle = bulbGlow;
+  ctx.beginPath();
+  ctx.ellipse(bulbCX, bulbCY, bulbRX - 1, bulbRY - 1, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.restore();
+
+  // 3) Draw opaque-bezel native RGBA thermometer shell ON TOP of mercury
+  if (imgReady('load_thermo_shell')) {
+    ctx.drawImage(images.load_thermo_shell, thX, thY, thW, thH);
+  } else {
+    strokeRectR(tubeL - 3, tubeTop - 3, tubeW + 6, colSpan + 10, 12, '#141022', 4);
+  }
+
+  // 4) Crisp comic scale ticks cleanly outside left tube outline
+  ctx.save();
+  const tickX = thX + thW * 0.194;
+  ctx.lineCap = 'round';
+  for (let ti = 0; ti < 6; ti++) {
+    const ty = tubeTop + 20 + ti * ((bulbCY - bulbRY - tubeTop - 28) / 5);
+    const tLen = (ti % 2 === 0 ? 10 : 7);
+    ctx.strokeStyle = '#0a1a32';
+    ctx.lineWidth = 4;
+    ctx.beginPath(); ctx.moveTo(tickX - 3, ty); ctx.lineTo(tickX - tLen, ty); ctx.stroke();
+    ctx.strokeStyle = '#d8f6ff';
+    ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(tickX - 3, ty); ctx.lineTo(tickX - tLen, ty); ctx.stroke();
+  }
+  ctx.restore();
+
+  // 3C. Temperature Readout & Hand-Painted Frosted BUZ GİBİ! Badge beside thermometer
+  const infoX = tx + 124;
+  const shakeX = pct < 0.2 ? Math.sin(t * 42) * 1.8 : 0;
+  drawOutlined(`${tempVal}°C`, infoX + shakeX, 272, 46, txtCol);
+
+  if (pct >= 0.85 && imgReady('load_badge_ice')) {
+    const im = images.load_badge_ice;
+    const popK = Math.min(1, (pct - 0.85) / 0.15);
+    const spring = 0.85 + 0.15 * Math.sin(popK * Math.PI * 0.5) + (isFull ? Math.sin(t * 8) * 0.02 : 0);
+    const iw = Math.round(168 * spring);
+    const ih = Math.round(iw * (im.naturalHeight / im.naturalWidth));
+    ctx.drawImage(im, infoX - iw / 2, 302, iw, ih);
+  } else {
+    const isHot = pct < 0.25;
+    const statusText = pct >= 0.85 ? 'BUZ GİBİ!' : (isHot ? 'HARARET KRİTİK!' : 'SOĞUYOR...');
+    const statusCol = pct >= 0.85 ? '#8ef4ff' : (isHot ? '#ff7c68' : '#ffd86b');
+    drawOutlined(statusText, infoX, 322, 17, statusCol);
+  }
+
+  // 4. Hand-Painted Forged Iron Scroll-Bracketed Progress Bar (y = 486)
+  const barW = Math.min(580, VW - 160);
+  const barH = imgReady('load_bar_frame')
+    ? Math.round(barW * (images.load_bar_frame.naturalHeight / images.load_bar_frame.naturalWidth))
+    : 64;
+  const barX = cx - barW / 2;
+  const barY = 486;
+
+  // Calibrated inner slot coords with tiny overlap tuck cleanly behind iron frame
+  const slotX = barX + barW * 0.040;
+  const slotW = barW * (0.960 - 0.040);
+  const slotY = barY + barH * 0.328;
+  const slotH = barH * (0.655 - 0.328);
+
+  fillRectR(slotX, slotY, slotW, slotH, slotH * 0.45, '#0c1320');
+  if (pct > 0.015) {
+    const fillW = Math.max(16, slotW * pct);
+    ctx.save();
+    roundRect(slotX, slotY, fillW, slotH, slotH * 0.45);
+    ctx.clip();
+    const fillG = ctx.createLinearGradient(slotX, slotY, slotX + slotW, slotY);
+    fillG.addColorStop(0, '#ff8e2b');
+    fillG.addColorStop(0.55, '#ffca57');
+    fillG.addColorStop(1, '#4ce6ff');
+    ctx.fillStyle = fillG;
+    ctx.fillRect(slotX, slotY, fillW, slotH);
+
+    // Animated diagonal white sheen sweep
+    const sheenX = slotX - 70 + ((t * 240) % (slotW + 140));
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.35)';
+    ctx.beginPath();
+    ctx.moveTo(sheenX, slotY - 4);
+    ctx.lineTo(sheenX + 34, slotY - 4);
+    ctx.lineTo(sheenX + 14, slotY + slotH + 4);
+    ctx.lineTo(sheenX - 20, slotY + slotH + 4);
+    ctx.closePath();
+    ctx.fill();
+    ctx.restore();
+  }
+
+  if (imgReady('load_bar_frame')) {
+    ctx.drawImage(images.load_bar_frame, barX, barY, barW, barH);
+  } else {
+    strokeRectR(slotX, slotY, slotW, slotH, 12, '#7ef0ff', 3);
+  }
+  drawOutlined(`${Math.round(pct * 100)}%`, cx, slotY + slotH * 0.52, 17, '#ffffff');
+
+  // 5. Hand-Painted Forged Slate Tip Banner (y = 574)
+  const TIPS = [
+    'İPUCU: Önce Ayranla ıslat, sonra 80° Kolonya ile 1.9x KÖPÜK ŞOKU patlat!',
+    'İPUCU: Simit arabasına veya tezgaha zıpla — yüksekten atış +%45 menzil verir!',
+    'İPUCU: Kırmızı saldırı yayını görünce geri çekil veya tezgaha kaç!',
+    'İPUCU: Mega Nazar önündeki 520 px koniyi dondurur — kalabalığa doğru dön!'
+  ];
+  const tipIdx = Math.floor(t / 2.2) % TIPS.length;
+  const tipW = Math.min(720, VW - 96);
+  const tipH = imgReady('load_tip_frame')
+    ? Math.round(tipW * (images.load_tip_frame.naturalHeight / images.load_tip_frame.naturalWidth))
+    : 74;
+  const tipX = cx - tipW / 2;
+  const tipY = 574;
+
+  if (imgReady('load_tip_frame')) {
+    ctx.drawImage(images.load_tip_frame, tipX, tipY, tipW, tipH);
+  } else {
+    fillRectR(tipX, tipY, tipW, tipH, 14, '#1b222c');
+    strokeRectR(tipX, tipY, tipW, tipH, 14, '#5a6b80', 4);
+  }
+  ctx.font = '800 15px BalooBold, sans-serif';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillStyle = '#f2f8ff';
+  ctx.fillText(TIPS[tipIdx], cx, tipY + tipH * 0.485, tipW * 0.85);
+
+  ctx.restore();
 }
 
 let lastTs = performance.now();
@@ -3146,14 +3553,27 @@ function loop(ts) {
   G.dt = dt;
   lastTs = ts;
   G.time += dt;
+  const rawPct = Math.min(1, coreLoadedCount / Math.max(1, totalCoreAssets));
+  loadDisplayPct += (rawPct - loadDisplayPct) * Math.min(1, dt * 14);
+
+  if (loadPreviewPct !== null) {
+    G.zones = [];
+    ctx.clearRect(0, 0, VW, VH);
+    drawLoadingScreen(1, loadPreviewPct);
+    requestAnimationFrame(loop);
+    return;
+  }
+
   const assetsReady = (coreLoadedCount >= totalCoreAssets && fontsReady) || G.time > 8;
   if (!assetsReady) {
     G.zones = [];
     ctx.clearRect(0, 0, VW, VH);
-    drawLoadingScreen();
+    drawLoadingScreen(1, loadDisplayPct);
     requestAnimationFrame(loop);
     return;
   }
+  if (!loadDone) loadDone = true;
+
   if (G.screen === 'play') updatePlay(dt);
   else if (G.screen === 'story') updateStory(dt);
 
@@ -3169,6 +3589,11 @@ function loop(ts) {
   else if (G.screen === 'pause') drawPauseModal();
   else if (G.screen === 'gameover') drawEndModal(false);
   else if (G.screen === 'victory') drawEndModal(true);
+
+  if (loadFadeT < 0.32) {
+    loadFadeT += dt;
+    drawLoadingScreen(Math.max(0, 1 - loadFadeT / 0.32), 1);
+  }
 
   requestAnimationFrame(loop);
 }

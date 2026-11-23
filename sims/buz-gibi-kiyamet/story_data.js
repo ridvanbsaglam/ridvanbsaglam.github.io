@@ -148,8 +148,8 @@ window.STORY_DATA = {
     // ========================================================================
     l1_intro: {
       bg: 'bg_intro_city_heat',
-      chapterTag: 'PROLOG • FETHİYE 45°C',
-      subtitle: 'Körfez kaynıyor. Klimalar pes etti.',
+      chapterTag: 'PROLOG • FETHİYE 13:30 • 45°C',
+      subtitle: 'Öğle güneşi kavuruyor. Klimalar pes etti.',
       start: 'p1',
       nodes: {
         p1: {
@@ -157,8 +157,8 @@ window.STORY_DATA = {
           motion: 'city_heat',
           speaker: 'narrator',
           side: 'center',
-          plaque: 'FETHİYE • 45°C YAZ GECESİ',
-          text: 'Yılın en kavurucu Fethiye gecesi. Klimalar tek tek yandı, sokaklardan yeşil hararet sisi yükseliyor.',
+          plaque: 'FETHİYE • 13:30 • 45°C ÖĞLE GÜNEŞİ',
+          text: 'Yılın en kavurucu Fethiye öğleni. Güneş tam tepede, klimalar tek tek yandı, sokaklardan hararet dalgası yükseliyor.',
           left: null,
           right: null,
           next: 'p1b',
@@ -176,11 +176,11 @@ window.STORY_DATA = {
           next: 'p2',
         },
         p2: {
-          bg: 'bg_balcony_chill',
+          bg: 'bg_balcony_chill_day',
           motion: 'balcony_breathe',
           speaker: 'hero_chill',
           side: 'left',
-          plaque: 'YUKARIDA • SERİN BALKON',
+          plaque: 'YUKARIDA • GÖLGELİ BALKON • 13:30',
           text: 'Aşağıda Fethiye kaynasın dursun... Ben burada pijama-atlet, buz gibi ayranımla gayet iyiyim.',
           left: null,
           right: null,
@@ -188,7 +188,7 @@ window.STORY_DATA = {
           next: 'p2b',
         },
         p2b: {
-          bg: 'bg_intro_cooler',
+          bg: 'bg_intro_cooler_day',
           motion: 'balcony_breathe',
           speaker: 'narrator',
           side: 'center',
@@ -199,7 +199,7 @@ window.STORY_DATA = {
           next: 'p3',
         },
         p3: {
-          bg: 'bg_balcony_phone',
+          bg: 'bg_balcony_phone_day',
           motion: 'balcony_breathe',
           speaker: 'gorevli',
           side: 'right',
@@ -211,7 +211,7 @@ window.STORY_DATA = {
           next: 'p4',
         },
         p4: {
-          bg: 'bg_balcony_phone',
+          bg: 'bg_balcony_phone_day',
           motion: 'balcony_breathe',
           speaker: 'hero_phone',
           side: 'left',
@@ -263,7 +263,7 @@ window.STORY_DATA = {
           side: 'right',
           left: 'hero',
           right: 'teyze',
-          plaque: 'BÖLÜM 1 • MAHALLE SOKAĞI',
+          plaque: 'BÖLÜM 1 • MAHALLE SOKAĞI • ☀️ ÖĞLEN',
           sfx: 'horn',
           text: 'Gölge benim! Çekil önümden, hararetten yanıyorum!',
           next: 'm2',
@@ -350,8 +350,8 @@ window.STORY_DATA = {
     // ========================================================================
     l2_intro: {
       bg: 'bg_l2_classic',
-      chapterTag: 'BÖLÜM 2 • ESNAF ÇARŞISI',
-      subtitle: 'Herkes buz arıyor.',
+      chapterTag: 'BÖLÜM 2 • İKİNDİ ÇARŞISI (17:45)',
+      subtitle: 'Güneş alçalıyor, kızıl hararet çöküyor.',
       start: 'c1',
       nodes: {
         c1: {
@@ -456,8 +456,8 @@ window.STORY_DATA = {
     // ========================================================================
     l3_intro: {
       bg: 'bg_l3_classic',
-      chapterTag: 'BÖLÜM 3 • ER-ÖZ HOTEL',
-      subtitle: 'Her şey dahil. Her şey.',
+      chapterTag: 'BÖLÜM 3 • ER-ÖZ HOTEL • 🌙 AKŞAM',
+      subtitle: 'Akşam çöktü. Her şey dahil. Her şey.',
       start: 'h1',
       nodes: {
         h1: {
