@@ -1974,30 +1974,80 @@ function drawHUD() {
     drawOutlined(`DİKKAT! ${lvl.boss.name} GELİYOR!`, 640, 206, 22, '#ffee6e');
   }
 
-  const pads = [{ id:'pad_left', lbl:'<', x:22, w:60 }, { id:'pad_right', lbl:'>', x:90, w:60 }, { id:'pad_jump', lbl:'ZIPLA', x:158, w:98 }];
-  for (const pd of pads) {
-    drawWoodPad(pd.x, 634, pd.w, 58);
-    drawOutlined(pd.lbl, pd.x + pd.w / 2, 663, pd.id === 'pad_jump' ? 18 : 26, '#fff5d2');
-    addZone(pd.id, pd.x, 634, pd.w, 58);
-  }
-  fillRectR(266, 660, 646, 32, 10, 'rgba(18,14,30,0.78)');
-  strokeRectR(266, 660, 646, 32, 10, 'rgba(95,108,155,0.65)', 1.8);
-  drawLabel('A/D: Yürü • Space: Tezgahlara Zıpla • S: İn • J: Islat • K: Köpük Şoku (1.9x) • Q: Nazar', 589, 676, 12.5, '#f0f2ff', 'center', false);
+  // ==========================================================================
+  // ARCADE TOUCH & HUD CONTROLS
+  // ==========================================================================
 
+  // --- LEFT SIDE: MOVEMENT D-PAD & DROP DOWN ---
+  fillRectR(18, 582, 268, 122, 22, 'rgba(14, 16, 28, 0.62)');
+  strokeRectR(18, 582, 268, 122, 22, 'rgba(85, 115, 165, 0.42)', 2);
+
+  // Left Arrow Button (pad_left)
+  const lPressed = G.holdLeft || G.hover === 'pad_left';
+  fillRectR(28, 592, 78, 102, 16, lPressed ? '#2d6896' : '#1c2844');
+  strokeRectR(28, 592, 78, 102, 16, lPressed ? '#6ee0ff' : '#3f5780', lPressed ? 3 : 2);
+  drawOutlined('◀', 67, 634, 32, lPressed ? '#ffffff' : '#d2e8ff');
+  drawLabel('SOL [A]', 67, 672, 11, lPressed ? '#9feaff' : '#7ba0cc', 'center', true);
+  addZone('pad_left', 28, 592, 78, 102);
+
+  // Right Arrow Button (pad_right)
+  const rPressed = G.holdRight || G.hover === 'pad_right';
+  fillRectR(112, 592, 78, 102, 16, rPressed ? '#2d6896' : '#1c2844');
+  strokeRectR(112, 592, 78, 102, 16, rPressed ? '#6ee0ff' : '#3f5780', rPressed ? 3 : 2);
+  drawOutlined('▶', 151, 634, 32, rPressed ? '#ffffff' : '#d2e8ff');
+  drawLabel('SAĞ [D]', 151, 672, 11, rPressed ? '#9feaff' : '#7ba0cc', 'center', true);
+  addZone('pad_right', 112, 592, 78, 102);
+
+  // Drop Down Button (pad_down) - Active on platform
+  const dActive = G.onPlatform;
+  const dPressed = G.hover === 'pad_down' && dActive;
+  fillRectR(196, 604, 80, 80, 16, dActive ? (dPressed ? '#8c4e24' : '#683618') : 'rgba(32, 26, 32, 0.7)');
+  strokeRectR(196, 604, 80, 80, 16, dActive ? '#ffb454' : '#4d3a44', 2);
+  drawOutlined('▼', 236, 634, 24, dActive ? '#fff2b8' : '#6b5860');
+  drawLabel('İN [S]', 236, 664, 11, dActive ? '#ffe596' : '#6b5860', 'center', true);
+  addZone('pad_down', 196, 604, 80, 80);
+
+  // --- CENTER KEYBOARD / CONTROLS BANNER (Subtle & clean) ---
+  fillRectR(304, 668, 580, 32, 10, 'rgba(16, 14, 26, 0.72)');
+  strokeRectR(304, 668, 580, 32, 10, 'rgba(80, 95, 145, 0.50)', 1.5);
+  drawLabel('Space: Zıpla • J: Ayran • K: Köpük Şoku (1.9x) • Q: Nazar • S: Tezgahtan İn • M: Market', 594, 684, 11.5, '#e4ebff', 'center', false);
+
+  // --- RIGHT SIDE: ACTION CLUSTER (JUMP, AYRAN, KOLONYA, NAZAR) ---
+  fillRectR(908, 484, 354, 224, 24, 'rgba(14, 16, 28, 0.62)');
+  strokeRectR(908, 484, 354, 224, 24, 'rgba(85, 115, 165, 0.42)', 2);
+
+  // 1. MEGA NAZAR (Top Left in Cluster)
   const nReady = G.nazar >= 100;
-  const nPulse = nReady ? (1 + Math.sin(G.time * 8) * 0.08) : 1;
-  drawImgCenter('ui_btn_nazar', 976, 646, 86 * nPulse, 0, nReady ? 1 : 0.55);
-  drawOutlined(nReady ? 'Q • HAZIR!' : `${Math.floor(G.nazar)}%`, 976, 700, 14.5, '#82f0ff');
-  addZone('btn_nazar', 932, 602, 88, 88);
+  const nPulse = nReady ? (1 + Math.sin(G.time * 8) * 0.09) : 1;
+  drawImgCenter('ui_btn_nazar', 968, 542, 80 * nPulse, 0, nReady ? 1 : 0.55);
+  drawOutlined(nReady ? 'NAZAR!' : `${Math.floor(G.nazar)}%`, 968, 588, 13.5, nReady ? '#6effff' : '#99d8e8');
+  drawLabel('[Q]', 968, 604, 10, '#bfefff', 'center', true);
+  addZone('btn_nazar', 924, 498, 88, 88);
 
+  // 2. KOLONYA ŞOKU (Top Right in Cluster)
   const kReady = G.kolonyaCd <= 0;
-  drawImgCenter('ui_btn_kolonya', 1084, 646, 86, 0, kReady ? 1 : 0.52);
-  drawOutlined(kReady ? 'K • ŞOK!' : `${G.kolonyaCd.toFixed(1)}s`, 1084, 700, 14.5, '#91ffa0');
-  addZone('btn_kolonya', 1040, 602, 88, 88);
+  drawImgCenter('ui_btn_kolonya', 1064, 542, 80, 0, kReady ? 1 : 0.52);
+  drawOutlined(kReady ? '80° ŞOK!' : `${G.kolonyaCd.toFixed(1)}s`, 1064, 588, 13.5, kReady ? '#8cff9a' : '#85a88c');
+  drawLabel('[K]', 1064, 604, 10, '#c8ffcf', 'center', true);
+  addZone('btn_kolonya', 1020, 498, 88, 88);
 
-  drawImgCenter('ui_btn_ayran', 1198, 644, 96, 0, 1);
-  drawOutlined('J • ISLAT', 1198, 700, 14.5, '#ffe876');
-  addZone('btn_ayran', 1148, 596, 100, 96);
+  // 3. ZIPLA / JUMP (Bottom Left in Cluster - Next to Ayran!)
+  const jPressed = G.hover === 'pad_jump';
+  const hasDbl = (G.upLevels.belt_cap || 0) >= 1;
+  const jCol = !G.onGround && hasDbl && G.jumpsLeft > 0 ? '#ff9a2e' : (jPressed ? '#2d78a8' : '#1c3654');
+  fillRectR(954, 616, 96, 82, 18, jCol);
+  strokeRectR(954, 616, 96, 82, 18, jPressed ? '#78e5ff' : '#4578ab', 2.5);
+  drawOutlined('⬆', 1002, 646, 26, '#ffffff');
+  drawOutlined(hasDbl ? 'ÇİFT ZIPLA' : 'ZIPLA', 1002, 672, 12.5, '#ffeaa2');
+  drawLabel('[Space]', 1002, 688, 9.5, '#cce6ff', 'center', true);
+  addZone('pad_jump', 954, 616, 96, 82);
+
+  // 4. AYRAN FIRLAT (Big Primary Action Button - Bottom Right)
+  const aPressed = G.hover === 'btn_ayran';
+  drawImgCenter('ui_btn_ayran', 1172, 638, aPressed ? 98 : 106, 0, 1);
+  drawOutlined('AYRAN AT', 1172, 684, 14.5, '#ffea62');
+  drawLabel('[J]', 1172, 700, 10.5, '#fff4b8', 'center', true);
+  addZone('btn_ayran', 1118, 584, 108, 108);
 }
 
 function drawKeycapBar(cy) {
@@ -2564,6 +2614,14 @@ function syncMoveHolds() {
 canvas.addEventListener('pointermove', ev => {
   const p = getVirtualPos(ev);
   G.hover = hitTest(p.x, p.y);
+  if (activeMovePointers.has(ev.pointerId)) {
+    const id = hitTest(p.x, p.y);
+    if (id === 'pad_left') { activeMovePointers.set(ev.pointerId, 'left'); syncMoveHolds(); }
+    else if (id === 'pad_right') { activeMovePointers.set(ev.pointerId, 'right'); syncMoveHolds(); }
+    else if (id === 'pad_down') {
+      if (G.onPlatform) { G.dropThroughT = 0.28; G.onGround = false; G.onPlatform = false; G.pvy = 120; }
+    }
+  }
 });
 function releasePointer(ev) {
   if (activeMovePointers.has(ev.pointerId)) {
@@ -2613,12 +2671,45 @@ canvas.addEventListener('pointerdown', ev => {
     resetFullGame(); G.screen = 'title'; return;
   }
   if (id.startsWith('buy_')) { buyUpgrade(id.slice(4)); return; }
-  if (id === 'pad_left') { activeMovePointers.set(ev.pointerId, 'left'); syncMoveHolds(); return; }
-  if (id === 'pad_right') { activeMovePointers.set(ev.pointerId, 'right'); syncMoveHolds(); return; }
-  if (id === 'pad_jump') { G.jumpBufT = 0.12; executeJump(); return; }
-  if (id === 'btn_ayran') { fireAyran(null); return; }
-  if (id === 'btn_kolonya') { useKolonya(); return; }
-  if (id === 'btn_nazar') { useMegaNazar(); return; }
+  if (id === 'pad_left') {
+    activeMovePointers.set(ev.pointerId, 'left');
+    syncMoveHolds();
+    if (navigator.vibrate) try { navigator.vibrate(8); } catch (_) {}
+    return;
+  }
+  if (id === 'pad_right') {
+    activeMovePointers.set(ev.pointerId, 'right');
+    syncMoveHolds();
+    if (navigator.vibrate) try { navigator.vibrate(8); } catch (_) {}
+    return;
+  }
+  if (id === 'pad_down') {
+    if (G.onPlatform) {
+      G.dropThroughT = 0.28; G.onGround = false; G.onPlatform = false; G.pvy = 120; playSfx('sfx_jump');
+      if (navigator.vibrate) try { navigator.vibrate(10); } catch (_) {}
+    }
+    return;
+  }
+  if (id === 'pad_jump') {
+    G.jumpBufT = 0.14; executeJump();
+    if (navigator.vibrate) try { navigator.vibrate(10); } catch (_) {}
+    return;
+  }
+  if (id === 'btn_ayran') {
+    fireAyran(null);
+    if (navigator.vibrate) try { navigator.vibrate(12); } catch (_) {}
+    return;
+  }
+  if (id === 'btn_kolonya') {
+    useKolonya();
+    if (navigator.vibrate) try { navigator.vibrate(16); } catch (_) {}
+    return;
+  }
+  if (id === 'btn_nazar') {
+    useMegaNazar();
+    if (navigator.vibrate) try { navigator.vibrate(25); } catch (_) {}
+    return;
+  }
   if (G.screen === 'play') fireAyran((p.x + G.camX) >= G.px ? 1 : -1);
 });
 
