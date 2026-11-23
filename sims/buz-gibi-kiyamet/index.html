@@ -67,7 +67,7 @@
 (() => {
 'use strict';
 
-const VW = 1280;
+let VW = 1280;
 const VH = 720;
 const WORLD_W = 3840;
 const GROUND_Y = 612;
@@ -116,21 +116,33 @@ if (fsBtn) {
   });
 }
 
-// Responsive Fullscreen HiDPI sizing + Automatic Portrait Phone 90° Rotation!
+// Responsive Fullscreen HiDPI sizing + Dynamic Ultrawide Viewport (Zero Black Bars!)
 function resizeCanvas() {
   const dpr = Math.min(2.5, window.devicePixelRatio || 1);
   const vv = window.visualViewport;
   const availW = Math.floor(vv ? vv.width : window.innerWidth);
   const availH = Math.floor(vv ? vv.height : window.innerHeight);
 
-  // On portrait phones/tablets, auto-rotate 90° clockwise so the 16:9 game fills the full phone screen!
+  // On portrait phones/tablets, auto-rotate 90° clockwise so the game fills the full phone screen!
   isRotated = (availH > availW) && (IS_TOUCH || availW <= 768);
   const targetW = isRotated ? availH : availW;
   const targetH = isRotated ? availW : availH;
 
-  viewScale = Math.min(targetW / VW, targetH / VH);
-  const cssW = Math.floor(VW * viewScale);
-  const cssH = Math.floor(VH * viewScale);
+  // Dynamic Ultrawide Viewport: Calculates exact VW to match the phone's physical aspect ratio (19.5:9, 20:9, etc.)
+  // Eliminates 100% of black letterbox bars on modern mobile devices!
+  const aspect = targetW / Math.max(1, targetH);
+  if (aspect >= 1280 / 720) {
+    VW = Math.max(1280, Math.min(1760, Math.round(VH * aspect)));
+    viewScale = targetH / VH;
+    var cssW = targetW;
+    var cssH = targetH;
+  } else {
+    VW = 1280;
+    viewScale = Math.min(targetW / VW, targetH / VH);
+    var cssW = Math.floor(VW * viewScale);
+    var cssH = Math.floor(VH * viewScale);
+  }
+
   canvas.style.width = cssW + 'px';
   canvas.style.height = cssH + 'px';
   canvas.style.transform = isRotated ? 'rotate(90deg)' : 'none';
@@ -1980,7 +1992,7 @@ function drawHUD() {
   drawOutlined(`${G.gold} ₺`, 274, 137, 17.5, '#ffe85f');
   addZone('btn_shop', 316, 114, 38, 44);
 
-  const lx = 424, ly = 2, lw = 432, lh = 128;
+  const lw = 432, lh = 128, lx = (VW - lw) / 2, ly = 2;
   drawImgBox('hud_level_progress', lx, ly, lw, lh);
   drawOutlined('SEVİYE', lx + lw * 0.116, ly + lh * 0.41, 11, '#ffec82');
   drawOutlined(String(lvl.id), lx + lw * 0.116, ly + lh * 0.63, 25, '#ffffff');
@@ -1990,42 +2002,44 @@ function drawHUD() {
     fillRectR(pbL, pbT, pbW * prog, pbH, 5, '#5ff273');
     fillRectR(pbL + 2, pbT + 2, Math.max(4, pbW * prog - 4), 5, 2, 'rgba(255,255,255,0.5)');
   }
-  drawOutlined(lvl.title, 668, 114, 13.5, '#ffec82');
+  drawOutlined(lvl.title, lx + lw * 0.56, 114, 13.5, '#ffec82');
 
   for (const z of G.zombies) {
     if (z.isBoss && !z.calmed) {
-      fillRectR(390, 140, 500, 38, 11, 'rgba(115,22,34,0.96)');
-      strokeRectR(390, 140, 500, 38, 11, '#ffcd50', 3);
-      fillRectR(404, 159, 472, 12, 6, '#1c0c12');
-      fillRectR(406, 161, 468 * Math.max(0, z.hp / z.maxHp), 8, 4, '#ff4c44');
-      drawOutlined(z.label, 640, 150, 13, '#ffec7d');
+      const bBarW = 500, bBarX = (VW - bBarW) / 2;
+      fillRectR(bBarX, 140, bBarW, 38, 11, 'rgba(115,22,34,0.96)');
+      strokeRectR(bBarX, 140, bBarW, 38, 11, '#ffcd50', 3);
+      fillRectR(bBarX + 14, 159, bBarW - 28, 12, 6, '#1c0c12');
+      fillRectR(bBarX + 16, 161, (bBarW - 32) * Math.max(0, z.hp / z.maxHp), 8, 4, '#ff4c44');
+      drawOutlined(z.label, VW / 2, 150, 13, '#ffec7d');
     }
   }
 
   // Sound Toggle Button in HUD
   const sndHov = G.hover === 'btn_sound';
-  fillRectR(890, 26, 64, 52, 13, G.muted ? '#4c2424' : (sndHov ? '#226e55' : '#19523f'));
-  strokeRectR(890, 26, 64, 52, 13, G.muted ? '#ff6666' : '#5affc3', 2.5);
-  drawLabel(G.muted ? '🔇' : '🔊', 922, 59, 23, '#ffffff', 'center', false);
-  addZone('btn_sound', 890, 26, 64, 52);
+  const sndX = VW - 390;
+  fillRectR(sndX, 26, 64, 52, 13, G.muted ? '#4c2424' : (sndHov ? '#226e55' : '#19523f'));
+  strokeRectR(sndX, 26, 64, 52, 13, G.muted ? '#ff6666' : '#5affc3', 2.5);
+  drawLabel(G.muted ? '🔇' : '🔊', sndX + 32, 59, 23, '#ffffff', 'center', false);
+  addZone('btn_sound', sndX, 26, 64, 52);
 
-  drawImgBox('hud_score_panel', 968, 12, 214, 82);
-  drawOutlined(String(G.score), 1102, 57, 21, '#ffee7d');
-  drawImgCenter('ui_btn_settings', 1228, 54, G.hover === 'btn_pause' ? 64 : 58);
-  addZone('btn_pause', 1196, 22, 64, 64);
+  const scrX = VW - 312;
+  drawImgBox('hud_score_panel', scrX, 12, 214, 82);
+  drawOutlined(String(G.score), scrX + 134, 57, 21, '#ffee7d');
+  
+  const pauseX = VW - 52;
+  drawImgCenter('ui_btn_settings', pauseX, 54, G.hover === 'btn_pause' ? 64 : 58);
+  addZone('btn_pause', pauseX - 32, 22, 64, 64);
 
   if (G.combo >= 2) {
-    drawImgBox('ui_badge_red', 1070, 96, 194, 54);
-    drawOutlined(`${G.combo}x KOMBO!`, 1167, 121, 18, '#fff073');
+    const cmbX = VW - 210;
+    drawImgBox('ui_badge_red', cmbX, 96, 194, 54);
+    drawOutlined(`${G.combo}x KOMBO!`, cmbX + 97, 121, 18, '#fff073');
   }
   if (G.bossBannerT > 0) {
-    drawImgBox('ui_badge_red', 270, 152, 740, 112);
-    drawOutlined(`DİKKAT! ${lvl.boss.name} GELİYOR!`, 640, 206, 22, '#ffee6e');
+    drawImgBox('ui_badge_red', (VW - 740) / 2, 152, 740, 112);
+    drawOutlined(`DİKKAT! ${lvl.boss.name} GELİYOR!`, VW / 2, 206, 22, '#ffee6e');
   }
-
-  // ==========================================================================
-  // ARCADE TOUCH & HUD CONTROLS
-  // ==========================================================================
 
   // ============================================================================
   // MOBILE GHOST ARCADE HUD (Zero-clutter, translucent, ergonomic thumb-arc)
@@ -2077,24 +2091,31 @@ function drawHUD() {
   // --- CENTER KEYBOARD BANNER: Only shown on desktop/keyboard, hidden on mobile touch devices ---
   const isTouchDevice = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
   if (!isTouchDevice) {
-    fillRectR(360, 678, 460, 26, 8, 'rgba(12, 14, 26, 0.45)');
-    strokeRectR(360, 678, 460, 26, 8, 'rgba(80, 110, 160, 0.35)', 1);
-    drawLabel('Space: Zıpla • J: Ayran • K: Kolonya • Q: Nazar • S: İn', 590, 692, 11, '#dce8ff', 'center', false);
+    const kBarW = 460, kBarX = (VW - kBarW) / 2;
+    fillRectR(kBarX, 678, kBarW, 26, 8, 'rgba(12, 14, 26, 0.45)');
+    strokeRectR(kBarX, 678, kBarW, 26, 8, 'rgba(80, 110, 160, 0.35)', 1);
+    drawLabel('Space: Zıpla • J: Ayran • K: Kolonya • Q: Nazar • S: İn', VW / 2, 692, 11, '#dce8ff', 'center', false);
   }
 
   // --- RIGHT SIDE: ERGONOMIC THUMB-ARC CLUSTER (Zero solid background box) ---
+  // Dynamically anchored to VW right edge:
+  const ayX = VW - 96, ayY = 632;
+  const jpX = VW - 206, jpY = 634;
+  const klX = VW - 188, klY = 520;
+  const nzX = VW - 85, nzY = 514;
+
   // 1. MEGA NAZAR (Top-Right Arc, compact floating circle)
   const nReady = G.nazar >= 100;
   const nPulse = nReady ? (1 + Math.sin(G.time * 8) * 0.08) : 1;
-  drawImgCenter('ui_btn_nazar', 1195, 514, 66 * nPulse, 0, nReady ? 1 : 0.52);
-  drawOutlined(nReady ? 'NAZAR!' : `${Math.floor(G.nazar)}%`, 1195, 554, 12, nReady ? '#6effff' : '#9be2f5');
-  addZone('btn_nazar', 1162, 482, 66, 66);
+  drawImgCenter('ui_btn_nazar', nzX, nzY, 66 * nPulse, 0, nReady ? 1 : 0.52);
+  drawOutlined(nReady ? 'NAZAR!' : `${Math.floor(G.nazar)}%`, nzX, nzY + 40, 12, nReady ? '#6effff' : '#9be2f5');
+  addZone('btn_nazar', nzX - 33, nzY - 33, 66, 66);
 
   // 2. KOLONYA ŞOKU (Top-Center Arc, compact floating circle)
   const kReady = G.kolonyaCd <= 0;
-  drawImgCenter('ui_btn_kolonya', 1092, 520, 66, 0, kReady ? 1 : 0.48);
-  drawOutlined(kReady ? 'ŞOK!' : `${G.kolonyaCd.toFixed(1)}s`, 1092, 558, 12, kReady ? '#8cff9a' : '#85a88c');
-  addZone('btn_kolonya', 1058, 488, 66, 66);
+  drawImgCenter('ui_btn_kolonya', klX, klY, 66, 0, kReady ? 1 : 0.48);
+  drawOutlined(kReady ? 'ŞOK!' : `${G.kolonyaCd.toFixed(1)}s`, klX, klY + 38, 12, kReady ? '#8cff9a' : '#85a88c');
+  addZone('btn_kolonya', klX - 33, klY - 33, 66, 66);
 
   // 3. ZIPLA / JUMP (Left thumb-arc, naturally swept from Ayran)
   const jPressed = G.hover === 'pad_jump';
@@ -2105,24 +2126,24 @@ function drawHUD() {
   ctx.shadowColor = isDblReady ? '#ff9a2e' : (jPressed ? '#6ee0ff' : 'rgba(0,0,0,0)');
   ctx.shadowBlur = jPressed ? 14 : 6;
   ctx.fillStyle = isDblReady ? 'rgba(255, 140, 40, 0.42)' : (jPressed ? 'rgba(45, 120, 180, 0.45)' : 'rgba(16, 28, 54, 0.38)');
-  ctx.beginPath(); ctx.arc(1074, 634, 38, 0, Math.PI * 2); ctx.fill();
+  ctx.beginPath(); ctx.arc(jpX, jpY, 38, 0, Math.PI * 2); ctx.fill();
   ctx.strokeStyle = isDblReady ? '#ffbe52' : (jPressed ? '#6ee0ff' : 'rgba(110, 210, 255, 0.45)');
   ctx.lineWidth = 2.2; ctx.stroke();
   ctx.restore();
 
-  drawOutlined(isDblReady ? '▲▲' : '▲', 1074, 642, isDblReady ? 23 : 26, isDblReady ? '#ffe27d' : '#ffffff');
-  drawLabel(isDblReady ? '2X' : 'ZIPLA', 1074, 660, 10, isDblReady ? '#ffe27d' : '#cce8ff', 'center', true);
-  addZone('pad_jump', 1034, 594, 80, 80);
+  drawOutlined(isDblReady ? '▲▲' : '▲', jpX, jpY + 8, isDblReady ? 23 : 26, isDblReady ? '#ffe27d' : '#ffffff');
+  drawLabel(isDblReady ? '2X' : 'ZIPLA', jpX, jpY + 26, 10, isDblReady ? '#ffe27d' : '#cce8ff', 'center', true);
+  addZone('pad_jump', jpX - 40, jpY - 40, 80, 80);
 
   // 4. AYRAN AT (Primary Action - Floating corner circle)
   const aPressed = G.hover === 'btn_ayran';
   ctx.save();
   ctx.shadowColor = aPressed ? '#ffe05c' : 'rgba(255, 200, 40, 0.4)';
   ctx.shadowBlur = aPressed ? 18 : 8;
-  drawImgCenter('ui_btn_ayran', 1184, 632, aPressed ? 92 : 100, 0, 1);
+  drawImgCenter('ui_btn_ayran', ayX, ayY, aPressed ? 92 : 100, 0, 1);
   ctx.restore();
-  drawOutlined('AYRAN', 1184, 676, 13.5, '#ffea62');
-  addZone('btn_ayran', 1134, 582, 100, 100);
+  drawOutlined('AYRAN', ayX, ayY + 44, 13.5, '#ffea62');
+  addZone('btn_ayran', ayX - 50, ayY - 50, 100, 100);
 }
 
 function drawKeycapBar(cy) {
@@ -2148,30 +2169,34 @@ function drawTitleScreen() {
   // Unified 3D Logo ("BUZ GİBİ KIYAMET: SON AYRANCI" with winged Nazar crest)
   const logoH = 345;
   const logoW = Math.round(logoH * (960 / 873));
-  drawImgBox('ui_logo_buzgibi', 640 - logoW / 2, 8 + bob, logoW, logoH);
+  drawImgBox('ui_logo_buzgibi', (VW - logoW) / 2, 8 + bob, logoW, logoH);
 
   // Title Sound Toggle
   const sndHov = G.hover === 'btn_sound';
-  fillRectR(1088, 24, 160, 44, 12, G.muted ? '#4c2424' : (sndHov ? '#226e55' : '#19523f'));
-  strokeRectR(1088, 24, 160, 44, 12, G.muted ? '#ff6666' : '#5affc3', 2);
-  drawOutlined(G.muted ? '🔇 MÜZİK: KAPALI' : '🔊 MÜZİK: AÇIK', 1168, 51, 14, '#ffffff');
-  addZone('btn_sound', 1088, 24, 160, 44);
+  const sndX = VW - 188;
+  fillRectR(sndX, 24, 160, 44, 12, G.muted ? '#4c2424' : (sndHov ? '#226e55' : '#19523f'));
+  strokeRectR(sndX, 24, 160, 44, 12, G.muted ? '#ff6666' : '#5affc3', 2);
+  drawOutlined(G.muted ? '🔇 MÜZİK: KAPALI' : '🔊 MÜZİK: AÇIK', sndX + 80, 51, 14, '#ffffff');
+  addZone('btn_sound', sndX, 24, 160, 44);
 
   const cards = [
     { frame:'ui_card_blue', topper:'ui_topper_ayran', th:88, t:'BUZ GİBİ AYRAN', s:'HARARETİ SÖNDÜR!', tc:'#ffffff', sc:'#bcf2ff' },
     { frame:'ui_card_green', topper:'ui_btn_kolonya', th:82, t:'KOLONYA ŞOKU', s:'2X KÖPÜK PATLAMASI!', tc:'#f4ffbd', sc:'#ebff85' },
     { frame:'ui_card_amber', topper:'ui_trophy', th:80, t:'ESNAFI İYİLEŞTİR', s:'MAHALLEYİ KURTAR!', tc:'#fff2c4', sc:'#ffe280' },
   ];
+  const cw = 228, ch = 152, cGap = 12;
+  const totalCardsW = 3 * cw + 2 * cGap;
+  const startCardsX = (VW - totalCardsW) / 2;
   cards.forEach((c, i) => {
-    const cw = 228, ch = 152, cx = 286 + i * 240, cy = 376;
+    const cx = startCardsX + i * (cw + cGap), cy = 376;
     drawImgBox(c.frame, cx, cy, cw, ch);
     drawImgCenter(c.topper, cx + cw / 2, cy - 8 + Math.sin(G.time * 3.1 + i * 1.4) * 3, c.th);
     drawOutlined(c.t, cx + cw / 2, cy + 68, 20.5, c.tc);
     drawOutlined(c.s, cx + cw / 2, cy + 104, 16.5, c.sc, 'center', true);
   });
-  if (G.bestScore > 0) drawOutlined(`EN YÜKSEK SKORUN: ${G.bestScore}`, 640, 546, 16, '#ffea6e');
-  drawGoldBtn('btn_start', 640, 608, 330, 96, 'BAŞLA', 34, true);
-  // Controls bar removed per request for a cleaner, modern arcade interface
+
+  if (G.bestScore > 0) drawOutlined(`EN YÜKSEK SKORUN: ${G.bestScore}`, VW / 2, 546, 16, '#ffea6e');
+  drawGoldBtn('btn_start', VW / 2, 608, 330, 96, 'BAŞLA', 34, true);
 }
 
 function wrapTextLines(str, maxW, fontSpec) {
@@ -2391,17 +2416,19 @@ function drawStoryScreen() {
 
   // Backlog button (fixed corner)
   const logHov = G.hover === 'btn_story_log';
-  fillRectR(956, 24, 134, 48, 12, logHov ? '#3c5478' : 'rgba(26, 36, 56, 0.92)');
-  strokeRectR(956, 24, 134, 48, 12, '#8cdfff', 2.5);
-  drawOutlined('GEÇMİŞ [L]', 1023, 48, 14.5, '#e8f9ff');
-  addZone('btn_story_log', 956, 24, 134, 48);
+  const logX = VW - 324;
+  fillRectR(logX, 24, 134, 48, 12, logHov ? '#3c5478' : 'rgba(26, 36, 56, 0.92)');
+  strokeRectR(logX, 24, 134, 48, 12, '#8cdfff', 2.5);
+  drawOutlined('GEÇMİŞ [L]', logX + 67, 48, 14.5, '#e8f9ff');
+  addZone('btn_story_log', logX, 24, 134, 48);
 
   // Skip button (fixed corner)
   const skipHov = G.hover === 'btn_story_skip';
-  fillRectR(1104, 24, 148, 48, 12, skipHov ? '#e69f24' : '#b8721a');
-  strokeRectR(1104, 24, 148, 48, 12, '#18121e', 3);
-  drawOutlined('ATLA [ESC] ⏭', 1178, 48, 14.5, '#fff8dc');
-  addZone('btn_story_skip', 1104, 24, 148, 48);
+  const skipX = VW - 176;
+  fillRectR(skipX, 24, 148, 48, 12, skipHov ? '#e69f24' : '#b8721a');
+  strokeRectR(skipX, 24, 148, 48, 12, '#18121e', 3);
+  drawOutlined('ATLA [ESC] ⏭', skipX + 74, 48, 14.5, '#fff8dc');
+  addZone('btn_story_skip', skipX, 24, 148, 48);
 
   // 4. Optional Spotlight Plaque (e.g., "45°C YAZ GECESİ", "SOĞUK, PAYLAŞINCA SOĞUK.")
   if (node.plaque) {
@@ -2420,10 +2447,10 @@ function drawStoryScreen() {
   const fullText = node.text || '';
   const isTyping = G.story.charIdx < fullText.length;
   if (node.left) {
-    drawStoryPortrait(node.left, 240, 584, node.side === 'left', isTyping, false);
+    drawStoryPortrait(node.left, bx + 104, 584, node.side === 'left', isTyping, false);
   }
   if (node.right) {
-    drawStoryPortrait(node.right, 1040, 584, node.side === 'right', isTyping, !!node.phoneRing);
+    drawStoryPortrait(node.right, bx + bw - 104, 584, node.side === 'right', isTyping, !!node.phoneRing);
   }
 
   // 6. Choice Buttons (clean center stack between portraits, zero overlap!)
@@ -2448,7 +2475,7 @@ function drawStoryScreen() {
   }
 
   // 7. Bottom Comic Dialogue Box (sleek, compact lower-third so scene art shines!)
-  const bx = 136, by = 568, bw = 1008, bh = 128;
+  const bw = Math.min(1008, VW - 120), bx = (VW - bw) / 2, by = 568, bh = 128;
   fillRectR(bx, by + 5, bw, bh, 16, 'rgba(8, 6, 16, 0.86)');
   fillRectR(bx, by, bw, bh, 16, '#6e3e20');
   strokeRectR(bx, by, bw, bh, 16, '#16111e', 4);
@@ -2498,9 +2525,10 @@ function drawStoryScreen() {
   // 8. Backlog Overlay (optional)
   if (G.story.logOpen) {
     fillRectR(0, 0, VW, VH, 0, 'rgba(10, 8, 20, 0.78)');
-    drawWoodenModal(164, 54, 952, 608);
-    drawImgBox('ui_badge_red', 432, 42, 416, 88);
-    drawOutlined('KONUŞMA GEÇMİŞİ', 640, 86, 23, '#ffec7d');
+    const bModalW = 952, bmx = (VW - bModalW) / 2;
+    drawWoodenModal(bmx, 54, bModalW, 608);
+    drawImgBox('ui_badge_red', (VW - 416) / 2, 42, 416, 88);
+    drawOutlined('KONUŞMA GEÇMİŞİ', VW / 2, 86, 23, '#ffec7d');
     const recent = G.story.backlog.slice(-6);
     if (recent.length === 0) {
       drawLabel('Henüz konuşma yok.', 640, 320, 20, '#f0e6d2', 'center', false);
@@ -2519,7 +2547,7 @@ function drawStoryScreen() {
         }
       });
     }
-    drawGoldBtn('btn_story_log_close', 640, 610, 260, 84, 'KAPAT', 22, false);
+    drawGoldBtn('btn_story_log_close', VW / 2, 610, 260, 84, 'KAPAT', 22, false);
   }
 }
 
@@ -2527,16 +2555,17 @@ function drawComicIntro() {
   const lvl = LEVELS[G.levelIdx];
   drawImgBox('ui_title_bg', 0, 0, VW, VH);
   fillRectR(0, 0, VW, VH, 0, 'rgba(12,16,36,0.38)');
-  drawWoodenModal(82, 34, 1116, 608);
-  drawImgBox('ui_badge_red', 118, 48, 224, 90);
-  drawOutlined(`SAYI #${lvl.id}`, 230, 91, 25, '#ffffff');
-  drawOutlined(lvl.title, 668, 108, 32, '#ffea8a');
+  const mw = 1116, mh = 608, mx = (VW - mw) / 2;
+  drawWoodenModal(mx, 34, mw, mh);
+  drawImgBox('ui_badge_red', mx + 36, 48, 224, 90);
+  drawOutlined(`SAYI #${lvl.id}`, mx + 148, 91, 25, '#ffffff');
+  drawOutlined(lvl.title, mx + 586, 108, 32, '#ffea8a');
 
   const frames = ['ui_card_blue','ui_card_green','ui_card_amber'];
   const caps = ['ui_cap_blue','ui_cap_green','ui_cap_yellow'];
   const pSprites = ['hero_idle', `z_${lvl.group + 1}_2`, lvl.boss.img];
   for (let i = 0; i < 3; i++) {
-    const px = 152 + i * 334, py = 160, pw = 308, ph = 408;
+    const px = mx + 70 + i * 334, py = 160, pw = 308, ph = 408;
     drawImgBox(frames[i], px, py, pw, ph);
     const hx = px + 26, hy = py + 36, hw = pw - 52, hh = 58;
     drawImgBox(caps[i], hx, hy, hw, hh);
@@ -2551,7 +2580,7 @@ function drawComicIntro() {
 
     ctx.fillStyle = 'rgba(16,12,24,0.5)';
     ctx.beginPath(); ctx.ellipse(px + pw / 2, py + ph - 32, 62, 14, 0, 0, Math.PI * 2); ctx.fill();
-    // High-res crisp intro portraits for all 3 levels (eliminates blurry 192px sprite cells)
+    // High-res crisp intro portraits for all 3 levels
     const introPairs = [
       ['intro_hero', 'intro_l1_mid', 'intro_l1_boss'],
       ['intro_hero', 'intro_l2_mid', 'intro_l2_boss'],
@@ -2564,28 +2593,30 @@ function drawComicIntro() {
       drawSheetFrame(pSprites[i], 4, 0, px + pw / 2, py + ph - 28, i === 0 ? 286 : 280, i === 0 ? 1 : -1);
     }
   }
-  fillRectR(166, 578, 616, 40, 11, 'rgba(36,20,14,0.86)');
-  strokeRectR(166, 578, 616, 40, 11, '#120c12', 2.5);
-  drawLabel(lvl.subtitle, 474, 598, 13.5, '#fff4d2', 'center', true);
-  drawGoldBtn('btn_go_play', 996, 602, 344, 110, 'SOKAĞA ÇIK!', 28, true);
+  fillRectR(mx + 84, 578, 616, 40, 11, 'rgba(36,20,14,0.86)');
+  strokeRectR(mx + 84, 578, 616, 40, 11, '#120c12', 2.5);
+  drawLabel(lvl.subtitle, mx + 392, 598, 13.5, '#fff4d2', 'center', true);
+  drawGoldBtn('btn_go_play', mx + mw - 200, 602, 344, 110, 'SOKAĞA ÇIK!', 28, true);
 }
 
 function drawShopModal() {
   drawWorld();
   fillRectR(0, 0, VW, VH, 0, 'rgba(12,10,26,0.65)');
-  drawWoodenModal(148, 28, 984, 636);
-  drawImgBox('ui_badge_red', 198, 42, 256, 86);
-  drawOutlined('ESNAF MARKETİ', 326, 84, 22, '#ffffff');
+  const mw = 984, mh = 636, mx = (VW - mw) / 2;
+  drawWoodenModal(mx, 28, mw, mh);
+  drawImgBox('ui_badge_red', mx + 50, 42, 256, 86);
+  drawOutlined('ESNAF MARKETİ', mx + 178, 84, 22, '#ffffff');
   
   const totalBought = Object.values(G.upLevels).reduce((a, b) => a + b, 0);
   if (totalBought === 0) {
-    fillRectR(470, 58, 204, 38, 10, '#ff9626');
-    strokeRectR(470, 58, 204, 38, 10, '#fff4b8', 2);
-    drawOutlined('İLK ALIŞA %40 İNDİRİM!', 572, 82, 13, '#ffffff');
+    fillRectR(mx + 322, 58, 204, 38, 10, '#ff9626');
+    strokeRectR(mx + 322, 58, 204, 38, 10, '#fff4b8', 2);
+    drawOutlined('İLK ALIŞA %40 İNDİRİM!', mx + 424, 82, 13, '#ffffff');
   }
 
-  drawImgBox('hud_gold_counter', 856, 62, 206, 72);
-  drawOutlined(`${G.gold} ₺`, 968, 99, 20, '#ffe85f');
+  const gx = mx + mw - 276;
+  drawImgBox('hud_gold_counter', gx, 62, 206, 72);
+  drawOutlined(`${G.gold} ₺`, gx + 112, 99, 20, '#ffe85f');
 
   UPGRADES.forEach((u, i) => {
     const ry = 160 + i * 94;
@@ -2593,66 +2624,71 @@ function drawShopModal() {
     const cost = getUpgradeCost(u);
     const maxed = ulvl >= u.maxLvl;
     const afford = G.gold >= cost && !maxed;
-    fillRectR(224, ry, 832, 80, 15, 'rgba(58,34,22,0.96)');
-    strokeRectR(224, ry, 832, 80, 15, '#181016', 3);
-    drawImgCenter(u.icon, 276, ry + 40, 48);
+    const rx = mx + 76, rw = 832;
+    fillRectR(rx, ry, rw, 80, 15, 'rgba(58,34,22,0.96)');
+    strokeRectR(rx, ry, rw, 80, 15, '#181016', 3);
+    drawImgCenter(u.icon, rx + 52, ry + 40, 48);
     const tStr = u.name + (u.maxLvl < 50 ? `  (Sv.${ulvl}/${u.maxLvl})` : '');
-    drawOutlined(tStr, 324, ry + 27, 18.5, '#ffec7d', 'left');
-    drawLabel(u.desc, 324, ry + 54, 13.5, '#f5ecdc', 'left', false);
+    drawOutlined(tStr, rx + 100, ry + 27, 18.5, '#ffec7d', 'left');
+    drawLabel(u.desc, rx + 100, ry + 54, 13.5, '#f5ecdc', 'left', false);
     const bid = 'buy_' + u.id;
     const hov = G.hover === bid;
-    fillRectR(882, ry + 14, 154, 48, 13, afford ? (hov ? '#5ceb69' : '#3ac869') : '#4e4244');
-    strokeRectR(882, ry + 14, 154, 48, 13, '#18121c', 3);
-    drawOutlined(maxed ? 'MAKS!' : `${cost} ₺`, 959, ry + 38, 19.5, '#ffffff');
-    if (afford) addZone(bid, 882, ry + 14, 154, 52);
+    const bx = rx + rw - 174;
+    fillRectR(bx, ry + 14, 154, 48, 13, afford ? (hov ? '#5ceb69' : '#3ac869') : '#4e4244');
+    strokeRectR(bx, ry + 14, 154, 48, 13, '#18121c', 3);
+    drawOutlined(maxed ? 'MAKS!' : `${cost} ₺`, bx + 77, ry + 38, 19.5, '#ffffff');
+    if (afford) addZone(bid, bx, ry + 14, 154, 52);
   });
-  drawGoldBtn('btn_shop_next', 640, 610, 356, 108, G.bossDefeated ? `BÖLÜM ${G.levelIdx + 2}'E GEÇ!` : 'OYUNA DÖN', 25, true);
+  drawGoldBtn('btn_shop_next', VW / 2, 610, 356, 108, G.bossDefeated ? `BÖLÜM ${G.levelIdx + 2}'E GEÇ!` : 'OYUNA DÖN', 25, true);
 }
 
 function drawEndModal(isWin) {
   drawImgBox('ui_title_bg', 0, 0, VW, VH);
   fillRectR(0, 0, VW, VH, 0, 'rgba(12,10,26,0.6)');
-  drawWoodenModal(180, 56, 920, 566);
-  drawImgBox('ui_badge_red', 420, 44, 440, 108);
+  const mw = 920, mh = 566, mx = (VW - mw) / 2;
+  drawWoodenModal(mx, 56, mw, mh);
+  drawImgBox('ui_badge_red', (VW - 440) / 2, 44, 440, 108);
   if (isWin) {
-    drawOutlined('ER-ÖZ HOTEL GÜVENDE!', 640, 96, 27, '#ffec6e');
-    drawSheetFrame('hero_nazar', 4, Math.floor(G.time * 10) % 12, 585, 332, 212);
-    drawOutlined('Tüm mahalleyi Köpük Şoku ile serinlettin, 5 YILDIZLI ZAFER!', 640, 354, 16.5, '#d7f8ff', 'center', false);
+    drawOutlined('ER-ÖZ HOTEL GÜVENDE!', VW / 2, 96, 27, '#ffec6e');
+    drawSheetFrame('hero_nazar', 4, Math.floor(G.time * 10) % 12, VW / 2 - 55, 332, 212);
+    drawOutlined('Tüm mahalleyi Köpük Şoku ile serinlettin, 5 YILDIZLI ZAFER!', VW / 2, 354, 16.5, '#d7f8ff', 'center', false);
   } else {
-    drawOutlined('HARARET BASTI!', 640, 96, 31, '#ffec6e');
-    drawSheetFrame('hero_hit', 4, 2, 640, 324, 200);
-    drawOutlined('İpucu: Tezgahlara zıpla, Ayranla ıslatıp Kolonya ile patlat!', 640, 354, 16, '#ffeed7', 'center', false);
+    drawOutlined('HARARET BASTI!', VW / 2, 96, 31, '#ffec6e');
+    drawSheetFrame('hero_hit', 4, 2, VW / 2, 324, 200);
+    drawOutlined('İpucu: Tezgahlara zıpla, Ayranla ıslatıp Kolonya ile patlat!', VW / 2, 354, 16, '#ffeed7', 'center', false);
   }
   const stats = [['SKOR', G.score, '#ffe86e'], ['SAKİNLEŞEN', G.totalCalmed, '#82ffa5'], ['KÖPÜK ŞOKU', G.shockCount, '#78eeff']];
+  const totalStatsW = 3 * 224 + 2 * 20, startStatsX = (VW - totalStatsW) / 2;
   stats.forEach(([l, v, c], i) => {
-    const sx = 282 + i * 244;
+    const sx = startStatsX + i * 244;
     fillRectR(sx, 386, 224, 88, 14, 'rgba(48,28,18,0.96)');
     strokeRectR(sx, 386, 224, 88, 14, '#181016', 3);
     drawLabel(l, sx + 112, 410, 14, '#ebe1cd', 'center', false);
     drawOutlined(String(v), sx + 112, 444, 28, c);
   });
-  drawOutlined(`En Yüksek Skor: ${G.bestScore}   •   Maks. Kombo: ${G.maxCombo}x`, 640, 500, 15, '#fff4d7', 'center', false);
+  drawOutlined(`En Yüksek Skor: ${G.bestScore}   •   Maks. Kombo: ${G.maxCombo}x`, VW / 2, 500, 15, '#fff4d7', 'center', false);
   const hov = G.hover === 'btn_restart';
   const bw = hov ? 320 : 306, bh = hov ? 142 : 136;
-  drawImgBox(isWin ? 'hud_cta_gold' : 'hud_cta_red', 640 - bw / 2, 578 - bh / 2, bw, bh);
-  drawOutlined(isWin ? 'TEKRAR OYNA!' : 'TEKRAR DENE!', 640, 594, 26, '#ffffff');
-  addZone('btn_restart', 480, 520, 320, 118);
+  drawImgBox(isWin ? 'hud_cta_gold' : 'hud_cta_red', VW / 2 - bw / 2, 578 - bh / 2, bw, bh);
+  drawOutlined(isWin ? 'TEKRAR OYNA!' : 'TEKRAR DENE!', VW / 2, 594, 26, '#ffffff');
+  addZone('btn_restart', VW / 2 - 160, 520, 320, 118);
 }
 
 function drawPauseModal() {
   drawWorld(); drawHUD();
   fillRectR(0, 0, VW, VH, 0, 'rgba(12,10,26,0.65)');
-  drawWoodenModal(324, 126, 632, 456);
-  drawImgBox('ui_badge_red', 448, 114, 384, 96);
-  drawOutlined('ÇAY MOLASI', 640, 160, 28, '#ffec6e');
+  const mw = 632, mh = 456, mx = (VW - mw) / 2;
+  drawWoodenModal(mx, 126, mw, mh);
+  drawImgBox('ui_badge_red', (VW - 384) / 2, 114, 384, 96);
+  drawOutlined('ÇAY MOLASI', VW / 2, 160, 28, '#ffec6e');
   const h1 = G.hover === 'btn_resume', w1 = h1 ? 292 : 278, hh1 = h1 ? 134 : 128;
-  drawImgBox('hud_cta_gold', 640 - w1 / 2, 304 - hh1 / 2, w1, hh1);
-  drawOutlined('DEVAM ET', 640, 320, 25, '#ffffff');
-  addZone('btn_resume', 494, 248, 292, 116);
+  drawImgBox('hud_cta_gold', VW / 2 - w1 / 2, 304 - hh1 / 2, w1, hh1);
+  drawOutlined('DEVAM ET', VW / 2, 320, 25, '#ffffff');
+  addZone('btn_resume', VW / 2 - w1 / 2, 248, w1, 116);
   const h2 = G.hover === 'btn_restart', w2 = h2 ? 278 : 264, hh2 = h2 ? 126 : 120;
-  drawImgBox('hud_cta_red', 640 - w2 / 2, 442 - hh2 / 2, w2, hh2);
-  drawOutlined('BAŞTAN BAŞLA', 640, 456, 22, '#ffffff');
-  addZone('btn_restart', 500, 388, 280, 112);
+  drawImgBox('hud_cta_red', VW / 2 - w2 / 2, 442 - hh2 / 2, w2, hh2);
+  drawOutlined('BAŞTAN BAŞLA', VW / 2, 456, 22, '#ffffff');
+  addZone('btn_restart', VW / 2 - w2 / 2, 388, w2, 112);
 }
 
 // ============================================================================
@@ -2853,14 +2889,14 @@ function drawLoadingScreen() {
   ctx.fillRect(0, 0, VW, VH);
 
   const pct = Math.min(1, coreLoadedCount / Math.max(1, totalCoreAssets));
-  drawOutlined('BUZ GİBİ KIYAMET: SON AYRANCI', 640, 290, 38, '#ffec6e');
-  drawLabel('Mahalle hazırlanıyor...', 640, 342, 20, '#bfefff', 'center', true);
-  fillRectR(340, 380, 600, 30, 15, 'rgba(10, 14, 30, 0.85)');
-  strokeRectR(340, 380, 600, 30, 15, '#4ee6ff', 3);
+  drawOutlined('BUZ GİBİ KIYAMET: SON AYRANCI', VW / 2, 290, 38, '#ffec6e');
+  drawLabel('Mahalle hazırlanıyor...', VW / 2, 342, 20, '#bfefff', 'center', true);
+  fillRectR((VW - 600) / 2, 380, 600, 30, 15, 'rgba(10, 14, 30, 0.85)');
+  strokeRectR((VW - 600) / 2, 380, 600, 30, 15, '#4ee6ff', 3);
   if (pct > 0.02) {
-    fillRectR(344, 384, Math.max(18, (600 - 8) * pct), 22, 11, '#4ee6ff');
+    fillRectR((VW - 600) / 2 + 4, 384, Math.max(18, (600 - 8) * pct), 22, 11, '#4ee6ff');
   }
-  drawOutlined(`${Math.round(pct * 100)}%`, 640, 440, 22, '#ffffff');
+  drawOutlined(`${Math.round(pct * 100)}%`, VW / 2, 440, 22, '#ffffff');
 }
 
 let lastTs = performance.now();
