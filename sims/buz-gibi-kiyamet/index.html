@@ -149,37 +149,37 @@ resizeCanvas();
 // ============================================================================
 // DATA (1:1 parity with game_data.luau)
 // ============================================================================
-const IMAGE_IDS = [
-  ['ui_title_bg', 'jpg'],
-  ['bg_intro_city_heat', 'jpg'], ['bg_fethiye_chaos', 'jpg'], ['bg_hotel_siege', 'jpg'],
-  ['bg_balcony_chill', 'jpg'], ['bg_balcony_phone', 'jpg'], ['bg_suitup_comic', 'jpg'],
-  ['bg_intro_balcony', 'jpg'], ['bg_intro_cooler', 'jpg'],
-  ['bg_l1_classic', 'jpg'], ['bg_l2_classic', 'jpg'], ['bg_l3_classic', 'jpg'],
-  ['hero_idle', 'png'], ['hero_run', 'png'], ['hero_jump', 'png'], ['hero_throw', 'png'],
-  ['hero_cologne', 'png'], ['hero_nazar', 'png'], ['hero_hit', 'png'],
-  'hero_state_chill', 'hero_state_phone', 'hero_state_ready',
+const CORE_IMAGE_IDS = [
+  'ui_title_bg', 'ui_logo_buzgibi', 'ui_board_wood', 'ui_card_blue', 'ui_card_green', 'ui_card_amber',
+  'ui_btn_gold', 'ui_badge_red', 'ui_topper_ayran', 'ui_topper_brain', 'ui_header_plank',
+  'ui_cap_blue', 'ui_cap_green', 'ui_cap_yellow', 'ui_play_icon',
+  'hud_health_bar', 'hud_level_progress', 'hud_ayran_counter', 'hud_gold_counter', 'hud_score_panel', 'hud_cta_gold', 'hud_cta_red',
+  'ui_heart', 'ui_nazar_wing', 'ui_ayran_icon', 'ui_coin', 'ui_trophy', 'ui_btn_ayran', 'ui_btn_kolonya', 'ui_btn_nazar', 'ui_btn_settings',
+  'hero_idle', 'hero_run', 'hero_jump', 'hero_throw', 'hero_cologne', 'hero_nazar', 'hero_hit', 'hero_state_chill', 'hero_state_phone', 'hero_state_ready',
+  'bg_l1_classic', 'bg_intro_city_heat', 'bg_intro_balcony', 'bg_intro_cooler',
   'z_1_1','z_1_2','z_1_3','z_1_4','z_1_5','z_1_6','z_1_7','z_1_8','z_1_9',
-  'z_2_1','z_2_2','z_2_3','z_2_4','z_2_5','z_2_6','z_2_7','z_2_8','z_2_9',
-  'z_3_1','z_3_2','z_3_3','z_3_4','z_3_5','z_3_6','z_3_7','z_3_8','z_3_9',
+  'c_1_1','c_1_2','c_1_3','c_1_4','c_1_5','c_1_6','c_1_7','c_1_8','c_1_9',
   'p_simit_0','p_simit_1','p_simit_2','p_cay_0','p_cay_1','p_cay_2',
   'p_cop_0','p_cop_1','p_cop_2','p_dondurma_0','p_dondurma_1','p_dondurma_2',
-  'ui_heart','ui_nazar_wing','ui_ayran_icon','ui_coin','ui_trophy',
-  'ui_btn_ayran','ui_btn_kolonya','ui_btn_nazar','ui_btn_settings',
-  'ui_logo_buzgibi','ui_board_wood','ui_card_blue','ui_card_green','ui_card_amber',
-  'ui_btn_gold','ui_badge_red','ui_topper_ayran','ui_topper_brain',
-  'hud_health_bar','hud_level_progress','hud_ayran_counter','hud_gold_counter',
-  'hud_score_panel','hud_cta_gold','hud_cta_red',
-  'ui_header_plank','ui_cap_blue','ui_cap_green','ui_cap_yellow','ui_play_icon',
   'proj_ayran_sise','proj_curuk_domates','proj_hamsi','proj_kamp_feneri',
   'proj_kolonya_bulutu','proj_kozan_misir','proj_mini_balon','proj_nazar_halka',
   'proj_nota_dalgasi','proj_oklava','proj_sicak_cay','proj_simit',
   'proj_ucan_telefon','proj_zehirli_dondurma','proj_zehirli_kokteyl',
   'vfx_splash_ayran','vfx_puddle_tea','vfx_splat_tomato','vfx_popcorn_burst','vfx_splat_slime_green','vfx_fire_zone',
-  'intro_hero','intro_l1_mid','intro_l1_boss','intro_l2_mid','intro_l2_boss','intro_l3_mid','intro_l3_boss',
-  ['c_1_1','webp'],['c_1_2','webp'],['c_1_3','webp'],['c_1_4','webp'],['c_1_5','webp'],['c_1_6','webp'],['c_1_7','webp'],['c_1_8','webp'],['c_1_9','webp'],
-  ['c_2_1','webp'],['c_2_2','webp'],['c_2_3','webp'],['c_2_4','webp'],['c_2_5','webp'],['c_2_6','webp'],['c_2_7','webp'],['c_2_8','webp'],['c_2_9','webp'],
-  ['c_3_1','webp'],['c_3_2','webp'],['c_3_3','webp'],['c_3_4','webp'],['c_3_5','webp'],['c_3_6','webp'],['c_3_7','webp'],['c_3_8','webp'],['c_3_9','webp'],
+  'intro_hero','intro_l1_mid','intro_l1_boss'
 ];
+
+const BACKGROUND_IMAGE_IDS = [
+  'bg_fethiye_chaos', 'bg_hotel_siege', 'bg_balcony_chill', 'bg_balcony_phone', 'bg_suitup_comic',
+  'bg_l2_classic', 'bg_l3_classic',
+  'z_2_1','z_2_2','z_2_3','z_2_4','z_2_5','z_2_6','z_2_7','z_2_8','z_2_9',
+  'z_3_1','z_3_2','z_3_3','z_3_4','z_3_5','z_3_6','z_3_7','z_3_8','z_3_9',
+  'c_2_1','c_2_2','c_2_3','c_2_4','c_2_5','c_2_6','c_2_7','c_2_8','c_2_9',
+  'c_3_1','c_3_2','c_3_3','c_3_4','c_3_5','c_3_6','c_3_7','c_3_8','c_3_9',
+  'intro_l2_mid','intro_l2_boss','intro_l3_mid','intro_l3_boss'
+];
+
+const IMAGE_IDS = [...CORE_IMAGE_IDS, ...BACKGROUND_IMAGE_IDS];
 
 const SFX_IDS = [
   'sfx_throw','sfx_splash','sfx_kolonya','sfx_nazar','sfx_jump',
@@ -284,33 +284,63 @@ const LEVEL_PROP_LAYOUTS = [
 // ============================================================================
 const images = {};
 const sfx = {};
-let loadedCount = 0;
-let totalAssets = IMAGE_IDS.length;
+let coreLoadedCount = 0;
+const totalCoreAssets = CORE_IMAGE_IDS.length;
+let bgLoadedCount = 0;
+const totalBgAssets = BACKGROUND_IMAGE_IDS.length;
+
 let fontsReady = false;
 if (document.fonts && document.fonts.ready) {
   document.fonts.ready.then(() => { fontsReady = true; }).catch(() => { fontsReady = true; });
 } else fontsReady = true;
-setTimeout(() => { fontsReady = true; }, 3500);
+setTimeout(() => { fontsReady = true; }, 3000);
 
-for (const entry of IMAGE_IDS) {
-  const [id, ext] = Array.isArray(entry) ? entry : [entry, 'png'];
+function loadSingleAsset(id, onDone) {
+  if (images[id]) return images[id];
   const img = new Image();
-  img.onload = () => { loadedCount++; };
-  img.onerror = () => { loadedCount++; };
-  img.src = `img/${id}.${ext}?v=8`;
+  img.onload = () => { if (onDone) onDone(); };
+  img.onerror = () => {
+    // If WebP fails for any reason, fallback to original PNG/JPG
+    img.onerror = () => { if (onDone) onDone(); };
+    img.src = `img/${id}.png?v=9`;
+  };
+  img.src = `img/${id}.webp?v=9`;
   images[id] = img;
+  return img;
 }
 
+// Phase 1: Fast-Start Critical Assets (~6 MB WebP)
+for (const id of CORE_IMAGE_IDS) {
+  loadSingleAsset(id, () => {
+    coreLoadedCount++;
+    if (coreLoadedCount >= totalCoreAssets) {
+      startBackgroundPreload();
+    }
+  });
+}
+
+// Phase 2: Background preload for Level 2 & Level 3 assets
+let bgPreloadStarted = false;
+function startBackgroundPreload() {
+  if (bgPreloadStarted) return;
+  bgPreloadStarted = true;
+  const runPreload = () => {
+    for (const id of BACKGROUND_IMAGE_IDS) {
+      loadSingleAsset(id, () => { bgLoadedCount++; });
+    }
+  };
+  if (window.requestIdleCallback) {
+    window.requestIdleCallback(runPreload);
+  } else {
+    setTimeout(runPreload, 250);
+  }
+}
+setTimeout(startBackgroundPreload, 1800);
+
+// Optimized on-demand SFX pool (zero startup network choke)
 const sfxPools = {};
 for (const sid of SFX_IDS) {
   sfxPools[sid] = { idx: 0, list: [] };
-  for (let pi = 0; pi < 4; pi++) {
-    const a = new Audio(`sfx/${sid}.wav`);
-    a.preload = 'auto';
-    a.volume = 0.55;
-    sfxPools[sid].list.push(a);
-  }
-  sfx[sid] = sfxPools[sid].list[0];
 }
 
 let _audioCtx = null;
@@ -374,9 +404,18 @@ function playPhoneRing() {
 function playSfx(name) {
   if (G.muted) return;
   const pool = sfxPools[name];
-  if (!pool || !pool.list.length) return;
+  if (!pool) return;
   try {
-    const inst = pool.list[pool.idx % pool.list.length];
+    let inst = pool.list[pool.idx];
+    if (!inst) {
+      if (pool.list.length < 3) {
+        inst = new Audio(`sfx/${name}.wav`);
+        inst.volume = 0.55;
+        pool.list.push(inst);
+      } else {
+        inst = pool.list[0];
+      }
+    }
     pool.idx = (pool.idx + 1) % pool.list.length;
     inst.currentTime = 0;
     inst.volume = 0.55;
@@ -2727,7 +2766,7 @@ window.addEventListener('keydown', ev => {
   G.keys[ev.code] = true;
   if (['Space','ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(ev.code)) ev.preventDefault();
   if (!first) return;
-  if (loadedCount < totalAssets && G.time <= 10) return;
+  if (coreLoadedCount < totalCoreAssets && G.time <= 8) return;
   if (G.screen === 'title' && (ev.code === 'Space' || ev.code === 'Enter')) {
     resetFullGame(); playSfx('sfx_coin');
     startStoryScene('l1_intro', () => { G.screen = 'play'; playSfx('sfx_win'); });
@@ -2782,7 +2821,7 @@ function drawLoadingScreen() {
   ctx.fillStyle = grad;
   ctx.fillRect(0, 0, VW, VH);
 
-  const pct = Math.min(1, loadedCount / Math.max(1, totalAssets));
+  const pct = Math.min(1, coreLoadedCount / Math.max(1, totalCoreAssets));
   drawOutlined('BUZ GİBİ KIYAMET: SON AYRANCI', 640, 290, 38, '#ffec6e');
   drawLabel('Mahalle hazırlanıyor...', 640, 342, 20, '#bfefff', 'center', true);
   fillRectR(340, 380, 600, 30, 15, 'rgba(10, 14, 30, 0.85)');
@@ -2799,7 +2838,7 @@ function loop(ts) {
   G.dt = dt;
   lastTs = ts;
   G.time += dt;
-  const assetsReady = (loadedCount >= totalAssets && fontsReady) || G.time > 10;
+  const assetsReady = (coreLoadedCount >= totalCoreAssets && fontsReady) || G.time > 8;
   if (!assetsReady) {
     G.zones = [];
     ctx.clearRect(0, 0, VW, VH);
